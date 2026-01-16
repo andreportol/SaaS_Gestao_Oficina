@@ -1,0 +1,11 @@
+staticfiles/
+// sdist/
+// var/     
+__pycache__/
+// *.pyc    
+// *.pyo
+// *.pyd    
+.Python
+env/
+build/
+.env

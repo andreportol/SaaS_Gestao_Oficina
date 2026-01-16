@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-wrapper">
+    <div class="col-lg-5 col-md-7 col-11 mx-auto">
+        <div class="card p-2 py-3 auth-card text-center">
+            <h2 class="h5 mb-3">Acesso ao Sistema</h2>
+            <form method="post" class="app-form text-start">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <div class="mb-3">
+                    <label class="form-label">Usuário</label>
+                    <div class="form-control-wrap">
+                        {{ form.username }}
+                    </div>
+                    {{ form.username.errors }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Senha</label>
+                    <div class="form-control-wrap">
+                        {{ form.password }}
+                    </div>
+                    {{ form.password.errors }}
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Acessar</button>
+            </form>
+        </div>
+        <div class="auth-hero text-center mt-3">
+            <span class="pill text-uppercase small text-white-50 login-eyebrow">Acesso seguro</span>
+            <p class="mb-0 mt-2">Gerencie clientes, veículos e ordens com rapidez e simplicidade.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

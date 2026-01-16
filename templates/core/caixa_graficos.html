@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Caixa - Gráficos</h1>
+    <a class="chip chip-back no-dot" href="{% url 'caixa' %}">Voltar</a>
+</div>
+
+<div class="card p-3">
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+        <h2 class="h6 text-uppercase text-muted mb-0">Entradas x Despesas</h2>
+        <div class="d-flex gap-2 flex-wrap">
+            <select class="form-select form-select-sm" id="chartPeriod">
+                <option value="dia">Dia</option>
+                <option value="mes">Mês</option>
+                <option value="ano">Ano</option>
+            </select>
+            <select class="form-select form-select-sm" id="chartType">
+                <option value="bar">Barras</option>
+                <option value="line">Linhas</option>
+                <option value="pie">Pizza</option>
+            </select>
+        </div>
+    </div>
+    <div class="small text-muted mb-2">
+        Saldo do mês:
+        <span id="saldoResumo" class="fw-bold"></span>
+    </div>
+    <div class="chart-wrapper">
+        <canvas id="cashChart" height="320"></canvas>
+    </div>
+</div>
+
+<div class="card p-3 mt-3">
+    <h2 class="h6 text-uppercase text-muted mb-3">Formas de Pagamento</h2>
+    <div class="chart-wrapper">
+        <canvas id="formasChart" height="260"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{{ chart_data|json_script:"chart-data" }}
+<script>
+    window.addEventListener("load", function() {
+        const dataSets = JSON.parse(document.getElementById("chart-data").textContent);
+
+        const ctx = document.getElementById("cashChart");
+        const periodSel = document.getElementById("chartPeriod");
+        const typeSel = document.getElementById("chartType");
+        const formasCtx = document.getElementById("formasChart");
+        const themeToggle = document.getElementById("themeToggle");
+        let chart;
+        let formasChart;
+
+        const buildData = (period) => {
+            const items = dataSets[period] || [];
+            return {
+                labels: items.map((i) => i.label),
+                entradas: items.map((i) => Number(i.entradas || 0)),
+                saidas: items.map((i) => Number(i.saidas || 0)),
+                saldo: items.map((i) => Number(i.saldo || 0)),
+            };
+        };
+
+        const valFromCtx = (ctx) => {
+            if (ctx && typeof ctx.parsed === "object") {
+                return Number(ctx.parsed.y ?? ctx.parsed.x ?? 0);
+            }
+            return Number(ctx.parsed ?? 0);
+        };
+
+        const renderMainChart = () => {
+            const axisColor = document.body.classList.contains("theme-light") ? "#000" : "#cbd5e1";
+            const period = periodSel.value;
+            const type = typeSel.value;
+            const { labels, entradas, saidas, saldo } = buildData(period);
+            if (chart) chart.destroy();
+
+            const totalSaldo = entradas.reduce((a, b) => a + b, 0) - saidas.reduce((a, b) => a + b, 0);
+            const resumo = document.getElementById("saldoResumo");
+            if (resumo) {
+                resumo.textContent = `R$ ${totalSaldo.toFixed(2)}`;
+                resumo.classList.toggle("text-success", totalSaldo >= 0);
+                resumo.classList.toggle("text-danger", totalSaldo < 0);
+            }
+
+            const datasets =
+                type === "pie"
+                    ? [
+                          {
+                              label: "Entradas",
+                              data: [entradas.reduce((a, b) => a + b, 0)],
+                              backgroundColor: "rgba(52, 211, 153, 0.7)",
+                              borderColor: "rgba(52, 211, 153, 1)",
+                          },
+                          {
+                              label: "Despesas",
+                              data: [saidas.reduce((a, b) => a + b, 0)],
+                              backgroundColor: "rgba(239, 68, 68, 0.7)",
+                              borderColor: "rgba(239, 68, 68, 1)",
+                          },
+                      ]
+                    : [
+                          {
+                              label: "Entradas",
+                              data: entradas,
+                              backgroundColor: "rgba(52, 211, 153, 0.6)",
+                              borderColor: "rgba(52, 211, 153, 1)",
+                              tension: 0.25,
+                          },
+                          {
+                              label: "Despesas",
+                              data: saidas,
+                              backgroundColor: "rgba(239, 68, 68, 0.6)",
+                              borderColor: "rgba(239, 68, 68, 1)",
+                              tension: 0.25,
+                          },
+                          {
+                              label: "Saldo",
+                              data: saldo,
+                              backgroundColor: "rgba(59, 130, 246, 0.6)",
+                              borderColor: "rgba(59, 130, 246, 1)",
+                              borderDash: [6, 4],
+                              tension: 0.25,
+                          },
+                      ];
+
+            chart = new Chart(ctx, {
+                type,
+                data: {
+                    labels: type === "pie" ? ["Total"] : labels,
+                    datasets,
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: axisColor } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: R$ ${valFromCtx(ctx).toFixed(2)}`,
+                            },
+                        },
+                    },
+                    scales:
+                        type === "pie"
+                            ? {}
+                            : {
+                                  x: { ticks: { color: axisColor } },
+                                  y: {
+                                      ticks: { color: axisColor },
+                                      beginAtZero: true,
+                                  },
+                              },
+                },
+            });
+        };
+
+        const renderFormasChart = () => {
+            const formasData = dataSets.formas || [];
+            const labelsFormas = formasData.map((f) => f.forma);
+            const valoresFormas = formasData.map((f) => f.total);
+            const axisColorFormas = document.body.classList.contains("theme-light") ? "#000" : "#cbd5e1";
+            const palette = [
+                "rgba(52, 211, 153, 0.7)",
+                "rgba(59, 130, 246, 0.7)",
+                "rgba(239, 68, 68, 0.7)",
+                "rgba(251, 191, 36, 0.7)",
+                "rgba(139, 92, 246, 0.7)",
+                "rgba(16, 185, 129, 0.7)",
+            ];
+            const paletteBorder = [
+                "rgba(52, 211, 153, 1)",
+                "rgba(59, 130, 246, 1)",
+                "rgba(239, 68, 68, 1)",
+                "rgba(251, 191, 36, 1)",
+                "rgba(139, 92, 246, 1)",
+                "rgba(16, 185, 129, 1)",
+            ];
+            if (formasChart) formasChart.destroy();
+            formasChart = new Chart(formasCtx, {
+                type: "bar",
+                data: {
+                    labels: labelsFormas,
+                    datasets: [
+                        {
+                            label: "Total",
+                            data: valoresFormas,
+                            backgroundColor: labelsFormas.map((_, idx) => palette[idx % palette.length]),
+                            borderColor: labelsFormas.map((_, idx) => paletteBorder[idx % paletteBorder.length]),
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: axisColorFormas } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `R$ ${valFromCtx(ctx).toFixed(2)}`,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { ticks: { color: axisColorFormas } },
+                        y: { ticks: { color: axisColorFormas }, beginAtZero: true },
+                    },
+                },
+            });
+        };
+
+        periodSel.addEventListener("change", renderMainChart);
+        typeSel.addEventListener("change", renderMainChart);
+        themeToggle?.addEventListener("click", () => {
+            setTimeout(() => {
+                renderMainChart();
+                renderFormasChart();
+            }, 0);
+        });
+        renderMainChart();
+        renderFormasChart();
+    });
+</script>
+{% endblock %}

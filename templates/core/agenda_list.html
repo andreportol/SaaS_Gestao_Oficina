@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Agenda</h1>
+</div>
+
+<div class="card p-3 mb-3">
+    <form method="post" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-4">
+            <label class="form-label">{{ form.cliente.label }}</label>
+            {{ form.cliente }}
+            {% for error in form.cliente.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">{{ form.veiculo.label }}</label>
+            {{ form.veiculo }}
+            {% for error in form.veiculo.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">{{ form.data_agendada.label }}</label>
+            {{ form.data_agendada }}
+            {% for error in form.data_agendada.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">{{ form.hora_agendada.label }}</label>
+            {{ form.hora_agendada }}
+            {% for error in form.hora_agendada.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">{{ form.tipo.label }}</label>
+            {{ form.tipo }}
+            {% for error in form.tipo.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-7">
+            <label class="form-label">{{ form.observacoes.label }}</label>
+            {{ form.observacoes }}
+            {% for error in form.observacoes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-primary w-100">Agendar</button>
+        </div>
+    </form>
+</div>
+
+<form class="row g-2 mb-3" method="get" id="agendaSearchForm">
+    <div class="col-auto flex-grow-1">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar por cliente ou veículo">
+    </div>
+    <input type="hidden" name="mes" value="{{ current_month }}">
+    <input type="hidden" name="ano" value="{{ current_year }}">
+    {% if selected_date %}
+    <input type="hidden" name="data" value="{{ selected_date|date:'Y-m-d' }}">
+    {% endif %}
+    <div class="col-auto d-flex gap-2">
+        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+        <button class="btn btn-outline-danger" type="button" id="clearAgendaSearch">Limpar</button>
+    </div>
+</form>
+
+{% if selected_date %}
+<div class="alert alert-info d-flex justify-content-between align-items-center mb-3 py-2">
+    <div>Mostrando agendamentos em <strong>{{ selected_date|date:"d/m/Y" }}</strong>.</div>
+    <div>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'agenda' %}">Limpar filtro</a>
+    </div>
+</div>
+{% endif %}
+
+<div class="card p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2 gap-3 flex-wrap">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <strong>Calendário</strong>
+            <div class="text-muted small">Mostrando agendamentos de <strong>{{ request.user.empresa.nome|default:"sua empresa" }}</strong></div>
+        </div>
+    </div>
+    <div id="agendaCalendar" class="fullcalendar-wrapper"></div>
+</div>
+
+<div class="modal fade" id="quickAgendaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo agendamento rápido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickAgendaForm" class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Cliente (novo ou existente)</label>
+                        <input type="text" name="cliente_nome" class="form-control" required placeholder="Nome do cliente">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Telefone</label>
+                        <input type="text" name="telefone" class="form-control" placeholder="(99)99999-9999">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Tipo do agendamento</label>
+                        <select name="tipo" class="form-select">
+                            <option value="NOTA">Anotação</option>
+                            <option value="ENTREGA">Entrega (deixar)</option>
+                            <option value="RETIRADA">Retirada (buscar)</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Data</label>
+                        <input type="date" name="data" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Hora</label>
+                        <input type="time" name="hora" class="form-control" required>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button class="btn btn-primary" type="submit">Salvar agendamento</button>
+                    </div>
+                </form>
+                <div class="alert alert-danger d-none mt-3" id="quickAgendaError"></div>
+                <div class="alert alert-success d-none mt-3" id="quickAgendaSuccess">Agendamento criado!</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script>
+(function() {
+    const calendarEl = document.getElementById("agendaCalendar");
+    if (!calendarEl) return;
+
+    const events = JSON.parse('{{ eventos_fc_json|escapejs }}');
+    const selectedDate = "{{ selected_date|date:'Y-m-d' }}";
+    const fallbackDate = "{{ current_year }}-{{ current_month|stringformat:'02d' }}-01";
+    const quickModalEl = document.getElementById("quickAgendaModal");
+    if (quickModalEl && quickModalEl.parentElement !== document.body) {
+        document.body.appendChild(quickModalEl);
+    }
+    const quickModal = quickModalEl ? new bootstrap.Modal(quickModalEl) : null;
+    const quickForm = document.getElementById("quickAgendaForm");
+    const quickError = document.getElementById("quickAgendaError");
+    const quickSuccess = document.getElementById("quickAgendaSuccess");
+    let calendar; // will hold instance later
+
+    const csrfToken =
+        document.querySelector('input[name="csrfmiddlewaretoken"]')?.value ||
+        document.cookie
+            .split(";")
+            .map((c) => c.trim())
+            .find((c) => c.startsWith("csrftoken="))
+            ?.split("=")[1] ||
+        "";
+
+    const syncMove = async (info) => {
+        const start = info.event.start;
+        if (!start) throw new Error("Data inválida.");
+        const payload = {
+            id: info.event.id,
+            date: start.toISOString().slice(0, 10),
+            time: info.event.allDay ? null : start.toTimeString().slice(0, 5),
+            allDay: info.event.allDay,
+        };
+        const response = await fetch("{% url 'agenda_move' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+            throw new Error("Erro ao salvar");
+        }
+    };
+
+    const deleteEvent = async (eventId) => {
+        const response = await fetch("{% url 'agenda_delete' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken,
+            },
+            body: JSON.stringify({id: eventId}),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+            throw new Error(data.error || "Erro ao excluir");
+        }
+    };
+
+    const openQuickModal = (dateObj) => {
+        if (!quickModal || !quickForm) {
+            alert("Não foi possível abrir o modal. Recarregue a página e tente novamente.");
+            return;
+        }
+        quickError?.classList.add("d-none");
+        quickSuccess?.classList.add("d-none");
+        const dateInput = quickForm.querySelector('input[name="data"]');
+        const timeInput = quickForm.querySelector('input[name="hora"]');
+        if (dateInput) dateInput.value = dateObj.toISOString().slice(0, 10);
+        if (timeInput) {
+            const hasTime = dateObj.getHours() !== 0 || dateObj.getMinutes() !== 0;
+            timeInput.value = hasTime ? dateObj.toTimeString().slice(0, 5) : "08:00";
+        }
+        quickModal.show();
+        const first = quickForm.querySelector("input[name='cliente_nome']");
+        first?.focus();
+    };
+
+    quickForm?.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        quickError?.classList.add("d-none");
+        quickSuccess?.classList.add("d-none");
+        const formData = new FormData(quickForm);
+        const payload = Object.fromEntries(formData.entries());
+        try {
+            const resp = await fetch("{% url 'agenda_quick_create' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.ok) {
+                throw new Error(data.error || "Erro ao salvar");
+            }
+            if (data.event) {
+                calendar.addEvent(data.event);
+            }
+            quickSuccess?.classList.remove("d-none");
+            quickForm.reset();
+            setTimeout(() => quickModal.hide(), 800);
+        } catch (err) {
+            if (quickError) {
+                quickError.textContent = err.message || "Erro ao salvar";
+                quickError.classList.remove("d-none");
+            } else {
+                alert(err.message || "Erro ao salvar");
+            }
+        }
+    });
+
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: "pt-br",
+        initialView: "dayGridMonth",
+        initialDate: selectedDate || fallbackDate,
+        headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,dayGridDay",
+        },
+        height: "auto",
+        contentHeight: "auto",
+        aspectRatio: 1.6,
+        slotMinTime: "07:00:00",
+        slotMaxTime: "20:00:00",
+        scrollTime: "08:00:00",
+        buttonText: {
+            today: "Hoje",
+            month: "Mês",
+            week: "Semana",
+            day: "Dia",
+        },
+        navLinks: true,
+        editable: true,
+        selectable: true,
+        eventTimeFormat: {hour: "2-digit", minute: "2-digit", hour12: false},
+        nowIndicator: true,
+        events,
+        dateClick(info) {
+            if (info.view.type === "dayGridMonth") {
+                calendar.changeView("timeGridDay", info.date);
+                return;
+            }
+            openQuickModal(info.date);
+        },
+        eventClick(info) {
+            if (!info.event.start) return;
+            const startDate = info.event.start;
+            const confirmDelete = confirm("Deseja excluir este agendamento?");
+            if (confirmDelete) {
+                deleteEvent(info.event.id)
+                    .then(() => info.event.remove())
+                    .catch((err) => alert(err.message || "Erro ao excluir"));
+                return;
+            }
+            calendar.changeView("timeGridDay", startDate);
+        },
+        eventDrop: async (info) => {
+            try {
+                await syncMove(info);
+            } catch (err) {
+                info.revert();
+                alert("Não foi possível mover o agendamento. Tente novamente.");
+            }
+        },
+        eventResize: async (info) => {
+            try {
+                await syncMove(info);
+            } catch (err) {
+                info.revert();
+                alert("Não foi possível atualizar o horário. Tente novamente.");
+            }
+        },
+    });
+
+    calendar.render();
+})();
+
+(function() {
+    const veiculos = JSON.parse('{{ veiculos_json|escapejs }}');
+    const clienteSelect = document.getElementById("id_cliente");
+    const veiculoSelect = document.getElementById("id_veiculo");
+    if (!clienteSelect || !veiculoSelect) return;
+
+    const renderOptions = () => {
+        if (!veiculos.length) {
+            veiculoSelect.disabled = false;
+            return;
+        }
+        const clienteId = clienteSelect.value;
+        const previous = veiculoSelect.value;
+        veiculoSelect.innerHTML = "";
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = clienteId ? "Selecione o veículo do cliente" : "Selecione um cliente (lista completa)";
+        veiculoSelect.appendChild(placeholder);
+        const lista = clienteId ? veiculos.filter(v => String(v.cliente_id) === clienteId) : veiculos;
+        lista.forEach(v => {
+            const opt = document.createElement("option");
+            opt.value = v.id;
+            opt.textContent = `${v.placa} - ${v.modelo}`;
+            veiculoSelect.appendChild(opt);
+        });
+        veiculoSelect.disabled = false;
+        if (previous) {
+            veiculoSelect.value = previous;
+        }
+    };
+
+    clienteSelect.addEventListener("change", renderOptions);
+    renderOptions();
+})();
+
+(function() {
+    const form = document.getElementById("agendaSearchForm");
+    const input = form?.querySelector('input[name="q"]');
+    const clearBtn = document.getElementById("clearAgendaSearch");
+    if (!form || !input) return;
+    let last = input.value;
+    input.addEventListener("input", () => {
+        const current = input.value;
+        if (current.trim() === "" && last.trim() !== "") {
+            form.submit();
+        }
+        last = current;
+    });
+    clearBtn?.addEventListener("click", () => {
+        input.value = "";
+        form.submit();
+    });
+})();
+</script>
+{% endblock %}

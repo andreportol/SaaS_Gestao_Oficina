@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">OS #{{ object.id }} - {{ object.cliente.nome }}</h1>
+    <div class="d-flex gap-2">
+    <a class="chip chip-action no-dot" href="{% url 'os_update' object.pk %}">Editar</a>
+        <a class="chip chip-back no-dot" href="{% url 'os_list' %}">Voltar</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card p-3 h-100">
+            <h2 class="h6 text-uppercase text-muted">Dados</h2>
+            <p class="mb-1"><strong>Cliente:</strong> {{ object.cliente.nome }}</p>
+            <p class="mb-1"><strong>Veículo:</strong> {{ object.veiculo.placa }} - {{ object.veiculo.modelo }}</p>
+            <p class="mb-1"><strong>Status:</strong> <span class="status-pill status-{{ object.status }}">{{ object.get_status_display }}</span></p>
+            <p class="mb-1"><strong>Entrada:</strong> {{ object.entrada_em }}</p>
+            <p class="mb-1"><strong>Previsão:</strong> {{ object.previsao_entrega|default:"-" }}</p>
+            <p class="mb-1"><strong>Problema:</strong> {{ object.problema }}</p>
+            <p class="mb-1"><strong>Diagnóstico:</strong> {{ object.diagnostico|default:"-" }}</p>
+            <p class="mb-1"><strong>Observações:</strong> {{ object.observacoes|default:"-" }}</p>
+            {% if object.anexo %}<p class="mb-1"><a href="{{ object.anexo.url }}" target="_blank">Ver anexo</a></p>{% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3 h-100">
+            <h2 class="h6 text-uppercase text-muted">Totais</h2>
+            <p class="mb-1"><strong>Itens:</strong> R$ {{ object.total_itens|floatformat:2 }}</p>
+            <p class="mb-1"><strong>Mão de Obra:</strong> R$ {{ object.mao_de_obra|floatformat:2 }}</p>
+            <p class="mb-1"><strong>Desconto:</strong> R$ {{ object.desconto|floatformat:2 }}</p>
+            <p class="mb-1"><strong>Total:</strong> R$ {{ object.total|floatformat:2 }}</p>
+            <p class="mb-1"><strong>Total Pago:</strong> R$ {{ object.total_pago|floatformat:2 }}</p>
+            <p class="mb-1"><strong>Saldo:</strong> <span class="{% if object.saldo > 0 %}text-danger{% else %}text-success{% endif %}">R$ {{ object.saldo|floatformat:2 }}</span></p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-2">
+    <div class="col-md-7">
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 text-uppercase text-muted mb-0">Itens</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th class="text-end">Qtd</th>
+                            <th class="text-end">Valor</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in object.itens.all %}
+                        <tr>
+                            <td>{{ item.descricao }}</td>
+                            <td class="text-end">{{ item.qtd|floatformat:0 }}</td>
+                            <td class="text-end">R$ {{ item.valor_unitario|floatformat:2 }}</td>
+                            <td class="text-end">R$ {{ item.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center">Nenhum item.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <form method="post" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="add_item" value="1">
+                <div class="row g-2">
+                    {% for field in item_form %}
+                    <div class="col-md-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                    </div>
+                    {% endfor %}
+                    <div class="col-md-2 d-grid align-items-end">
+                        <button class="btn btn-sm btn-primary">Adicionar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card p-3">
+            <h2 class="h6 text-uppercase text-muted mb-2">Pagamentos</h2>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Forma</th>
+                            <th class="text-end">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pagamento in object.pagamentos.all %}
+                        <tr>
+                            <td>{{ pagamento.pago_em }}</td>
+                            <td>{{ pagamento.forma_pagamento|default:"-" }}</td>
+                            <td class="text-end">R$ {{ pagamento.valor|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center">Nenhum pagamento.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <form method="post" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="add_pagamento" value="1">
+                {% for field in pagamento_form %}
+                <div class="mb-2">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endfor %}
+                <button class="btn btn-sm btn-primary">Registrar Pagamento</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    const select = document.getElementById("id_produto");
+    const valorInput = document.getElementById("id_valor_unitario");
+    const descricaoInput = document.getElementById("id_descricao");
+    if (!select || !valorInput) return;
+    const info = JSON.parse('{{ produtos_info_json|escapejs }}');
+    const setFields = () => {
+        const id = select.value;
+        if (id && info[id] !== undefined) {
+            valorInput.value = Number(info[id].preco || 0).toFixed(2);
+            if (descricaoInput && !descricaoInput.value) {
+                descricaoInput.value = info[id].descricao || info[id].nome || "";
+            }
+        }
+    };
+    select.addEventListener("change", setFields);
+    setFields();
+})();
+</script>
+{% endblock %}

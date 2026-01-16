@@ -1,0 +1,631 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ProjetoOficina</title>
+    <meta name="theme-color" content="#0f172a">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="app-bg">
+<div class="app-blob app-blob-1"></div>
+<div class="app-blob app-blob-2"></div>
+<nav class="navbar navbar-expand-lg navbar-dark app-nav py-3">
+    <div class="container-xl">
+        <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">
+            {% if user.is_authenticated %}
+                <span class="brand-mark" aria-label="Status online"></span>
+            {% else %}
+                <span class="brand-mark offline" aria-label="Status offline"></span>
+            {% endif %}
+            {% if user.is_authenticated and user.empresa %}
+                {{ user.empresa.nome }}
+            {% else %}
+                Área Administrativa
+            {% endif %}
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto nav-menu align-items-center">
+                {% if user.is_authenticated %}
+                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'clientes_list' %}">Clientes</a></li>
+                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'veiculos_list' %}">Veículos</a></li>
+                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'agenda' %}">Agenda</a></li>
+                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'produtos_list' %}">Produtos</a></li>
+                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'os_list' %}">Ordens</a></li>
+                {% if user.is_manager %}
+                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'caixa' %}">Caixa</a></li>
+                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'relatorios' %}">Relatórios</a></li>
+                {% endif %}
+                {% endif %}
+            </ul>
+            <ul class="navbar-nav align-items-center gap-3 nav-actions ms-3">
+                <li class="nav-item">
+                    <a class="nav-link nav-pill" href="#" data-bs-toggle="modal" data-bs-target="#supportModal">Suporte</a>
+                </li>
+                <li class="nav-item">
+                    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Alternar tema">🌙</button>
+                </li>
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <span class="badge bg-soft badge-user">
+                            Olá, {{ user.first_name }} {{ user.last_name }}{% if not user.first_name and not user.last_name %}{{ user.username }}{% endif %}
+                        </span>
+                    </li>
+                    <li class="nav-item"><a class="btn btn-sm btn-nav" href="{% url 'logout' %}">Sair</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+<main class="container-xl app-content">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+<div class="modal fade" id="supportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Contato com suporte</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="supportForm" class="text-start">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Nome</label>
+                        <input type="text" name="nome" class="form-control" required placeholder="Seu nome">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">E-mail</label>
+                        <input type="email" name="email" class="form-control" required placeholder="seuemail@exemplo.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mensagem</label>
+                        <textarea name="mensagem" class="form-control" rows="3" required placeholder="Explique o que aconteceu"></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Enviar</button>
+                    </div>
+                </form>
+                <div class="alert alert-success d-none mt-3" id="supportSuccess">Mensagem enviada! Responderemos em breve.</div>
+                <div class="alert alert-danger d-none mt-3" id="supportError"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function() {
+        const firstInput = document.querySelector('main input:not([type="hidden"]), main select, main textarea');
+        if (firstInput && !firstInput.hasAttribute('autofocus')) {
+            firstInput.focus();
+        }
+    })();
+
+    (function() {
+        const body = document.body;
+        const btn = document.getElementById('themeToggle');
+        const stored = localStorage.getItem('theme');
+        if (stored === 'light') {
+            body.classList.add('theme-light');
+        }
+        updateIcon();
+
+        function updateIcon() {
+            if (!btn) return;
+            const isLight = body.classList.contains('theme-light');
+            btn.textContent = isLight ? '🌙' : '☀️';
+            btn.setAttribute('aria-label', isLight ? 'Alternar para tema escuro' : 'Alternar para tema claro');
+        }
+
+        btn?.addEventListener('click', () => {
+            const isLight = body.classList.toggle('theme-light');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            updateIcon();
+        });
+    })();
+
+    (function() {
+        const formatPhone = (value) => {
+            const digits = value.replace(/\D/g, "").slice(0, 11);
+            if (digits.length > 10) {
+                return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+            }
+            if (digits.length > 6) {
+                return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+            }
+            if (digits.length > 2) {
+                return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+            }
+            if (digits.length > 0) {
+                return `(${digits}`;
+            }
+            return "";
+        };
+
+        const applyMask = (input) => {
+            input.value = formatPhone(input.value);
+        };
+
+        const inputs = document.querySelectorAll(
+            '[data-mask="phone"], input[name="telefone"], input[id="id_telefone"]'
+        );
+        inputs.forEach((input) => {
+            applyMask(input);
+            input.addEventListener("input", () => applyMask(input));
+        });
+    })();
+
+    (function() {
+        const formatCPF = (value) => {
+            const digits = value.replace(/\D/g, "").slice(0, 11);
+            if (digits.length > 9) {
+                return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+            }
+            if (digits.length > 6) {
+                return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+            }
+            if (digits.length > 3) {
+                return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+            }
+            return digits;
+        };
+
+        const isValidCPF = (digits) => {
+            if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
+            let sum = 0;
+            for (let i = 0; i < 9; i++) {
+                sum += Number(digits[i]) * (10 - i);
+            }
+            let first = (sum * 10) % 11;
+            first = first === 10 ? 0 : first;
+            if (first !== Number(digits[9])) return false;
+
+            sum = 0;
+            for (let i = 0; i < 10; i++) {
+                sum += Number(digits[i]) * (11 - i);
+            }
+            let second = (sum * 10) % 11;
+            second = second === 10 ? 0 : second;
+            return second === Number(digits[10]);
+        };
+
+        const setCPFValidity = (input, digits) => {
+            if (!digits.length) {
+                input.setCustomValidity("");
+                return;
+            }
+            if (digits.length !== 11) {
+                input.setCustomValidity("CPF deve ter 11 dígitos.");
+                return;
+            }
+            input.setCustomValidity(isValidCPF(digits) ? "" : "CPF inválido.");
+        };
+
+        const applyCPFMask = (input) => {
+            const digits = input.value.replace(/\D/g, "").slice(0, 11);
+            input.value = formatCPF(digits);
+            setCPFValidity(input, digits);
+        };
+
+        const inputs = document.querySelectorAll(
+            '[data-mask="cpf"], input[name="documento"], input[id="id_documento"]'
+        );
+        inputs.forEach((input) => {
+            applyCPFMask(input);
+            input.addEventListener("input", () => applyCPFMask(input));
+            input.addEventListener("blur", () => applyCPFMask(input));
+        });
+    })();
+
+    (function() {
+        const tipoSelect = document.querySelector('select[name="tipo"], #id_tipo');
+        const marcaField = document.querySelector('input[name="marca"], select[name="marca"], #id_marca');
+        if (!tipoSelect || !marcaField) return;
+
+        let brandMap = {};
+        try {
+            brandMap = JSON.parse(marcaField.dataset.brands || "{}");
+        } catch (e) {
+            brandMap = {};
+        }
+        const placeholder = marcaField.dataset.placeholder || "Selecione a marca";
+        const originalPlaceholder = marcaField.getAttribute("placeholder") || placeholder;
+
+        const dependentFields = Array.from(
+            new Set([
+                marcaField,
+                ...document.querySelectorAll(
+                    'input[name="modelo"], #id_modelo, input[name="ano"], #id_ano, input[name="cor"], #id_cor, input[name="placa"], #id_placa'
+                ),
+            ])
+        );
+
+        const setFieldEnabled = (field, enabled) => {
+            field.disabled = !enabled;
+            const isInput = field.tagName.toLowerCase() === "input";
+            if (isInput) {
+                if (!field.dataset.origPlaceholder) {
+                    field.dataset.origPlaceholder = field.getAttribute("placeholder") || "";
+                }
+                field.setAttribute("placeholder", enabled ? field.dataset.origPlaceholder : "Selecione o tipo primeiro");
+                if (!enabled) {
+                    field.value = "";
+                }
+            } else if (!enabled) {
+                field.value = "";
+                field.innerHTML = "";
+                const opt = document.createElement("option");
+                opt.value = "";
+                opt.textContent = "Selecione o tipo primeiro";
+                field.appendChild(opt);
+            }
+        };
+
+        const ensureDatalist = (inputEl) => {
+            const listId = inputEl.getAttribute("list") || "marca-options";
+            inputEl.setAttribute("list", listId);
+            let datalist = document.getElementById(listId);
+            if (!datalist) {
+                datalist = document.createElement("datalist");
+                datalist.id = listId;
+                inputEl.insertAdjacentElement("afterend", datalist);
+            }
+            return datalist;
+        };
+
+        const renderSelectOptions = (selectEl, tipo, keepCurrent = true) => {
+            const current = keepCurrent ? selectEl.value : "";
+            const brands = brandMap[tipo] || [];
+            selectEl.innerHTML = "";
+
+            const placeholderOpt = document.createElement("option");
+            placeholderOpt.value = "";
+            placeholderOpt.textContent = placeholder;
+            placeholderOpt.selected = !current;
+            selectEl.appendChild(placeholderOpt);
+
+            const options = [...brands];
+            if (!options.includes("Outros")) options.push("Outros");
+
+            options.forEach((brand) => {
+                const opt = document.createElement("option");
+                opt.value = brand;
+                opt.textContent = brand;
+                if (current === brand) opt.selected = true;
+                selectEl.appendChild(opt);
+            });
+
+            if (current && !options.includes(current)) {
+                const opt = document.createElement("option");
+                opt.value = current;
+                opt.textContent = current;
+                opt.selected = true;
+                selectEl.appendChild(opt);
+            }
+        };
+
+        const renderInputOptions = (inputEl, tipo) => {
+            const datalist = ensureDatalist(inputEl);
+            const current = inputEl.value;
+            const brands = brandMap[tipo] || [];
+            const unique = Array.from(new Set([...brands, "Outros", current].filter(Boolean)));
+            datalist.innerHTML = "";
+            unique.forEach((brand) => {
+                const opt = document.createElement("option");
+                opt.value = brand;
+                datalist.appendChild(opt);
+            });
+        };
+
+        const render = (keepCurrent = true) => {
+            const tipo = tipoSelect.value;
+            const enabled = Boolean(tipo);
+            dependentFields.forEach((field) => setFieldEnabled(field, enabled));
+            if (!tipo) return;
+
+            if (marcaField.tagName.toLowerCase() === "select") {
+                renderSelectOptions(marcaField, tipo, keepCurrent);
+            } else {
+                renderInputOptions(marcaField, tipo);
+            }
+        };
+
+        tipoSelect.addEventListener("change", () => {
+            dependentFields.forEach((field) => {
+                field.value = "";
+            });
+            render(false);
+        });
+        marcaField.addEventListener("focus", () => render(true));
+        render(true);
+    })();
+
+    (function() {
+        const inputs = document.querySelectorAll('[data-mask="ano-modelo"], input[name="ano"], #id_ano');
+        if (!inputs.length) return;
+
+        const formatAnoModelo = (value) => {
+            const digits = value.replace(/\D/g, "").slice(0, 8);
+            if (digits.length > 4) {
+                return `${digits.slice(0, 4)}/${digits.slice(4)}`;
+            }
+            return digits;
+        };
+
+        inputs.forEach((input) => {
+            input.addEventListener("input", () => {
+                input.value = formatAnoModelo(input.value);
+            });
+        });
+    })();
+
+    (function() {
+        const inputs = document.querySelectorAll('input[name="placa"], #id_placa');
+        inputs.forEach((input) => {
+            input.addEventListener("input", () => {
+                if (input.disabled) return;
+                const start = input.selectionStart ?? input.value.length;
+                const end = input.selectionEnd ?? input.value.length;
+                input.value = input.value.toUpperCase();
+                input.setSelectionRange?.(start, end);
+            });
+        });
+    })();
+
+    (function() {
+        const inputs = document.querySelectorAll('input[name="modelo"], #id_modelo');
+        const toTitleCase = (value) =>
+            value.replace(/\b(\S)(\S*)/g, (_, first, rest) => first.toUpperCase() + rest.toLowerCase());
+
+        inputs.forEach((input) => {
+            input.addEventListener("input", () => {
+                if (input.disabled) return;
+                const start = input.selectionStart ?? input.value.length;
+                const end = input.selectionEnd ?? input.value.length;
+                const formatted = toTitleCase(input.value);
+                if (formatted !== input.value) {
+                    input.value = formatted;
+                    input.setSelectionRange?.(start, end);
+                }
+            });
+        });
+    })();
+
+    (function() {
+        const inputs = document.querySelectorAll('input[name="cor"], #id_cor');
+        const formatCor = (value) => value.replace(/\b(\S)(\S*)/g, (_, first, rest) => first.toUpperCase() + rest.toLowerCase());
+
+        inputs.forEach((input) => {
+            input.addEventListener("input", () => {
+                if (input.disabled) return;
+                const start = input.selectionStart ?? input.value.length;
+                const end = input.selectionEnd ?? input.value.length;
+                const formatted = formatCor(input.value);
+                if (formatted !== input.value) {
+                    input.value = formatted;
+                    input.setSelectionRange?.(start, end);
+                }
+            });
+        });
+    })();
+
+    (function() {
+        const clienteSelect = document.querySelector('select[name="cliente"], #id_cliente');
+        const veiculoSelect = document.querySelector('select[name="veiculo"], #id_veiculo');
+        if (!clienteSelect || !veiculoSelect) return;
+        if (!veiculoSelect.dataset.vehicles) return;
+
+        let vehiclesMap = {};
+        try {
+            vehiclesMap = JSON.parse(veiculoSelect.dataset.vehicles || "{}");
+        } catch (e) {
+            vehiclesMap = {};
+        }
+        const placeholder = veiculoSelect.dataset.placeholder || "Selecione o veículo do cliente";
+
+        const renderVeiculos = (clienteId, keepCurrent = true) => {
+            const current = keepCurrent ? veiculoSelect.value : "";
+            veiculoSelect.innerHTML = "";
+
+            const placeholderOpt = document.createElement("option");
+            placeholderOpt.value = "";
+            placeholderOpt.textContent = placeholder;
+            placeholderOpt.selected = !current;
+            veiculoSelect.appendChild(placeholderOpt);
+
+            const options = vehiclesMap[clienteId] || [];
+            options.forEach((v) => {
+                const opt = document.createElement("option");
+                opt.value = v.id;
+                opt.textContent = v.label;
+                if (String(current) === String(v.id)) opt.selected = true;
+                veiculoSelect.appendChild(opt);
+            });
+
+            const hasValid = options.some((v) => String(v.id) === String(current));
+            if (!hasValid) {
+                veiculoSelect.value = "";
+            }
+            veiculoSelect.disabled = !clienteId;
+        };
+
+        clienteSelect.addEventListener("change", () => renderVeiculos(clienteSelect.value, false));
+        renderVeiculos(clienteSelect.value || "", true);
+    })();
+
+    (function() {
+        const moneyInputs = document.querySelectorAll('[data-format="currency2"]');
+
+        const formatMoney = (input) => {
+            const raw = input.value.replace(",", ".").replace(/[^\d.]/g, "");
+            if (!raw) {
+                input.value = "";
+                return;
+            }
+            const num = parseFloat(raw);
+            if (isNaN(num)) {
+                input.value = "";
+                return;
+            }
+            const clamped = Math.max(0, num);
+            input.value = clamped.toFixed(2);
+        };
+
+        moneyInputs.forEach((input) => {
+            input.addEventListener("blur", () => formatMoney(input));
+        });
+    })();
+
+    (function() {
+        const cepInputs = document.querySelectorAll('[data-mask="cep"], input[name="cep"], #id_cep');
+        if (!cepInputs.length) return;
+
+        const formatCEP = (value) => {
+            const digits = value.replace(/\D/g, "").slice(0, 8);
+            if (digits.length > 5) {
+                return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+            }
+            return digits;
+        };
+
+        const caretFromDigits = (formatted, digitsTarget) => {
+            if (digitsTarget <= 0) return 0;
+            let count = 0;
+            for (let i = 0; i < formatted.length; i++) {
+                if (/\d/.test(formatted[i])) count++;
+                if (count >= digitsTarget) return i + 1;
+            }
+            return formatted.length;
+        };
+
+        const fillAddress = (data) => {
+            const rua = document.querySelector('input[name="rua"], #id_rua');
+            const bairro = document.querySelector('input[name="bairro"], #id_bairro');
+            const cidade = document.querySelector('input[name="cidade"], #id_cidade');
+            if (rua) rua.value = data?.logradouro || "";
+            if (bairro) bairro.value = data?.bairro || "";
+            if (cidade) cidade.value = data?.localidade || "";
+        };
+
+        const lookupCEP = async (cepValue, input) => {
+            const digits = cepValue.replace(/\D/g, "");
+            if (digits.length !== 8) return;
+            if (input.dataset.lookup !== "viacep") return;
+            try {
+                const resp = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (!data.erro) {
+                    fillAddress(data);
+                }
+            } catch (e) {
+                // ignore lookup errors silently
+            }
+        };
+
+        cepInputs.forEach((input) => {
+            input.addEventListener("input", () => {
+                const raw = input.value;
+                const digitsBefore = raw.slice(0, input.selectionStart ?? raw.length).replace(/\D/g, "").length;
+                input.value = formatCEP(raw).toUpperCase();
+                const newPos = caretFromDigits(input.value, digitsBefore);
+                if (!input.value.replace(/\D/g, "")) {
+                    fillAddress({});
+                }
+                input.setSelectionRange?.(newPos, newPos);
+            });
+            input.addEventListener("blur", () => lookupCEP(input.value, input));
+            // format initial value
+            input.value = formatCEP(input.value).toUpperCase();
+        });
+    })();
+
+    (function() {
+        const btn = document.getElementById("btnLocate");
+        if (!btn) return;
+
+        const getVal = (name) => {
+            const el = document.querySelector(`input[name="${name}"], #id_${name}`);
+            return el ? el.value.trim() : "";
+        };
+
+        btn.addEventListener("click", () => {
+            const parts = [getVal("rua"), getVal("numero"), getVal("bairro"), getVal("cidade"), getVal("cep")];
+            const query = parts.filter(Boolean).join(", ");
+            if (!query) return;
+            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+            window.open(url, "_blank");
+        });
+    })();
+
+    (function() {
+        const form = document.getElementById("supportForm");
+        const successEl = document.getElementById("supportSuccess");
+        const errorEl = document.getElementById("supportError");
+        const modalEl = document.getElementById("supportModal");
+        const modal = modalEl ? bootstrap.Modal.getOrCreateInstance(modalEl) : null;
+
+        const getCSRFToken = () => {
+            return (
+                form?.querySelector('input[name="csrfmiddlewaretoken"]')?.value ||
+                document.cookie
+                    .split(";")
+                    .map((c) => c.trim())
+                    .find((c) => c.startsWith("csrftoken="))
+                    ?.split("=")[1] ||
+                ""
+            );
+        };
+
+        form?.addEventListener("submit", async (ev) => {
+            ev.preventDefault();
+            successEl?.classList.add("d-none");
+            errorEl?.classList.add("d-none");
+
+            const payload = Object.fromEntries(new FormData(form).entries());
+            try {
+                const resp = await fetch("{% url 'contato_suporte' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCSRFToken(),
+                    },
+                    body: JSON.stringify(payload),
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.ok) {
+                    throw new Error(data.error || "Não foi possível enviar a mensagem.");
+                }
+                successEl?.classList.remove("d-none");
+                form.reset();
+                setTimeout(() => modal?.hide(), 1200);
+            } catch (err) {
+                if (errorEl) {
+                    errorEl.textContent = err.message || "Erro ao enviar.";
+                    errorEl.classList.remove("d-none");
+                } else {
+                    alert(err.message || "Erro ao enviar.");
+                }
+            }
+        });
+    })();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

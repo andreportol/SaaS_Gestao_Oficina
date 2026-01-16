@@ -1,0 +1,36 @@
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ("core", "0007_cleanup_os_status_entregue"),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name="cliente",
+            name="bairro",
+            field=models.CharField(blank=True, default="", max_length=100),
+        ),
+        migrations.AddField(
+            model_name="cliente",
+            name="cep",
+            field=models.CharField(blank=True, default="", max_length=12),
+        ),
+        migrations.AddField(
+            model_name="cliente",
+            name="cidade",
+            field=models.CharField(blank=True, default="", max_length=100),
+        ),
+        migrations.AddField(
+            model_name="cliente",
+            name="numero",
+            field=models.CharField(blank=True, default="", max_length=20),
+        ),
+        migrations.AddField(
+            model_name="cliente",
+            name="rua",
+            field=models.CharField(blank=True, default="", max_length=150),
+        ),
+    ]

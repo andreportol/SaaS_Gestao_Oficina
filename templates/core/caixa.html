@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-3 flex-wrap gap-2">
+    <div class="d-flex align-items-end gap-2">
+        <h1 class="h4 mb-0">Caixa</h1>
+        <a class="chip chip-action chip-ghost no-dot" href="{% url 'caixa_graficos' %}">Ver gráficos</a>
+    </div>
+    <form class="d-flex gap-2 align-items-end relatorio-filter" method="get">
+        <div class="d-flex flex-column">
+            <label class="form-label mb-1 small text-muted">Início</label>
+            <input type="date" name="inicio" value="{{ inicio|date:'Y-m-d' }}" class="form-control">
+        </div>
+        <div class="d-flex flex-column">
+            <label class="form-label mb-1 small text-muted">Fim</label>
+            <input type="date" name="fim" value="{{ fim|date:'Y-m-d' }}" class="form-control">
+        </div>
+        <button class="btn btn-outline-secondary">Aplicar</button>
+    </form>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card p-3">
+            <div class="small text-muted">Entradas</div>
+            <div class="h4 mb-0 text-success">R$ {{ total_entradas|floatformat:2 }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3">
+            <div class="small text-muted">Saídas</div>
+            <div class="h4 mb-0 text-danger">R$ {{ total_saidas|floatformat:2 }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3">
+            <div class="small text-muted">Saldo</div>
+            <div class="h4 mb-0 {% if saldo < 0 %}text-danger{% else %}text-success{% endif %}">R$ {{ saldo|floatformat:2 }}</div>
+        </div>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card p-3 mb-3">
+            <h2 class="h6 text-uppercase text-muted mb-2">Entradas (Pagamentos)</h2>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>Data</th><th>OS</th><th>Forma</th><th class="text-end">Valor</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for pagamento in entradas %}
+                        <tr>
+                            <td>{{ pagamento.pago_em }}</td>
+                            <td><a href="{% url 'os_detail' pagamento.os.id %}">#{{ pagamento.os.id }}</a></td>
+                            <td>{{ pagamento.forma_pagamento|default:"-" }}</td>
+                            <td class="text-end">R$ {{ pagamento.valor|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center">Sem entradas no período.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card p-3">
+            <h2 class="h6 text-uppercase text-muted mb-2">Saídas (Despesas)</h2>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Data</th><th>Descrição</th><th class="text-end">Valor</th></tr></thead>
+                    <tbody>
+                        {% for despesa in saidas %}
+                        <tr>
+                            <td>{{ despesa.data }}</td>
+                            <td>{{ despesa.descricao }}</td>
+                            <td class="text-end">R$ {{ despesa.valor|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center">Sem saídas no período.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card p-3">
+            <h2 class="h6 text-uppercase text-muted mb-2">Registrar Despesa</h2>
+            <form method="post" class="app-form">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Descrição</label>
+                    {{ despesa_form.descricao }}
+                    {% for error in despesa_form.descricao.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Valor</label>
+                    {{ despesa_form.valor }}
+                    {% for error in despesa_form.valor.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Data</label>
+                    {{ despesa_form.data }}
+                    {% for error in despesa_form.data.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

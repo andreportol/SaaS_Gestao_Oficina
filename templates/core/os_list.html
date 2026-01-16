@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Ordens de Serviço</h1>
+    <a class="btn btn-primary" href="{% url 'os_create' %}">Nova OS</a>
+</div>
+<form class="row g-2 mb-3 align-items-end relatorio-filter" method="get">
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">Status</option>
+            {% for value,label in statuses %}
+                <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label mb-1 small text-muted">Início</label>
+        <input type="date" name="inicio" value="{{ request.GET.inicio }}" class="form-control" placeholder="Início">
+    </div>
+    <div class="col-md-2">
+        <label class="form-label mb-1 small text-muted">Fim</label>
+        <input type="date" name="fim" value="{{ request.GET.fim }}" class="form-control" placeholder="Fim">
+    </div>
+    <div class="col-md-3">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Cliente ou placa">
+    </div>
+    <div class="col-md-2 d-grid">
+        <button class="btn btn-outline-secondary">Filtrar</button>
+    </div>
+</form>
+<div class="card p-0">
+    <div class="table-responsive">
+        <table class="table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Cliente</th>
+                    <th>Veículo</th>
+                    <th>Status</th>
+                    <th>Entrada</th>
+                    <th class="text-end">Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for os in object_list %}
+                <tr>
+                    <td>{{ os.id }}</td>
+                    <td>{{ os.cliente.nome }}</td>
+                    <td>{{ os.veiculo.placa }}</td>
+                    <td><span class="status-pill status-{{ os.status }}">{{ os.get_status_display }}</span></td>
+                    <td>{{ os.entrada_em }}</td>
+                    <td class="text-end">R$ {{ os.total|floatformat:2 }}</td>
+                    <td class="text-end">
+                        <a class="chip chip-action chip-ghost no-dot" href="{% url 'os_detail' os.pk %}">Detalhes</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center py-3">Nenhuma ordem encontrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% include "core/pagination.html" %}
+{% endblock %}

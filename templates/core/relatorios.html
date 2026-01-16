@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Relatórios</h1>
+    <form class="d-flex gap-2 align-items-end relatorio-filter" method="get">
+        <div class="d-flex flex-column">
+            <label class="form-label mb-1 small text-muted">Início</label>
+            <input type="date" name="inicio" value="{{ inicio|date:'Y-m-d' }}" class="form-control">
+        </div>
+        <div class="d-flex flex-column">
+            <label class="form-label mb-1 small text-muted">Fim</label>
+            <input type="date" name="fim" value="{{ fim|date:'Y-m-d' }}" class="form-control">
+        </div>
+        <button class="btn btn-outline-secondary">Filtrar</button>
+        <button class="btn btn-print" type="button" id="btnPrint">Imprimir</button>
+    </form>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card p-3">
+            <div class="small text-muted">Faturamento</div>
+            <div class="h4 mb-0">R$ {{ faturamento|floatformat:2 }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card p-3">
+            <div class="small text-muted">Despesas</div>
+            <div class="h4 mb-0 text-danger">R$ {{ total_despesas|floatformat:2 }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card p-3">
+            <div class="small text-muted">OS no Período</div>
+            <div class="h4 mb-0">{{ ordens|length }}</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card p-3">
+            <div class="small text-muted">Clientes em Aberto</div>
+            <div class="h4 mb-0">{{ clientes_em_aberto|length }}</div>
+        </div>
+    </div>
+</div>
+<div class="card p-3 mb-3">
+    <h2 class="h6 text-uppercase text-muted">OS por Status</h2>
+    <div class="row">
+        {% for status, total in os_por_status.items %}
+        <div class="col-md-4">
+            <div class="d-flex justify-content-between border-bottom py-2">
+                <span>{{ status }}</span>
+                <strong>{{ total }}</strong>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<div class="card p-3 mb-3">
+    <h2 class="h6 text-uppercase text-muted">Ordens do Período</h2>
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead><tr><th>#</th><th>Cliente</th><th>Status</th><th>Entrada</th><th class="text-end">Saldo</th></tr></thead>
+            <tbody>
+                {% for os in ordens %}
+                <tr>
+                    <td><a href="{% url 'os_detail' os.id %}">#{{ os.id }}</a></td>
+                    <td>{{ os.cliente.nome }}</td>
+                    <td>{{ os.get_status_display }}</td>
+                    <td>{{ os.entrada_em }}</td>
+                    <td class="text-end">R$ {{ os.saldo|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center">Sem ordens no período.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="card p-3">
+    <h2 class="h6 text-uppercase text-muted">Clientes com saldo em aberto</h2>
+    <ul class="mb-0 list-unstyled">
+        {% for item in pendencias %}
+            {% with item.telefone|default_if_none:""|cut:"("|cut:")"|cut:" "|cut:"-"|cut:"." as phone_digits %}
+            <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                    <div class="fw-bold">{{ item.cliente.nome }}</div>
+                    <div class="small text-muted">OS #{{ item.os_id }} • A receber: R$ {{ item.saldo|floatformat:2 }}</div>
+                    <div class="d-flex align-items-center gap-2 mt-1 phone-actions">
+                        <span class="small text-muted">{{ item.telefone }}</span>
+                        <a class="phone-call" href="tel:{{ item.telefone }}" title="Ligar">
+                            <img src="{% static 'core/img/telefone.png' %}" alt="Ligar" width="18" height="18">
+                        </a>
+                        {% if phone_digits %}
+                            <a class="phone-wa" href="https://wa.me/55{{ phone_digits }}" target="_blank" rel="noopener" title="WhatsApp">
+                                <img src="{% static 'core/img/whatsapp.png' %}" alt="WhatsApp" width="18" height="18">
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </li>
+            {% endwith %}
+        {% empty %}
+            <li>Nenhum cliente pendente.</li>
+        {% endfor %}
+    </ul>
+</div>
+<script>
+    (function() {
+        const btn = document.getElementById('btnPrint');
+        btn?.addEventListener('click', () => window.print());
+    })();
+</script>
+{% endblock %}
