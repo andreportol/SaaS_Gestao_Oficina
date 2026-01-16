@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Cliente, Empresa, OrdemServico, OSItem, Pagamento, Veiculo
+from .models import Cliente, Despesa, Empresa, OrdemServico, OSItem, Pagamento, Veiculo
 from .permissions import ROLE_EMPLOYEE, ROLE_MANAGER, setup_roles
 
 
@@ -62,8 +62,8 @@ class EmpresaIsolationTest(TestCase):
     def test_lista_os_filtra_por_empresa(self):
         self.client.force_login(self.user2)
         response = self.client.get(reverse("os_list"))
-        self.assertContains(response, str(self.os2.id))
-        self.assertNotContains(response, str(self.os1.id))
+        self.assertContains(response, f"<td>{self.os2.id}</td>")
+        self.assertNotContains(response, f"<td>{self.os1.id}</td>")
 
     def test_calcula_saldo(self):
         OSItem.objects.create(
@@ -93,13 +93,13 @@ class UserManagementTests(TestCase):
     def test_manager_cria_usuario_ate_limite(self):
         self.client.force_login(self.manager)
         url = reverse("usuarios_create")
-        for i in range(5):
+        for i in range(4):
             payload = {
                 "username": f"user{i}",
                 "email": f"user{i}@test.com",
                 "first_name": "User",
                 "last_name": f"{i}",
-                "is_active": "on",
+                "is_active": "True",
                 "password1": "Senha12345!",
                 "password2": "Senha12345!",
             }
@@ -114,7 +114,7 @@ class UserManagementTests(TestCase):
                 "email": "extra@test.com",
                 "first_name": "Extra",
                 "last_name": "User",
-                "is_active": "on",
+                "is_active": "True",
                 "password1": "Senha12345!",
                 "password2": "Senha12345!",
             },
@@ -159,5 +159,93 @@ class UserManagementTests(TestCase):
 
         self.client.force_login(self.employee)
         response = self.client.get(reverse("os_list"))
-        self.assertContains(response, str(os1.id))
-        self.assertNotContains(response, str(os2.id))
+        self.assertContains(response, f"<td>{os1.id}</td>")
+        self.assertNotContains(response, f"<td>{os2.id}</td>")
+
+
+class DashboardDataTests(TestCase):
+    def setUp(self):
+        self.empresa1 = Empresa.objects.create(nome="Empresa 1")
+        self.empresa2 = Empresa.objects.create(nome="Empresa 2")
+        self.manager = User.objects.create_user(
+            username="manager", password="123", empresa=self.empresa1, is_manager=True
+        )
+        self.employee = User.objects.create_user(username="employee", password="123", empresa=self.empresa1)
+        self.other_user = User.objects.create_user(username="other", password="123", empresa=self.empresa2)
+        self.cliente1 = Cliente.objects.create(empresa=self.empresa1, nome="Cliente 1", telefone="1111")
+        self.cliente2 = Cliente.objects.create(empresa=self.empresa2, nome="Cliente 2", telefone="2222")
+        self.veiculo1 = Veiculo.objects.create(
+            empresa=self.empresa1,
+            cliente=self.cliente1,
+            tipo=Veiculo.Tipo.CARRO,
+            placa="AAA1111",
+            marca="Marca",
+            modelo="Modelo",
+        )
+        self.veiculo2 = Veiculo.objects.create(
+            empresa=self.empresa2,
+            cliente=self.cliente2,
+            tipo=Veiculo.Tipo.CARRO,
+            placa="BBB2222",
+            marca="Marca",
+            modelo="Modelo",
+        )
+        self.os_employee = OrdemServico.objects.create(
+            empresa=self.empresa1,
+            cliente=self.cliente1,
+            veiculo=self.veiculo1,
+            responsavel=self.employee,
+            problema="Teste",
+            entrada_em=timezone.now().date(),
+        )
+        self.os_manager = OrdemServico.objects.create(
+            empresa=self.empresa1,
+            cliente=self.cliente1,
+            veiculo=self.veiculo1,
+            responsavel=self.manager,
+            problema="Teste",
+            entrada_em=timezone.now().date(),
+        )
+        self.os_other = OrdemServico.objects.create(
+            empresa=self.empresa2,
+            cliente=self.cliente2,
+            veiculo=self.veiculo2,
+            responsavel=self.other_user,
+            problema="Teste",
+            entrada_em=timezone.now().date(),
+        )
+        Pagamento.objects.create(
+            empresa=self.empresa1,
+            os=self.os_employee,
+            valor=100,
+            forma_pagamento=Pagamento.Metodo.DINHEIRO,
+        )
+        Pagamento.objects.create(
+            empresa=self.empresa1,
+            os=self.os_manager,
+            valor=200,
+            forma_pagamento=Pagamento.Metodo.DINHEIRO,
+        )
+        Pagamento.objects.create(
+            empresa=self.empresa2,
+            os=self.os_other,
+            valor=999,
+            forma_pagamento=Pagamento.Metodo.DINHEIRO,
+        )
+        Despesa.objects.create(empresa=self.empresa1, descricao="Despesa", valor=50)
+
+    def test_dashboard_data_funcionario_filtra_os_e_pagamentos(self):
+        self.client.force_login(self.employee)
+        response = self.client.get(reverse("dashboard_data"), {"range": "30d"})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(sum(data["operacional"]["os_por_funcionario"]["valores"]), 1)
+        self.assertEqual(data["financeiro"]["saldo_geral"], 50.0)
+
+    def test_dashboard_data_gerente_enxerga_empresa(self):
+        self.client.force_login(self.manager)
+        response = self.client.get(reverse("dashboard_data"), {"range": "30d"})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(sum(data["operacional"]["os_por_funcionario"]["valores"]), 2)
+        self.assertEqual(data["financeiro"]["saldo_geral"], 250.0)

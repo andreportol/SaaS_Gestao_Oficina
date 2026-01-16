@@ -194,7 +194,7 @@ class VeiculoForm(EmpresaFormMixin):
 class ProdutoForm(EmpresaFormMixin):
     class Meta:
         model = Produto
-        fields = ["nome", "descricao", "codigo", "custo", "preco", "estoque_atual"]
+        fields = ["nome", "descricao", "codigo", "custo", "preco", "estoque_atual", "estoque_minimo"]
         labels = {"codigo": "Código", "preco": "Preço", "descricao": "Descrição"}
         widgets = {
             "custo": forms.NumberInput(
@@ -205,6 +205,7 @@ class ProdutoForm(EmpresaFormMixin):
             ),
             "descricao": forms.Textarea(attrs={"rows": 2}),
             "estoque_atual": forms.NumberInput(attrs={"min": "0", "step": "1"}),
+            "estoque_minimo": forms.NumberInput(attrs={"min": "0", "step": "1"}),
         }
 
 

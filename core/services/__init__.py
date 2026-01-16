@@ -1,6 +1,6 @@
 from django.db.models import Q
 
-from .models import OrdemServico, OrdemServicoLog
+from ..models import OrdemServico, OrdemServicoLog
 
 
 def is_manager_user(user) -> bool:

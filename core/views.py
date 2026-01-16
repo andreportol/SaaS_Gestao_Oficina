@@ -48,6 +48,7 @@ from .models import (
     Veiculo,
 )
 from .services import criar_os_log, os_queryset_for_user
+from .services.dashboard_metrics import build_dashboard_data
 
 
 class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -113,12 +114,18 @@ def _apply_os_status_audit(os, previous_status, usuario):
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "core/dashboard.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not request.user.is_gerente():
+            return redirect("clientes_list")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         empresa = self.request.user.empresa
         hoje = timezone.now().date()
         inicio_periodo = hoje - timedelta(days=30)
         ordens = os_queryset_for_user(self.request.user)
+        dashboard_data = build_dashboard_data(self.request.user, range_key=self.request.GET.get("range"))
         context.update(
             {
                 "os_abertas": ordens.filter(status=OrdemServico.Status.ABERTA).count(),
@@ -131,9 +138,22 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                     empresa=empresa, pago_em__gte=inicio_periodo
                 ).aggregate(total=Sum("valor"))["total"]
                 or 0,
+                "dashboard_data": dashboard_data,
+                "dashboard_range": self.request.GET.get("range") or "6m",
             }
         )
         return context
+
+
+class DashboardDataView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        range_key = request.GET.get("range")
+        start_value = request.GET.get("start")
+        end_value = request.GET.get("end")
+        start = parse_date(start_value) if start_value else None
+        end = parse_date(end_value) if end_value else None
+        data = build_dashboard_data(request.user, range_key=range_key, start=start, end=end)
+        return JsonResponse(data)
 
 
 class ClienteListView(EmpresaQuerysetMixin, ListView):

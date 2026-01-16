@@ -141,6 +141,7 @@ class Produto(models.Model):
     custo = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)])
     preco = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     estoque_atual = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+    estoque_minimo = models.IntegerField(default=0, validators=[MinValueValidator(0)])
 
     class Meta:
         ordering = ["nome"]

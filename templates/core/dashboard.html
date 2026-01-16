@@ -1,5 +1,33 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-0">Dashboard</h1>
+        <div class="small text-muted dashboard-muted">Resumo financeiro e operacional</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-end">
+        <div>
+            <label class="small text-muted dashboard-muted" for="dashboardRange">Periodo</label>
+            <select class="form-select form-select-sm" id="dashboardRange">
+                <option value="30d"{% if dashboard_range == "30d" %} selected{% endif %}>Ultimos 30 dias</option>
+                <option value="90d"{% if dashboard_range == "90d" %} selected{% endif %}>Ultimos 90 dias</option>
+                <option value="6m"{% if dashboard_range == "6m" %} selected{% endif %}>Ultimos 6 meses</option>
+                <option value="12m"{% if dashboard_range == "12m" %} selected{% endif %}>Ultimos 12 meses</option>
+                <option value="custom">Personalizado</option>
+            </select>
+        </div>
+        <div>
+            <label class="small text-muted dashboard-muted" for="dashboardStart">Inicio</label>
+            <input class="form-control form-control-sm" type="date" id="dashboardStart" />
+        </div>
+        <div>
+            <label class="small text-muted dashboard-muted" for="dashboardEnd">Fim</label>
+            <input class="form-control form-control-sm" type="date" id="dashboardEnd" />
+        </div>
+        <button class="btn btn-cta btn-sm" id="dashboardApply">Aplicar</button>
+    </div>
+</div>
+
 <div class="row g-3">
     <div class="col-6 col-md-3">
         <div class="card p-3 text-center">
@@ -9,13 +37,13 @@
     </div>
     <div class="col-6 col-md-3">
         <div class="card p-3 text-center">
-            <div class="small text-muted">Aguardando Peça</div>
+            <div class="small text-muted">Aguardando Peca</div>
             <div class="h4 mb-0">{{ os_aguardando }}</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="card p-3 text-center">
-            <div class="small text-muted">Em Execução</div>
+            <div class="small text-muted">Em Execucao</div>
             <div class="h4 mb-0">{{ os_execucao }}</div>
         </div>
     </div>
@@ -26,11 +54,497 @@
         </div>
     </div>
 </div>
-<div class="card p-4 mt-5">
-    <div class="small text-muted">Pagamentos últimos 30 dias</div>
-    <div class="h4 mb-0">R$ {{ pagamentos_periodo|floatformat:2 }}</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-12 col-lg-8">
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 text-uppercase text-muted mb-0">Lucro mensal</h2>
+                <div class="small text-muted">Entradas - Despesas</div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="lucroChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="card p-3">
+            <div class="small text-muted">Saldo no periodo</div>
+            <div class="h4 mb-0" id="saldoPeriodo">R$ 0,00</div>
+        </div>
+    </div>
 </div>
-<div class="mt-3 text-end">
-    <a class="btn btn-cta" href="{% url 'os_list' %}">Ver Ordens</a>
+
+<div class="row g-3 mt-1">
+    <div class="col-12 col-lg-6">
+        <div class="card p-3">
+            <h2 class="h6 text-uppercase text-muted mb-2">OS por funcionario</h2>
+            <div class="chart-wrapper">
+                <canvas id="osFuncionarioChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-3">
+        <div class="card p-3">
+            <h2 class="h6 text-uppercase text-muted mb-2">Status das OS</h2>
+            <div class="chart-wrapper">
+                <canvas id="osStatusChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-3">
+        <div class="card p-3">
+            <h2 class="h6 text-uppercase text-muted mb-2">Tempo medio</h2>
+            <div class="chart-wrapper">
+                <canvas id="tempoMedioChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="row g-3 mt-1">
+    <div class="col-12 col-lg-7">
+        <div class="card p-3">
+            <h2 class="h6 text-uppercase text-muted mb-2">Produtos mais vendidos</h2>
+            <div class="chart-wrapper">
+                <canvas id="produtosChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5">
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 text-uppercase text-muted mb-0">Estoque critico</h2>
+                <span class="small text-muted"><span id="estoqueCriticoTotal">0</span> itens</span>
+            </div>
+            <div class="list-group list-group-flush" id="estoqueCriticoList"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-12 col-lg-6">
+        <div class="card p-3">
+            <h2 class="h6 text-uppercase text-muted mb-2">Clientes mais lucrativos</h2>
+            <div class="chart-wrapper">
+                <canvas id="clientesChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card p-3">
+            <h2 class="h6 text-uppercase text-muted mb-2">Recorrencia de clientes</h2>
+            <div class="chart-wrapper">
+                <canvas id="recorrenciaChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{{ dashboard_data|json_script:"dashboard-data" }}
+<script>
+    window.addEventListener("load", function() {
+        const dataSets = JSON.parse(document.getElementById("dashboard-data").textContent || "{}");
+        let currentData = dataSets;
+        const endpoint = "{% url 'dashboard_data' %}";
+        const rangeSel = document.getElementById("dashboardRange");
+        const startInput = document.getElementById("dashboardStart");
+        const endInput = document.getElementById("dashboardEnd");
+        const applyBtn = document.getElementById("dashboardApply");
+        const themeToggle = document.getElementById("themeToggle");
+        const charts = {};
+
+        const formatCurrency = (value) =>
+            `R$ ${Number(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+        const formatUnits = (value) => `${Number(value || 0)} Unidades`;
+        const formatDays = (value) => `${Number(value || 0).toFixed(1)} Dias`;
+        const axisColor = () => (document.body.classList.contains("theme-light") ? "#000" : "#cbd5e1");
+        const valueFromCtx = (ctx) => {
+            if (ctx && typeof ctx.parsed === "object") {
+                return Number(ctx.parsed.y ?? ctx.parsed.x ?? 0);
+            }
+            return Number(ctx?.parsed ?? 0);
+        };
+
+        const setSaldoCards = (financeiro) => {
+            const saldoPeriodo = document.getElementById("saldoPeriodo");
+            if (saldoPeriodo) {
+                saldoPeriodo.textContent = formatCurrency(financeiro.saldo_periodo);
+                saldoPeriodo.classList.toggle("text-success", financeiro.saldo_periodo >= 0);
+                saldoPeriodo.classList.toggle("text-danger", financeiro.saldo_periodo < 0);
+            }
+        };
+
+        const ensureChart = (key, ctx, config) => {
+            if (charts[key]) charts[key].destroy();
+            charts[key] = new Chart(ctx, config);
+        };
+
+        const renderLucro = (data) => {
+            const ctx = document.getElementById("lucroChart");
+            const labels = data.labels || [];
+            ensureChart("lucro", ctx, {
+                type: "bar",
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            type: "bar",
+                            label: "Entradas",
+                            data: data.entradas || [],
+                            backgroundColor: "rgba(52, 211, 153, 0.6)",
+                            borderColor: "rgba(52, 211, 153, 1)",
+                        },
+                        {
+                            type: "bar",
+                            label: "Despesas",
+                            data: data.despesas || [],
+                            backgroundColor: "rgba(239, 68, 68, 0.6)",
+                            borderColor: "rgba(239, 68, 68, 1)",
+                        },
+                        {
+                            type: "line",
+                            label: "Lucro",
+                            data: data.lucro || [],
+                            borderColor: "rgba(59, 130, 246, 1)",
+                            backgroundColor: "rgba(59, 130, 246, 0.3)",
+                            tension: 0.35,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: axisColor() } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${formatCurrency(valueFromCtx(ctx))}`,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { ticks: { color: axisColor() } },
+                        y: { ticks: { color: axisColor() }, beginAtZero: true },
+                    },
+                },
+            });
+        };
+
+        const renderOsFuncionario = (data) => {
+            const ctx = document.getElementById("osFuncionarioChart");
+            ensureChart("osFuncionario", ctx, {
+                type: "bar",
+                data: {
+                    labels: data.labels || [],
+                    datasets: [
+                        {
+                            label: "OS",
+                            data: data.valores || [],
+                            backgroundColor: "rgba(59, 130, 246, 0.6)",
+                            borderColor: "rgba(59, 130, 246, 1)",
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: axisColor() } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${formatUnits(valueFromCtx(ctx))}`,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { ticks: { color: axisColor() } },
+                        y: { ticks: { color: axisColor() }, beginAtZero: true },
+                    },
+                },
+            });
+        };
+
+        const renderOsStatus = (data) => {
+            const ctx = document.getElementById("osStatusChart");
+            ensureChart("osStatus", ctx, {
+                type: "doughnut",
+                data: {
+                    labels: data.labels || [],
+                    datasets: [
+                        {
+                            data: data.valores || [],
+                            backgroundColor: [
+                                "rgba(251, 191, 36, 0.7)",
+                                "rgba(59, 130, 246, 0.7)",
+                                "rgba(244, 114, 182, 0.7)",
+                                "rgba(52, 211, 153, 0.7)",
+                                "rgba(15, 23, 42, 0.7)",
+                            ],
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: axisColor() } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${formatUnits(valueFromCtx(ctx))}`,
+                            },
+                        },
+                    },
+                },
+            });
+        };
+
+        const renderTempoMedio = (data) => {
+            const ctx = document.getElementById("tempoMedioChart");
+            ensureChart("tempoMedio", ctx, {
+                type: "line",
+                data: {
+                    labels: data.labels || [],
+                    datasets: [
+                        {
+                            label: "Dias",
+                            data: data.dias || [],
+                            borderColor: "rgba(139, 92, 246, 1)",
+                            backgroundColor: "rgba(139, 92, 246, 0.3)",
+                            tension: 0.35,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: axisColor() } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${formatDays(valueFromCtx(ctx))}`,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { ticks: { color: axisColor() } },
+                        y: { ticks: { color: axisColor() }, beginAtZero: true },
+                    },
+                },
+            });
+        };
+
+        const renderProdutos = (data) => {
+            const ctx = document.getElementById("produtosChart");
+            ensureChart("produtos", ctx, {
+                type: "bar",
+                data: {
+                    labels: data.labels || [],
+                    datasets: [
+                        {
+                            label: "Qtd",
+                            data: data.qtd || [],
+                            backgroundColor: "rgba(16, 185, 129, 0.6)",
+                            borderColor: "rgba(16, 185, 129, 1)",
+                            yAxisID: "y",
+                        },
+                        {
+                            label: "Total (R$)",
+                            data: data.total || [],
+                            backgroundColor: "rgba(59, 130, 246, 0.6)",
+                            borderColor: "rgba(59, 130, 246, 1)",
+                            yAxisID: "y1",
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: axisColor() } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const value = valueFromCtx(ctx);
+                                    if (ctx.dataset.label?.toLowerCase().includes("total")) {
+                                        return `${ctx.dataset.label}: ${formatCurrency(value)}`;
+                                    }
+                                    return `${ctx.dataset.label}: ${formatUnits(value)}`;
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { ticks: { color: axisColor() } },
+                        y: { ticks: { color: axisColor() }, beginAtZero: true, position: "left" },
+                        y1: {
+                            ticks: { color: axisColor() },
+                            beginAtZero: true,
+                            position: "right",
+                            grid: { drawOnChartArea: false },
+                        },
+                    },
+                },
+            });
+        };
+
+        const renderClientes = (data) => {
+            const ctx = document.getElementById("clientesChart");
+            ensureChart("clientes", ctx, {
+                type: "bar",
+                data: {
+                    labels: data.labels || [],
+                    datasets: [
+                        {
+                            label: "Faturamento",
+                            data: data.valores || [],
+                            backgroundColor: "rgba(251, 146, 60, 0.6)",
+                            borderColor: "rgba(251, 146, 60, 1)",
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: axisColor() } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${formatCurrency(valueFromCtx(ctx))}`,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { ticks: { color: axisColor() } },
+                        y: { ticks: { color: axisColor() }, beginAtZero: true },
+                    },
+                },
+            });
+        };
+
+        const renderRecorrencia = (data) => {
+            const ctx = document.getElementById("recorrenciaChart");
+            ensureChart("recorrencia", ctx, {
+                type: "bar",
+                data: {
+                    labels: data.labels || [],
+                    datasets: [
+                        {
+                            label: "Clientes unicos",
+                            data: data.clientes || [],
+                            backgroundColor: "rgba(52, 211, 153, 0.6)",
+                            borderColor: "rgba(52, 211, 153, 1)",
+                        },
+                        {
+                            label: "Recorrentes",
+                            data: data.recorrentes || [],
+                            backgroundColor: "rgba(239, 68, 68, 0.6)",
+                            borderColor: "rgba(239, 68, 68, 1)",
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: axisColor() } },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: ${formatUnits(valueFromCtx(ctx))}`,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: { ticks: { color: axisColor() } },
+                        y: { ticks: { color: axisColor() }, beginAtZero: true },
+                    },
+                },
+            });
+        };
+
+        const renderEstoqueCritico = (data) => {
+            const totalEl = document.getElementById("estoqueCriticoTotal");
+            const listEl = document.getElementById("estoqueCriticoList");
+            if (totalEl) totalEl.textContent = data.total || 0;
+            if (!listEl) return;
+            listEl.innerHTML = "";
+            if (!data.itens || !data.itens.length) {
+                listEl.innerHTML = '<div class="list-group-item small text-muted">Sem itens criticos.</div>';
+                return;
+            }
+            data.itens.forEach((item) => {
+                const row = document.createElement("div");
+                row.className = "list-group-item d-flex justify-content-between align-items-center";
+                row.innerHTML = `
+                    <div>
+                        <div class="fw-bold">${item.nome}</div>
+                        <div class="small text-muted">Minimo: ${item.estoque_minimo ?? "-"}</div>
+                    </div>
+                    <span class="badge bg-danger-subtle text-danger-emphasis">${item.estoque_atual ?? "-"}</span>
+                `;
+                listEl.appendChild(row);
+            });
+        };
+
+        const renderAll = (data) => {
+            if (!data || !data.financeiro) return;
+            setSaldoCards(data.financeiro);
+            renderLucro(data.financeiro.lucro_mensal);
+            renderOsFuncionario(data.operacional.os_por_funcionario);
+            renderOsStatus(data.operacional.status_os);
+            renderTempoMedio(data.operacional.tempo_medio);
+            renderProdutos(data.produtos.mais_vendidos);
+            renderEstoqueCritico(data.produtos.estoque_critico);
+            renderClientes(data.clientes.mais_lucrativos);
+            renderRecorrencia(data.clientes.recorrencia);
+        };
+
+        const setInputsFromData = (data) => {
+            if (!data || !data.periodo) return;
+            startInput.value = data.periodo.start;
+            endInput.value = data.periodo.end;
+        };
+
+        const toggleCustomInputs = () => {
+            const isCustom = rangeSel.value === "custom";
+            startInput.disabled = !isCustom;
+            endInput.disabled = !isCustom;
+        };
+
+        const fetchData = () => {
+            const params = new URLSearchParams();
+            if (rangeSel.value && rangeSel.value !== "custom") {
+                params.set("range", rangeSel.value);
+            }
+            if (rangeSel.value === "custom") {
+                if (startInput.value) params.set("start", startInput.value);
+                if (endInput.value) params.set("end", endInput.value);
+            }
+            const url = params.toString() ? `${endpoint}?${params.toString()}` : endpoint;
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then((response) => response.json())
+                .then((data) => {
+                    currentData = data;
+                    renderAll(data);
+                    setInputsFromData(data);
+                });
+        };
+
+        rangeSel.addEventListener("change", () => {
+            toggleCustomInputs();
+            if (rangeSel.value !== "custom") {
+                fetchData();
+            }
+        });
+        applyBtn.addEventListener("click", fetchData);
+        themeToggle?.addEventListener("click", () => {
+            setTimeout(() => renderAll(currentData), 0);
+        });
+
+        toggleCustomInputs();
+        setInputsFromData(dataSets);
+        renderAll(currentData);
+    });
+</script>
 {% endblock %}

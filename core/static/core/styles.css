@@ -245,6 +245,18 @@ body:not(.theme-light) .relatorio-filter label {
     color: #cbd5e1 !important;
 }
 
+body:not(.theme-light) .text-muted,
+body:not(.theme-light) .form-text,
+body:not(.theme-light) .form-label {
+    color: #cbd5e1 !important;
+}
+
+body:not(.theme-light) .dashboard-muted,
+body:not(.theme-light) .dashboard-muted.text-muted {
+    color: var(--text) !important;
+    opacity: 1;
+}
+
 .btn-print {
     border: 1px solid #0d6efd !important;
     color: #0d6efd !important;
@@ -1235,6 +1247,11 @@ body:not(.theme-light) .fc .fc-toolbar-title {
 #supportModal .btn-outline-secondary {
     color: var(--text);
     border-color: var(--border);
+}
+
+body.app-bg:not(.theme-light) .dashboard-muted {
+    color: var(--text) !important;
+    opacity: 1;
 }
 
 .modal-backdrop.show {

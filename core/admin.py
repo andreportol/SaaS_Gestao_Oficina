@@ -102,9 +102,9 @@ class ProdutoAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Identificacao", {"fields": ("empresa", "nome", "codigo")}),
         ("Descricao", {"fields": ("descricao",)}),
-        ("Valores e estoque", {"fields": ("custo", "preco", "estoque_atual")}),
+        ("Valores e estoque", {"fields": ("custo", "preco", "estoque_atual", "estoque_minimo")}),
     )
-    list_display = ("nome", "codigo", "preco", "estoque_atual", "empresa")
+    list_display = ("nome", "codigo", "preco", "estoque_atual", "estoque_minimo", "empresa")
     search_fields = ("nome", "codigo")
     list_filter = ("empresa",)
 
