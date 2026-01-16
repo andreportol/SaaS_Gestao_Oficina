@@ -43,66 +43,84 @@
     </div>
 </div>
 <div class="card p-3 mb-3">
-    <h2 class="h6 text-uppercase text-muted">OS por Status</h2>
-    <div class="row">
-        {% for status, total in os_por_status.items %}
-        <div class="col-md-4">
-            <div class="d-flex justify-content-between border-bottom py-2">
-                <span>{{ status }}</span>
-                <strong>{{ total }}</strong>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-<div class="card p-3 mb-3">
-    <h2 class="h6 text-uppercase text-muted">Ordens do Período</h2>
-    <div class="table-responsive">
-        <table class="table table-sm">
-            <thead><tr><th>#</th><th>Cliente</th><th>Status</th><th>Entrada</th><th class="text-end">Saldo</th></tr></thead>
-            <tbody>
-                {% for os in ordens %}
-                <tr>
-                    <td><a href="{% url 'os_detail' os.id %}">#{{ os.id }}</a></td>
-                    <td>{{ os.cliente.nome }}</td>
-                    <td>{{ os.get_status_display }}</td>
-                    <td>{{ os.entrada_em }}</td>
-                    <td class="text-end">R$ {{ os.saldo|floatformat:2 }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="5" class="text-center">Sem ordens no período.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-<div class="card p-3">
-    <h2 class="h6 text-uppercase text-muted">Clientes com saldo em aberto</h2>
-    <ul class="mb-0 list-unstyled">
-        {% for item in pendencias %}
-            {% with item.telefone|default_if_none:""|cut:"("|cut:")"|cut:" "|cut:"-"|cut:"." as phone_digits %}
-            <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                <div>
-                    <div class="fw-bold">{{ item.cliente.nome }}</div>
-                    <div class="small text-muted">OS #{{ item.os_id }} • A receber: R$ {{ item.saldo|floatformat:2 }}</div>
-                    <div class="d-flex align-items-center gap-2 mt-1 phone-actions">
-                        <span class="small text-muted">{{ item.telefone }}</span>
-                        <a class="phone-call" href="tel:{{ item.telefone }}" title="Ligar">
-                            <img src="{% static 'core/img/telefone.png' %}" alt="Ligar" width="18" height="18">
-                        </a>
-                        {% if phone_digits %}
-                            <a class="phone-wa" href="https://wa.me/55{{ phone_digits }}" target="_blank" rel="noopener" title="WhatsApp">
-                                <img src="{% static 'core/img/whatsapp.png' %}" alt="WhatsApp" width="18" height="18">
-                            </a>
-                        {% endif %}
+    <ul class="nav nav-tabs" id="relatoriosTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="status-tab" data-bs-toggle="tab" data-bs-target="#status-pane" type="button" role="tab" aria-controls="status-pane" aria-selected="true">
+                Ordem de Serviço por Status
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="periodo-tab" data-bs-toggle="tab" data-bs-target="#periodo-pane" type="button" role="tab" aria-controls="periodo-pane" aria-selected="false">
+                Ordens do Período
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="saldo-tab" data-bs-toggle="tab" data-bs-target="#saldo-pane" type="button" role="tab" aria-controls="saldo-pane" aria-selected="false">
+                Clientes com saldo em aberto
+            </button>
+        </li>
+    </ul>
+    <div class="tab-content pt-3" id="relatoriosTabsContent">
+        <div class="tab-pane fade show active" id="status-pane" role="tabpanel" aria-labelledby="status-tab" tabindex="0">
+            <div class="row">
+                {% for status, total in os_por_status.items %}
+                <div class="col-md-4">
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <span>{{ status }}</span>
+                        <strong>{{ total }}</strong>
                     </div>
                 </div>
-            </li>
-            {% endwith %}
-        {% empty %}
-            <li>Nenhum cliente pendente.</li>
-        {% endfor %}
-    </ul>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="tab-pane fade" id="periodo-pane" role="tabpanel" aria-labelledby="periodo-tab" tabindex="0">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>#</th><th>Cliente</th><th>Status</th><th>Entrada</th><th class="text-end">Saldo</th></tr></thead>
+                    <tbody>
+                        {% for os in ordens %}
+                        <tr>
+                            <td><a href="{% url 'os_detail' os.id %}">#{{ os.id }}</a></td>
+                            <td>{{ os.cliente.nome }}</td>
+                            <td>{{ os.get_status_display }}</td>
+                            <td>{{ os.entrada_em }}</td>
+                            <td class="text-end">R$ {{ os.saldo|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center">Sem ordens no período.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="saldo-pane" role="tabpanel" aria-labelledby="saldo-tab" tabindex="0">
+            <ul class="mb-0 list-unstyled">
+                {% for item in pendencias %}
+                    {% with item.telefone|default_if_none:""|cut:"("|cut:")"|cut:" "|cut:"-"|cut:"." as phone_digits %}
+                    <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div>
+                            <div class="fw-bold">{{ item.cliente.nome }}</div>
+                            <div class="small text-muted">OS #{{ item.os_id }} • A receber: R$ {{ item.saldo|floatformat:2 }}</div>
+                            <div class="d-flex align-items-center gap-2 mt-1 phone-actions">
+                                <span class="small text-muted">{{ item.telefone }}</span>
+                                <a class="phone-call" href="tel:{{ item.telefone }}" title="Ligar">
+                                    <img src="{% static 'core/img/telefone.png' %}" alt="Ligar" width="18" height="18">
+                                </a>
+                                {% if phone_digits %}
+                                    <a class="phone-wa" href="https://wa.me/55{{ phone_digits }}" target="_blank" rel="noopener" title="WhatsApp">
+                                        <img src="{% static 'core/img/whatsapp.png' %}" alt="WhatsApp" width="18" height="18">
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+                    {% endwith %}
+                {% empty %}
+                    <li>Nenhum cliente pendente.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </div>
 <script>
     (function() {

@@ -1,11 +1,45 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Cliente, Despesa, Empresa, FormaPagamento, OrdemServico, OSItem, Pagamento, Produto, Usuario, Veiculo
+from .models import (
+    Cliente,
+    Despesa,
+    Empresa,
+    FormaPagamento,
+    OrdemServico,
+    OrdemServicoLog,
+    OSItem,
+    Pagamento,
+    Produto,
+    Usuario,
+    Veiculo,
+)
+
+
+class EmpresaAdminMixin:
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        empresa = getattr(request.user, "empresa", None)
+        if hasattr(qs.model, "empresa") and empresa:
+            return qs.filter(empresa=empresa)
+        return qs.none()
+
+    def save_model(self, request, obj, form, change):
+        if hasattr(obj, "empresa") and not obj.empresa_id and not request.user.is_superuser:
+            obj.empresa = request.user.empresa
+        return super().save_model(request, obj, form, change)
+
+    def has_delete_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return True
+        perm = f"{self.model._meta.app_label}.delete_{self.model._meta.model_name}"
+        return request.user.has_perm(perm)
 
 
 @admin.register(Usuario)
-class UsuarioAdmin(UserAdmin):
+class UsuarioAdmin(EmpresaAdminMixin, UserAdmin):
     fieldsets = (
         ("Credenciais", {"fields": ("username", "password")}),
         ("Dados pessoais", {"fields": ("first_name", "last_name", "email")}),
@@ -28,18 +62,18 @@ class UsuarioAdmin(UserAdmin):
 
 
 @admin.register(Empresa)
-class EmpresaAdmin(admin.ModelAdmin):
+class EmpresaAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
-        ("Dados da empresa", {"fields": ("nome", "cnpj_cpf", "telefone")}),
+        ("Dados da empresa", {"fields": ("nome", "cnpj_cpf", "telefone", "plano")}),
         ("Controle", {"fields": ("criado_em",)}),
     )
-    list_display = ("nome", "cnpj_cpf", "telefone", "criado_em")
+    list_display = ("nome", "cnpj_cpf", "telefone", "plano", "criado_em")
     search_fields = ("nome", "cnpj_cpf", "telefone")
     readonly_fields = ("criado_em",)
 
 
 @admin.register(Cliente)
-class ClienteAdmin(admin.ModelAdmin):
+class ClienteAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Identificacao", {"fields": ("empresa", "nome", "documento")}),
         ("Contato", {"fields": ("telefone", "email")}),
@@ -53,7 +87,7 @@ class ClienteAdmin(admin.ModelAdmin):
 
 
 @admin.register(Veiculo)
-class VeiculoAdmin(admin.ModelAdmin):
+class VeiculoAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Relacionamentos", {"fields": ("empresa", "cliente")}),
         ("Veiculo", {"fields": ("tipo", "placa", "marca", "modelo", "ano", "cor")}),
@@ -64,7 +98,7 @@ class VeiculoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Produto)
-class ProdutoAdmin(admin.ModelAdmin):
+class ProdutoAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Identificacao", {"fields": ("empresa", "nome", "codigo")}),
         ("Descricao", {"fields": ("descricao",)}),
@@ -76,7 +110,7 @@ class ProdutoAdmin(admin.ModelAdmin):
 
 
 @admin.register(FormaPagamento)
-class FormaPagamentoAdmin(admin.ModelAdmin):
+class FormaPagamentoAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Forma de pagamento", {"fields": ("empresa", "nome", "ativo")}),
     )
@@ -86,24 +120,24 @@ class FormaPagamentoAdmin(admin.ModelAdmin):
 
 
 @admin.register(OrdemServico)
-class OrdemServicoAdmin(admin.ModelAdmin):
+class OrdemServicoAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Identificacao", {"fields": ("empresa", "status")}),
-        ("Cliente e veiculo", {"fields": ("cliente", "veiculo")}),
+        ("Cliente e veiculo", {"fields": ("cliente", "veiculo", "responsavel")}),
         ("Datas", {"fields": ("entrada_em", "previsao_entrega")}),
         ("Descricao", {"fields": ("problema", "diagnostico", "observacoes")}),
         ("Valores", {"fields": ("mao_de_obra", "desconto", "total_cache")}),
         ("Anexo", {"fields": ("anexo",)}),
-        ("Controle", {"fields": ("criado_em",)}),
+        ("Controle", {"fields": ("criado_em", "criado_por", "iniciado_em", "finalizado_em", "finalizado_por")}),
     )
     list_display = ("id", "cliente", "veiculo", "status", "entrada_em", "empresa")
     list_filter = ("status", "empresa")
     search_fields = ("cliente__nome", "veiculo__placa")
-    readonly_fields = ("criado_em",)
+    readonly_fields = ("criado_em", "iniciado_em", "finalizado_em")
 
 
 @admin.register(OSItem)
-class OSItemAdmin(admin.ModelAdmin):
+class OSItemAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Vinculos", {"fields": ("empresa", "os", "produto")}),
         ("Detalhes", {"fields": ("descricao", "qtd", "valor_unitario", "subtotal")}),
@@ -115,7 +149,7 @@ class OSItemAdmin(admin.ModelAdmin):
 
 
 @admin.register(Pagamento)
-class PagamentoAdmin(admin.ModelAdmin):
+class PagamentoAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Pagamento", {"fields": ("empresa", "os")}),
         ("Dados", {"fields": ("forma_pagamento", "valor", "pago_em")}),
@@ -126,7 +160,7 @@ class PagamentoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Despesa)
-class DespesaAdmin(admin.ModelAdmin):
+class DespesaAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Despesa", {"fields": ("empresa", "descricao")}),
         ("Valores", {"fields": ("valor", "data")}),
@@ -134,3 +168,17 @@ class DespesaAdmin(admin.ModelAdmin):
     list_display = ("descricao", "valor", "data", "empresa")
     list_filter = ("empresa", "data")
     search_fields = ("descricao",)
+
+
+@admin.register(OrdemServicoLog)
+class OrdemServicoLogAdmin(EmpresaAdminMixin, admin.ModelAdmin):
+    list_display = ("os", "acao", "usuario", "criado_em", "empresa")
+    list_filter = ("acao", "empresa")
+    search_fields = ("os__id", "usuario__username")
+    readonly_fields = ("empresa", "os", "usuario", "acao", "observacao", "criado_em")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

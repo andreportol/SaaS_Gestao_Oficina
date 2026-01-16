@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Usuarios</h1>
+    <a class="btn btn-primary" href="{% url 'usuarios_create' %}">Novo usuario</a>
+</div>
+
+{% if limite_usuarios %}
+<div class="alert alert-info d-flex flex-wrap gap-3 align-items-center">
+    <span>Usuarios ativos: <strong>{{ usuarios_ativos }}</strong> / {{ limite_usuarios }}</span>
+    <span>Gerentes ativos: <strong>{{ gerentes_ativos }}</strong> / {{ limite_gerentes }}</span>
+</div>
+{% endif %}
+
+<form class="row g-2 mb-3 align-items-end" method="get">
+    <div class="col-md-8">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar usuario">
+    </div>
+    <div class="col-md-4 d-grid">
+        <button class="btn btn-outline-secondary">Buscar</button>
+    </div>
+</form>
+
+<div class="card p-0">
+    <div class="table-responsive">
+        <table class="table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Perfil</th>
+                    <th>Status</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in object_list %}
+                <tr>
+                    <td>{{ u.username }}</td>
+                    <td>{{ u.get_full_name|default:u.username }}</td>
+                    <td>{{ u.email|default:"-" }}</td>
+                    <td>{% if u.is_gerente %}Gerente{% else %}Funcionario{% endif %}</td>
+                    <td>{% if u.is_active %}Ativo{% else %}Inativo{% endif %}</td>
+                    <td class="text-end">
+                        <a class="chip chip-action chip-ghost no-dot" href="{% url 'usuarios_update' u.pk %}">Editar</a>
+                        {% if u.is_active and u.pk != request.user.pk %}
+                        <form method="post" action="{% url 'usuarios_deactivate' u.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button class="chip chip-action chip-outline no-dot" type="submit">Desativar</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center py-3">Nenhum usuario encontrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% include "core/pagination.html" %}
+{% endblock %}

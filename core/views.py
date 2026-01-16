@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
 from django.db.models import Q, Sum
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear
@@ -27,30 +28,50 @@ from .forms import (
     OrdemServicoForm,
     OSItemForm,
     PagamentoForm,
+    UsuarioCreateForm,
+    UsuarioUpdateForm,
     AgendaForm,
     ProdutoForm,
     VeiculoForm,
 )
-from .models import Agenda, Cliente, Despesa, FormaPagamento, OrdemServico, OSItem, Pagamento, Produto, Veiculo
+from .models import (
+    Agenda,
+    Cliente,
+    Despesa,
+    FormaPagamento,
+    OrdemServico,
+    OrdemServicoLog,
+    OSItem,
+    Pagamento,
+    Produto,
+    Usuario,
+    Veiculo,
+)
+from .services import criar_os_log, os_queryset_for_user
 
 
 class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
-        return getattr(self.request.user, "is_manager", False)
+        checker = getattr(self.request.user, "is_gerente", None)
+        if callable(checker):
+            return checker()
+        return bool(checker)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return super().handle_no_permission()
-        messages.error(self.request, "Acesso restrito a gerentes.")
-        return redirect("dashboard")
+        raise PermissionDenied
 
 
 class EmpresaQuerysetMixin(LoginRequiredMixin):
     def get_queryset(self):
         qs = super().get_queryset()
         empresa = getattr(self.request.user, "empresa", None)
-        if hasattr(qs.model, "empresa") and empresa:
-            qs = qs.filter(empresa=empresa)
+        if hasattr(qs.model, "empresa"):
+            if empresa:
+                qs = qs.filter(empresa=empresa)
+            else:
+                qs = qs.none()
         return qs
 
     def get_context_data(self, **kwargs):
@@ -73,6 +94,22 @@ class EmpresaFormMixin:
         return super().form_valid(form)
 
 
+def _apply_os_status_audit(os, previous_status, usuario):
+    actions = []
+    now = timezone.now()
+    if os.status == OrdemServico.Status.EXECUCAO and previous_status != os.status and not os.iniciado_em:
+        os.iniciado_em = now
+        actions.append(OrdemServicoLog.Acao.INICIAR)
+    if os.status == OrdemServico.Status.FINALIZADA and previous_status != os.status:
+        if not os.finalizado_em:
+            os.finalizado_em = now
+        os.finalizado_por = usuario
+        actions.append(OrdemServicoLog.Acao.FINALIZAR)
+    if os.status == OrdemServico.Status.CANCELADA and previous_status != os.status:
+        actions.append(OrdemServicoLog.Acao.CANCELAR)
+    return actions
+
+
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "core/dashboard.html"
 
@@ -81,7 +118,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         empresa = self.request.user.empresa
         hoje = timezone.now().date()
         inicio_periodo = hoje - timedelta(days=30)
-        ordens = OrdemServico.objects.filter(empresa=empresa)
+        ordens = os_queryset_for_user(self.request.user)
         context.update(
             {
                 "os_abertas": ordens.filter(status=OrdemServico.Status.ABERTA).count(),
@@ -305,6 +342,7 @@ class AgendaListView(EmpresaQuerysetMixin, FormMixin, ListView):
                 "eventos_fc_json": json.dumps(eventos_fc, default=str),
             }
         )
+        context["can_delete_agenda"] = self.request.user.has_perm("core.delete_agenda")
         return context
 
     def post(self, request, *args, **kwargs):
@@ -482,6 +520,8 @@ class AgendaQuickCreateView(LoginRequiredMixin, View):
 
 class AgendaDeleteView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
+        if not request.user.has_perm("core.delete_agenda"):
+            raise PermissionDenied
         if not request.user.empresa:
             return JsonResponse({"error": "Empresa não encontrada."}, status=400)
         try:
@@ -547,6 +587,91 @@ class ContatoSuporteView(View):
             return JsonResponse({"error": "Erro de comunicação com o serviço de email."}, status=500)
 
         return JsonResponse({"ok": True})
+
+
+class UsuarioListView(ManagerRequiredMixin, EmpresaQuerysetMixin, ListView):
+    model = Usuario
+    paginate_by = 10
+    template_name = "core/usuarios_list.html"
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        termo = self.request.GET.get("q")
+        if termo:
+            qs = qs.filter(
+                Q(username__icontains=termo)
+                | Q(email__icontains=termo)
+                | Q(first_name__icontains=termo)
+                | Q(last_name__icontains=termo)
+            )
+        return qs.order_by("username")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        empresa = getattr(self.request.user, "empresa", None)
+        if empresa:
+            context["limite_usuarios"] = empresa.limite_funcionarios()
+            context["limite_gerentes"] = empresa.limite_gerentes()
+            context["usuarios_ativos"] = Usuario.objects.filter(empresa=empresa, is_active=True).count()
+            context["gerentes_ativos"] = Usuario.objects.filter(
+                empresa=empresa, is_active=True, is_manager=True
+            ).count()
+        return context
+
+
+class UsuarioCreateView(ManagerRequiredMixin, CreateView):
+    model = Usuario
+    form_class = UsuarioCreateForm
+    template_name = "core/usuarios_form.html"
+    success_url = reverse_lazy("usuarios_list")
+    extra_context = {"title": "Novo usuario"}
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Usuario criado.")
+        return super().form_valid(form)
+
+
+class UsuarioUpdateView(ManagerRequiredMixin, UpdateView):
+    model = Usuario
+    form_class = UsuarioUpdateForm
+    template_name = "core/usuarios_form.html"
+    success_url = reverse_lazy("usuarios_list")
+    extra_context = {"title": "Editar usuario"}
+
+    def get_queryset(self):
+        return Usuario.objects.filter(empresa=self.request.user.empresa)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, "Usuario atualizado.")
+        return super().form_valid(form)
+
+
+class UsuarioDeactivateView(ManagerRequiredMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        usuario_id = kwargs.get("pk")
+        try:
+            usuario = Usuario.objects.get(pk=usuario_id, empresa=request.user.empresa)
+        except Usuario.DoesNotExist:
+            raise PermissionDenied
+        if usuario.pk == request.user.pk:
+            messages.error(request, "Nao e possivel desativar o proprio usuario.")
+            return redirect("usuarios_list")
+        usuario.is_active = False
+        usuario.save(update_fields=["is_active"])
+        messages.success(request, "Usuario desativado.")
+        return redirect("usuarios_list")
 
 
 class ProdutoListView(EmpresaQuerysetMixin, ListView):
@@ -623,7 +748,10 @@ class OrdemServicoListView(EmpresaQuerysetMixin, ListView):
             return None
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related("cliente", "veiculo")
+        qs = os_queryset_for_user(
+            self.request.user,
+            OrdemServico.objects.select_related("cliente", "veiculo", "responsavel"),
+        )
         status = self.request.GET.get("status")
         inicio = self._parse_date(self.request.GET.get("inicio"))
         fim = self._parse_date(self.request.GET.get("fim"))
@@ -659,6 +787,19 @@ class OrdemServicoCreateView(EmpresaFormMixin, EmpresaQuerysetMixin, CreateView)
         kwargs["user"] = self.request.user
         return kwargs
 
+    def form_valid(self, form):
+        if not form.instance.responsavel:
+            form.instance.responsavel = self.request.user
+        form.instance.criado_por = self.request.user
+        actions = _apply_os_status_audit(form.instance, None, self.request.user)
+        response = super().form_valid(form)
+        criar_os_log(self.object, self.request.user, OrdemServicoLog.Acao.CRIAR)
+        if form.instance.responsavel_id:
+            criar_os_log(self.object, self.request.user, OrdemServicoLog.Acao.ATRIBUIR)
+        for action in actions:
+            criar_os_log(self.object, self.request.user, action)
+        return response
+
 
 class OrdemServicoUpdateView(EmpresaFormMixin, EmpresaQuerysetMixin, UpdateView):
     model = OrdemServico
@@ -666,14 +807,34 @@ class OrdemServicoUpdateView(EmpresaFormMixin, EmpresaQuerysetMixin, UpdateView)
     template_name = "core/form.html"
     extra_context = {"title": "Editar Ordem de Serviço"}
 
+    def get_queryset(self):
+        return os_queryset_for_user(self.request.user)
+
     def get_success_url(self):
         messages.success(self.request, "Ordem de serviço atualizada.")
         return reverse("os_detail", args=[self.object.pk])
+
+    def form_valid(self, form):
+        previous_status = self.object.status
+        previous_responsavel_id = self.object.responsavel_id
+        actions = _apply_os_status_audit(form.instance, previous_status, self.request.user)
+        response = super().form_valid(form)
+        responsavel_changed = previous_responsavel_id != form.instance.responsavel_id
+        if responsavel_changed and form.instance.responsavel_id:
+            criar_os_log(self.object, self.request.user, OrdemServicoLog.Acao.ATRIBUIR)
+        for action in actions:
+            criar_os_log(self.object, self.request.user, action)
+        if not actions and not responsavel_changed and previous_status == form.instance.status:
+            criar_os_log(self.object, self.request.user, OrdemServicoLog.Acao.EDITAR)
+        return response
 
 
 class OrdemServicoDetailView(EmpresaQuerysetMixin, DetailView):
     model = OrdemServico
     template_name = "core/os_detail.html"
+
+    def get_queryset(self):
+        return os_queryset_for_user(self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

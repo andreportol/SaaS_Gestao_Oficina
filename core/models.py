@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
@@ -8,13 +9,28 @@ from django.urls import reverse
 
 
 class Empresa(models.Model):
+    class Plano(models.TextChoices):
+        BASICO = "BASICO", "Basico"
+        PLUS = "PLUS", "Plus"
+
     nome = models.CharField(max_length=150)
     cnpj_cpf = models.CharField(max_length=20, blank=True)
     telefone = models.CharField(max_length=20, blank=True)
+    plano = models.CharField(max_length=10, choices=Plano.choices, default=Plano.BASICO)
     criado_em = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
         return self.nome
+
+    def limite_funcionarios(self) -> int:
+        if self.plano == self.Plano.PLUS:
+            return 30
+        return 6
+
+    def limite_gerentes(self) -> int:
+        if self.plano == self.Plano.PLUS:
+            return 3
+        return 1
 
 
 class UsuarioManager(UserManager):
@@ -35,6 +51,11 @@ class Usuario(AbstractUser):
     def __str__(self) -> str:
         empresa = self.empresa.nome if self.empresa else "Sem empresa"
         return f"{self.username} - {empresa}"
+
+    def is_gerente(self) -> bool:
+        if self.is_superuser or self.is_manager:
+            return True
+        return self.groups.filter(name="Gerente").exists()
 
 
 class Cliente(models.Model):
@@ -153,9 +174,32 @@ class OrdemServico(models.Model):
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name="ordens_servico")
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name="ordens_servico")
     veiculo = models.ForeignKey(Veiculo, on_delete=models.CASCADE, related_name="ordens_servico")
+    responsavel = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="os_responsavel",
+        null=True,
+        blank=True,
+    )
+    criado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="os_criadas",
+        null=True,
+        blank=True,
+    )
+    finalizado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="os_finalizadas",
+        null=True,
+        blank=True,
+    )
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ABERTA)
     entrada_em = models.DateField(default=timezone.now)
     previsao_entrega = models.DateField(blank=True, null=True)
+    iniciado_em = models.DateTimeField(blank=True, null=True)
+    finalizado_em = models.DateTimeField(blank=True, null=True)
     problema = models.TextField()
     diagnostico = models.TextField(blank=True)
     mao_de_obra = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
@@ -191,6 +235,26 @@ class OrdemServico(models.Model):
     @property
     def saldo(self) -> Decimal:
         return self.total - self.total_pago
+
+
+class OrdemServicoLog(models.Model):
+    class Acao(models.TextChoices):
+        CRIAR = "CRIAR", "Criar"
+        ATRIBUIR = "ATRIBUIR", "Atribuir"
+        INICIAR = "INICIAR", "Iniciar"
+        FINALIZAR = "FINALIZAR", "Finalizar"
+        CANCELAR = "CANCELAR", "Cancelar"
+        EDITAR = "EDITAR", "Editar"
+
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name="os_logs")
+    os = models.ForeignKey(OrdemServico, on_delete=models.CASCADE, related_name="logs")
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    acao = models.CharField(max_length=30, choices=Acao.choices)
+    observacao = models.TextField(blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-criado_em", "-id"]
 
 
 class OSItem(models.Model):

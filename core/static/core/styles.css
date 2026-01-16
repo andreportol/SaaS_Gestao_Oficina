@@ -8,6 +8,7 @@
     --accent: #22d3ee;
     --accent-2: #fbbf24;
     --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    --nav-active-bg: rgba(34, 211, 238, 0.12);
 }
 
 * {
@@ -44,6 +45,7 @@ body::before {
     --accent: #0d6efd;
     --accent-2: #6ea8fe;
     --shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+    --nav-active-bg: rgba(13, 110, 253, 0.12);
     color-scheme: light;
 }
 
@@ -169,6 +171,14 @@ a:hover {
     border-color: var(--accent);
 }
 
+.nav-pill.active {
+    color: var(--text);
+    box-shadow: inset 0 -2px 0 var(--accent);
+    background: var(--nav-active-bg);
+    border-radius: 999px;
+    padding: 8px 12px !important;
+}
+
 .nav-pill {
     padding: 8px 0 !important;
     border-radius: 0;
@@ -246,6 +256,29 @@ body:not(.theme-light) .relatorio-filter label {
     background: rgba(13, 110, 253, 0.12) !important;
     color: #0d6efd !important;
     border-color: #0d6efd !important;
+}
+
+body:not(.theme-light) .nav-tabs .nav-link {
+    color: var(--accent);
+    border: none;
+    background: transparent;
+}
+
+body:not(.theme-light) .nav-tabs .nav-link.active {
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--border);
+}
+
+.theme-light .nav-tabs .nav-link {
+    color: #0f172a;
+    border: none;
+    background: transparent;
+}
+
+.theme-light .nav-tabs .nav-link.active {
+    color: #0d6efd;
+    border-bottom: 2px solid #0d6efd;
 }
 
 body:not(.theme-light) .btn-print {
@@ -775,7 +808,31 @@ body:not(.theme-light) .table tbody tr td {
     color: var(--text);
 }
 
-.app-form input,
+.jazzmin-fieldset {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px 18px;
+    background: var(--panel);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    min-width: 0;
+}
+
+.jazzmin-legend {
+    float: none;
+    width: auto;
+    padding: 4px 12px;
+    margin-bottom: 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel-strong);
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-form input:not([type="checkbox"]):not([type="radio"]),
 .app-form select,
 .app-form textarea {
     width: 100%;
@@ -865,6 +922,11 @@ body:not(.theme-light) .app-form select {
     color: #fff !important;
 }
 
+body:not(.theme-light) .password-hints,
+body:not(.theme-light) .user-flag-hints {
+    color: rgba(226, 232, 240, 0.9);
+}
+
 .theme-light .app-form select,
 .theme-light .app-form select option,
 .theme-light .app-form select option:checked,
@@ -881,7 +943,8 @@ body:not(.theme-light) .app-form select {
     accent-color: var(--accent);
 }
 
-.app-form input:focus,
+
+.app-form input:not([type="checkbox"]):not([type="radio"]):focus,
 .app-form select:focus,
 .app-form textarea:focus {
     border-color: var(--accent);
@@ -890,14 +953,25 @@ body:not(.theme-light) .app-form select {
     color: #fff !important;
 }
 
-.theme-light .app-form input,
+.app-form input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.app-form textarea::placeholder {
+    color: rgba(226, 232, 240, 0.65);
+}
+
+.theme-light .app-form input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.theme-light .app-form textarea::placeholder {
+    color: var(--bs-secondary-color);
+    opacity: 1;
+}
+
+.theme-light .app-form input:not([type="checkbox"]):not([type="radio"]),
 .theme-light .app-form select,
 .theme-light .app-form textarea {
     color: var(--text) !important;
     caret-color: var(--text);
 }
 
-.app-form input:-webkit-autofill,
+.app-form input:not([type="checkbox"]):not([type="radio"]):-webkit-autofill,
 .app-form select:-webkit-autofill,
 .app-form textarea:-webkit-autofill {
     background-color: rgba(255, 255, 255, 0.05) !important;
@@ -907,7 +981,7 @@ body:not(.theme-light) .app-form select {
     caret-color: #fff;
 }
 
-.app-form input:-webkit-autofill:focus,
+.app-form input:not([type="checkbox"]):not([type="radio"]):-webkit-autofill:focus,
 .app-form select:-webkit-autofill:focus,
 .app-form textarea:-webkit-autofill:focus {
     background-color: rgba(255, 255, 255, 0.06) !important;
@@ -921,7 +995,7 @@ body:not(.theme-light) .app-form select {
     caret-color: #fff;
 }
 
-.theme-light .app-form input:-webkit-autofill,
+.theme-light .app-form input:not([type="checkbox"]):not([type="radio"]):-webkit-autofill,
 .theme-light .app-form select:-webkit-autofill,
 .theme-light .app-form textarea:-webkit-autofill {
     box-shadow: 0 0 0 1000px #fff inset !important;
@@ -929,7 +1003,7 @@ body:not(.theme-light) .app-form select {
     -webkit-text-fill-color: var(--text) !important;
 }
 
-.theme-light .app-form input:-webkit-autofill:focus,
+.theme-light .app-form input:not([type="checkbox"]):not([type="radio"]):-webkit-autofill:focus,
 .theme-light .app-form select:-webkit-autofill:focus,
 .theme-light .app-form textarea:-webkit-autofill:focus {
     box-shadow:

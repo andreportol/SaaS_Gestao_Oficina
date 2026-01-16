@@ -139,6 +139,7 @@
     const events = JSON.parse('{{ eventos_fc_json|escapejs }}');
     const selectedDate = "{{ selected_date|date:'Y-m-d' }}";
     const fallbackDate = "{{ current_year }}-{{ current_month|stringformat:'02d' }}-01";
+    const canDelete = {{ can_delete_agenda|yesno:"true,false" }};
     const quickModalEl = document.getElementById("quickAgendaModal");
     if (quickModalEl && quickModalEl.parentElement !== document.body) {
         document.body.appendChild(quickModalEl);
@@ -181,6 +182,7 @@
     };
 
     const deleteEvent = async (eventId) => {
+        if (!canDelete) return;
         const response = await fetch("{% url 'agenda_delete' %}", {
             method: "POST",
             headers: {
@@ -286,6 +288,10 @@
         eventClick(info) {
             if (!info.event.start) return;
             const startDate = info.event.start;
+            if (!canDelete) {
+                calendar.changeView("timeGridDay", startDate);
+                return;
+            }
             const confirmDelete = confirm("Deseja excluir este agendamento?");
             if (confirmDelete) {
                 deleteEvent(info.event.id)

@@ -40,44 +40,58 @@
 <div class="row g-3">
     <div class="col-md-7">
         <div class="card p-3 mb-3">
-            <h2 class="h6 text-uppercase text-muted mb-2">Entradas (Pagamentos)</h2>
-            <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead>
-                        <tr><th>Data</th><th>OS</th><th>Forma</th><th class="text-end">Valor</th></tr>
-                    </thead>
-                    <tbody>
-                        {% for pagamento in entradas %}
-                        <tr>
-                            <td>{{ pagamento.pago_em }}</td>
-                            <td><a href="{% url 'os_detail' pagamento.os.id %}">#{{ pagamento.os.id }}</a></td>
-                            <td>{{ pagamento.forma_pagamento|default:"-" }}</td>
-                            <td class="text-end">R$ {{ pagamento.valor|floatformat:2 }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="4" class="text-center">Sem entradas no período.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card p-3">
-            <h2 class="h6 text-uppercase text-muted mb-2">Saídas (Despesas)</h2>
-            <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead><tr><th>Data</th><th>Descrição</th><th class="text-end">Valor</th></tr></thead>
-                    <tbody>
-                        {% for despesa in saidas %}
-                        <tr>
-                            <td>{{ despesa.data }}</td>
-                            <td>{{ despesa.descricao }}</td>
-                            <td class="text-end">R$ {{ despesa.valor|floatformat:2 }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="3" class="text-center">Sem saídas no período.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <ul class="nav nav-tabs" id="caixaTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="entradas-tab" data-bs-toggle="tab" data-bs-target="#entradas-pane" type="button" role="tab" aria-controls="entradas-pane" aria-selected="true">
+                        Entradas (Pagamentos)
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="saidas-tab" data-bs-toggle="tab" data-bs-target="#saidas-pane" type="button" role="tab" aria-controls="saidas-pane" aria-selected="false">
+                        Saídas (Despesas)
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content pt-3" id="caixaTabsContent">
+                <div class="tab-pane fade show active" id="entradas-pane" role="tabpanel" aria-labelledby="entradas-tab" tabindex="0">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr><th>Data</th><th>OS</th><th>Forma</th><th class="text-end">Valor</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for pagamento in entradas %}
+                                <tr>
+                                    <td>{{ pagamento.pago_em }}</td>
+                                    <td><a href="{% url 'os_detail' pagamento.os.id %}">#{{ pagamento.os.id }}</a></td>
+                                    <td>{{ pagamento.forma_pagamento|default:"-" }}</td>
+                                    <td class="text-end">R$ {{ pagamento.valor|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center">Sem entradas no período.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="saidas-pane" role="tabpanel" aria-labelledby="saidas-tab" tabindex="0">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead><tr><th>Data</th><th>Descrição</th><th class="text-end">Valor</th></tr></thead>
+                            <tbody>
+                                {% for despesa in saidas %}
+                                <tr>
+                                    <td>{{ despesa.data }}</td>
+                                    <td>{{ despesa.descricao }}</td>
+                                    <td class="text-end">R$ {{ despesa.valor|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center">Sem saídas no período.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

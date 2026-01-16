@@ -34,14 +34,31 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto nav-menu align-items-center">
                 {% if user.is_authenticated %}
-                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'clientes_list' %}">Clientes</a></li>
-                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'veiculos_list' %}">Veículos</a></li>
-                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'agenda' %}">Agenda</a></li>
-                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'produtos_list' %}">Produtos</a></li>
-                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'os_list' %}">Ordens</a></li>
-                {% if user.is_manager %}
-                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'caixa' %}">Caixa</a></li>
-                <li class="nav-item"><a class="nav-link nav-pill" href="{% url 'relatorios' %}">Relatórios</a></li>
+                <li class="nav-item">
+                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'clientes_list' or request.resolver_match.url_name == 'clientes_create' or request.resolver_match.url_name == 'clientes_update' %} active{% endif %}" href="{% url 'clientes_list' %}">Clientes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'veiculos_list' or request.resolver_match.url_name == 'veiculos_create' or request.resolver_match.url_name == 'veiculos_update' %} active{% endif %}" href="{% url 'veiculos_list' %}">Veículos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'agenda' %} active{% endif %}" href="{% url 'agenda' %}">Agenda</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'produtos_list' or request.resolver_match.url_name == 'produtos_create' or request.resolver_match.url_name == 'produtos_update' %} active{% endif %}" href="{% url 'produtos_list' %}">Produtos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'os_list' or request.resolver_match.url_name == 'os_create' or request.resolver_match.url_name == 'os_detail' or request.resolver_match.url_name == 'os_update' %} active{% endif %}" href="{% url 'os_list' %}">Ordens</a>
+                </li>
+                {% if user.is_gerente %}
+                <li class="nav-item">
+                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'usuarios_list' or request.resolver_match.url_name == 'usuarios_create' or request.resolver_match.url_name == 'usuarios_update' %} active{% endif %}" href="{% url 'usuarios_list' %}">Usuários</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'caixa' or request.resolver_match.url_name == 'caixa_graficos' %} active{% endif %}" href="{% url 'caixa' %}">Caixa</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'relatorios' %} active{% endif %}" href="{% url 'relatorios' %}">Relatórios</a>
+                </li>
                 {% endif %}
                 {% endif %}
             </ul>
@@ -623,6 +640,73 @@
                     alert(err.message || "Erro ao enviar.");
                 }
             }
+        });
+    })();
+
+    (function() {
+        const normalize = (value) =>
+            value
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+
+        document.querySelectorAll('select[name="cliente"], select#id_cliente').forEach((select, index) => {
+            if (select.dataset.clientSearch === "1") return;
+            select.dataset.clientSearch = "1";
+            const options = Array.from(select.options);
+            if (!options.length) return;
+
+            const placeholder = options.find((opt) => opt.value === "" || opt.disabled);
+            const selected = options.find((opt) => opt.selected && opt.value);
+            const datalistId = `cliente-datalist-${select.id || "field"}-${index}`;
+
+            const input = document.createElement("input");
+            input.type = "search";
+            input.className = "form-control";
+            input.placeholder = placeholder?.textContent?.trim() || "Digite o cliente...";
+            input.autocomplete = "off";
+            input.setAttribute("list", datalistId);
+
+            const datalist = document.createElement("datalist");
+            datalist.id = datalistId;
+
+            const map = new Map();
+            options.forEach((option) => {
+                if (!option.value || option.disabled) return;
+                const label = (option.textContent || "").trim();
+                const key = normalize(label);
+                if (!map.has(key)) {
+                    map.set(key, option.value);
+                }
+                const opt = document.createElement("option");
+                opt.value = label;
+                datalist.appendChild(opt);
+            });
+
+            select.parentNode.insertBefore(input, select);
+            select.parentNode.insertBefore(datalist, select);
+            select.classList.add("d-none");
+            select.setAttribute("aria-hidden", "true");
+
+            if (selected) {
+                input.value = (selected.textContent || "").trim();
+            }
+
+            const syncSelect = () => {
+                const key = normalize(input.value.trim());
+                const value = map.get(key) || "";
+                if (select.value !== value) {
+                    select.value = value;
+                    select.dispatchEvent(new Event("change", {bubbles: true}));
+                }
+            };
+
+            input.addEventListener("input", syncSelect);
+            input.addEventListener("change", syncSelect);
+            select.addEventListener("change", () => {
+                const current = select.options[select.selectedIndex];
+                input.value = (current?.textContent || "").trim();
+            });
         });
     })();
 </script>

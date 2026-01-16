@@ -3,10 +3,18 @@ import re
 from decimal import Decimal
 
 from django import forms
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.contrib.auth.password_validation import password_validators_help_texts, validate_password
 from django.db import models
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 
 from .models import Agenda, Cliente, Despesa, FormaPagamento, OrdemServico, OSItem, Pagamento, Produto, Veiculo
+from .permissions import ROLE_EMPLOYEE, ROLE_MANAGER
+
+
+User = get_user_model()
 
 
 class EmpresaFormMixin(forms.ModelForm):
@@ -239,6 +247,7 @@ class OrdemServicoForm(EmpresaFormMixin):
         fields = [
             "cliente",
             "veiculo",
+            "responsavel",
             "status",
             "entrada_em",
             "previsao_entrega",
@@ -265,12 +274,26 @@ class OrdemServicoForm(EmpresaFormMixin):
             "observacoes": "Observações",
             "desconto": "Desconto em Reais (R$)",
             "previsao_entrega": "Previsão de entrega",
+            "responsavel": "Responsável",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         user = getattr(self, "user", None)
         empresa = getattr(user, "empresa", None)
+
+        if "responsavel" in self.fields:
+            responsaveis_qs = User.objects.all()
+            if empresa:
+                responsaveis_qs = responsaveis_qs.filter(empresa=empresa, is_active=True)
+            is_manager = getattr(user, "is_gerente", None)
+            if callable(is_manager):
+                is_manager = is_manager()
+            if user and not is_manager:
+                responsaveis_qs = responsaveis_qs.filter(pk=user.pk)
+                self.fields["responsavel"].disabled = True
+                self.fields["responsavel"].initial = user.pk
+            self.fields["responsavel"].queryset = responsaveis_qs
 
         veiculos_qs = Veiculo.objects.all()
         if empresa:
@@ -358,3 +381,155 @@ class DespesaForm(EmpresaFormMixin):
                 attrs={"min": "0", "step": "0.01", "data-format": "currency2", "placeholder": "0,00"}
             ),
         }
+
+
+class UsuarioBaseForm(forms.ModelForm):
+    password1 = forms.CharField(label="Senha", widget=forms.PasswordInput, required=False)
+    password2 = forms.CharField(label="Confirmar senha", widget=forms.PasswordInput, required=False)
+
+    class Meta:
+        model = User
+        fields = ["username", "email", "first_name", "last_name", "is_manager", "is_active"]
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.request_user = user
+        super().__init__(*args, **kwargs)
+        empresa = self._get_empresa()
+        if "is_manager" in self.fields and getattr(empresa, "plano", None) != "PLUS":
+            self.fields.pop("is_manager", None)
+        if "is_active" in self.fields:
+            current = self.instance.is_active if self.instance.pk else True
+            self.fields["is_active"] = forms.TypedChoiceField(
+                label="Ativo",
+                choices=(("True", "Sim"), ("False", "Não")),
+                coerce=lambda value: value == "True",
+                widget=forms.RadioSelect,
+                initial=current,
+            )
+        if "is_manager" in self.fields:
+            self.fields["is_manager"].label = "Gerente"
+            self.fields["is_manager"].help_text = (
+                "Se marcado, o usuário pode gerenciar equipe, relatórios e configurações da empresa."
+            )
+        if "is_active" in self.fields:
+            self.fields["is_active"].help_text = "Se selecionar Não, o usuário não consegue acessar o sistema."
+        if "username" in self.fields:
+            self.fields["username"].label = "Login"
+            self.fields["username"].widget.attrs.setdefault("placeholder", "Digite o login")
+            self.fields["username"].widget.attrs.setdefault("autocomplete", "username")
+            self.fields["username"].widget.attrs.setdefault("autofocus", "autofocus")
+        if "email" in self.fields:
+            self.fields["email"].widget.attrs.setdefault("placeholder", "email@empresa.com")
+            self.fields["email"].widget.attrs.setdefault("autocomplete", "email")
+        if "first_name" in self.fields:
+            self.fields["first_name"].widget.attrs.setdefault("placeholder", "Nome")
+            self.fields["first_name"].widget.attrs.setdefault("autocomplete", "given-name")
+        if "last_name" in self.fields:
+            self.fields["last_name"].widget.attrs.setdefault("placeholder", "Sobrenome")
+            self.fields["last_name"].widget.attrs.setdefault("autocomplete", "family-name")
+        if "password1" in self.fields:
+            self.fields["password1"].widget.attrs.setdefault("placeholder", "Crie uma senha")
+            self.fields["password1"].widget.attrs.setdefault("autocomplete", "new-password")
+        if "password2" in self.fields:
+            self.fields["password2"].widget.attrs.setdefault("placeholder", "Confirme a senha")
+            self.fields["password2"].widget.attrs.setdefault("autocomplete", "new-password")
+        for name in ("username", "email", "first_name", "last_name", "password1", "password2"):
+            if name in self.fields:
+                self.fields[name].widget.attrs.setdefault("class", "form-control")
+        for name in ("is_manager", "is_active"):
+            if name in self.fields:
+                self.fields[name].widget.attrs.setdefault("class", "form-check-input")
+        if "password1" in self.fields:
+            help_texts = password_validators_help_texts()
+            if help_texts:
+                items = "".join(f"<li>{text}</li>" for text in help_texts)
+                self.fields["password1"].help_text = mark_safe(f"<ul class=\"mb-0\">{items}</ul>")
+
+    def _get_empresa(self):
+        return getattr(self.request_user, "empresa", None)
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1") or ""
+        password2 = self.cleaned_data.get("password2") or ""
+        if self._password_is_required() or password1 or password2:
+            if not password1 or not password2:
+                raise forms.ValidationError("Informe a senha duas vezes.")
+            if password1 != password2:
+                raise forms.ValidationError("As senhas não conferem.")
+            validate_password(password1, self.instance)
+        return password2
+
+    def clean(self):
+        cleaned = super().clean()
+        empresa = self._get_empresa()
+        if not empresa:
+            raise forms.ValidationError("Empresa não encontrada.")
+
+        is_active = bool(cleaned.get("is_active", False))
+        is_manager = bool(cleaned.get("is_manager", False))
+
+        if is_active and (not self.instance.pk or not self.instance.is_active):
+            ativos = User.objects.filter(empresa=empresa, is_active=True).count()
+            if ativos >= empresa.limite_funcionarios():
+                raise forms.ValidationError(
+                    "Limite de usuarios ativos atingido. Considere o plano PLUS para aumentar o limite."
+                )
+
+        if is_active and is_manager and (
+            not self.instance.pk or not self.instance.is_manager or not self.instance.is_active
+        ):
+            gerentes = User.objects.filter(empresa=empresa, is_active=True, is_manager=True).count()
+            if gerentes >= empresa.limite_gerentes():
+                raise forms.ValidationError(
+                    "Limite de gerentes atingido. Considere o plano PLUS para aumentar o limite."
+                )
+
+        return cleaned
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        empresa = self._get_empresa()
+        if empresa:
+            user.empresa = empresa
+
+        password = self.cleaned_data.get("password1") or ""
+        if password:
+            user.set_password(password)
+
+        if commit:
+            user.save()
+            self._sync_groups(user)
+        else:
+            self._pending_group_sync = True
+        return user
+
+    def _sync_groups(self, user):
+        manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
+        employee_group, _ = Group.objects.get_or_create(name=ROLE_EMPLOYEE)
+        if "is_manager" not in self.cleaned_data:
+            if not user.is_manager:
+                user.groups.add(employee_group)
+            return
+        if self.cleaned_data.get("is_manager"):
+            user.groups.add(manager_group)
+            user.groups.remove(employee_group)
+        else:
+            user.groups.add(employee_group)
+            user.groups.remove(manager_group)
+
+    def _password_is_required(self):
+        return False
+
+
+class UsuarioCreateForm(UsuarioBaseForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["password1"].required = True
+        self.fields["password2"].required = True
+
+    def _password_is_required(self):
+        return True
+
+
+class UsuarioUpdateForm(UsuarioBaseForm):
+    pass
