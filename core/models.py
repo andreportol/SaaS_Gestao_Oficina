@@ -16,6 +16,12 @@ class Empresa(models.Model):
     nome = models.CharField(max_length=150)
     cnpj_cpf = models.CharField(max_length=20, blank=True)
     telefone = models.CharField(max_length=20, blank=True)
+    logomarca = models.ImageField(
+        upload_to="empresas/logos/",
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png", "webp"])],
+    )
     plano = models.CharField(max_length=10, choices=Plano.choices, default=Plano.BASICO)
     criado_em = models.DateTimeField(auto_now_add=True)
 

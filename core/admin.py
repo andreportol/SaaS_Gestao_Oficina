@@ -64,7 +64,7 @@ class UsuarioAdmin(EmpresaAdminMixin, UserAdmin):
 @admin.register(Empresa)
 class EmpresaAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
-        ("Dados da empresa", {"fields": ("nome", "cnpj_cpf", "telefone", "plano")}),
+        ("Dados da empresa", {"fields": ("nome", "cnpj_cpf", "telefone", "logomarca", "plano")}),
         ("Controle", {"fields": ("criado_em",)}),
     )
     list_display = ("nome", "cnpj_cpf", "telefone", "plano", "criado_em")

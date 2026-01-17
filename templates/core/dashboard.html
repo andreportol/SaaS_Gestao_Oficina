@@ -1,9 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="h4 mb-0">Dashboard</h1>
-        <div class="small text-muted dashboard-muted">Resumo financeiro e operacional</div>
+    <div class="d-flex align-items-center gap-3">
+        {% if request.user.empresa.logomarca %}
+            <img class="report-logo" src="{{ request.user.empresa.logomarca.url }}" alt="Logomarca">
+        {% endif %}
+        <div>
+            <h1 class="h4 mb-0">Dashboard</h1>
+            <div class="small text-muted dashboard-muted">Resumo financeiro e operacional</div>
+        </div>
     </div>
     <div class="d-flex flex-wrap gap-2 align-items-end">
         <div>

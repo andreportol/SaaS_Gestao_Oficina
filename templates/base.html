@@ -264,6 +264,12 @@
         const placeholder = marcaField.dataset.placeholder || "Selecione a marca";
         const originalPlaceholder = marcaField.getAttribute("placeholder") || placeholder;
 
+        const modeloField = document.querySelector('input[name="modelo"], #id_modelo');
+        const modelPlaceholders = {
+            CARRO: "Onix Plus",
+            MOTO: "CG 160 Titan",
+            CAMINHAO: "Scania Plus",
+        };
         const dependentFields = Array.from(
             new Set([
                 marcaField,
@@ -350,11 +356,22 @@
             });
         };
 
+        const setModeloPlaceholder = (tipo) => {
+            if (!modeloField) return;
+            const placeholder = modelPlaceholders[tipo];
+            if (placeholder) {
+                modeloField.setAttribute("placeholder", placeholder);
+                modeloField.dataset.origPlaceholder = placeholder;
+            }
+        };
+
         const render = (keepCurrent = true) => {
             const tipo = tipoSelect.value;
             const enabled = Boolean(tipo);
             dependentFields.forEach((field) => setFieldEnabled(field, enabled));
             if (!tipo) return;
+
+            setModeloPlaceholder(tipo);
 
             if (marcaField.tagName.toLowerCase() === "select") {
                 renderSelectOptions(marcaField, tipo, keepCurrent);

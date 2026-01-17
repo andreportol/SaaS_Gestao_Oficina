@@ -104,7 +104,7 @@ class VeiculoForm(EmpresaFormMixin):
             "Honda",
             "Kawasaki",
             "KTM",
-            "Mottu (muito usada por entregadores)",
+            "Mottu",
             "Royal Enfield",
             "Shineray",
             "Suzuki",
