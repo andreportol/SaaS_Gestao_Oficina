@@ -1,12 +1,12 @@
 asgiref==3.11.0
-dj-database-url==3.1.0
+dj-database-url==2.3.0
 Django==6.0.1
 django-jazzmin==3.0.1
-dotenv==0.9.9
-pillow==12.1.0
-psycopg==3.3.2
+gunicorn==22.0.0
+Pillow==10.4.0
 psycopg-binary==3.3.2
-python-dotenv==1.2.1
+python-dotenv==1.0.1
 setuptools==80.9.0
 sqlparse==0.5.5
 tzdata==2025.3
+whitenoise==6.7.0
