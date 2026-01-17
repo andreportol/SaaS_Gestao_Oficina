@@ -9,9 +9,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
-DEBUG = os.getenv("DEBUG", "False").lower() in ("1", "true", "yes")
-ALLOWED_HOSTS = [host for host in os.getenv("ALLOWED_HOSTS", "").split() if host]
-CSRF_TRUSTED_ORIGINS = [origin for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split() if origin]
+DEBUG = True
+ALLOWED_HOSTS = [
+    "minhaoficina.up.railway.app",
+    ".up.railway.app",
+    ".railway.app",
+    "localhost",
+    "127.0.0.1",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://minhaoficina.up.railway.app",
+]
+
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "alpsistemascg@gmail.com")
