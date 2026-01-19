@@ -8,8 +8,8 @@
 
 {% if limite_usuarios %}
 <div class="alert alert-info d-flex flex-wrap gap-3 align-items-center">
-    <span>Usuários ativos: <strong>{{ usuarios_ativos }}</strong> / {{ limite_usuarios }}</span>
-    <span>Gerentes ativos: <strong>{{ gerentes_ativos }}</strong> / {{ limite_gerentes }}</span>
+    <span>Usuários ativos: <strong class="usuarios-highlight">{{ usuarios_ativos }}</strong> / {{ limite_usuarios }}</span>
+    <span>Gerentes ativos: <strong class="usuarios-highlight">{{ gerentes_ativos }}</strong> / {{ limite_gerentes }}</span>
 </div>
 {% endif %}
 

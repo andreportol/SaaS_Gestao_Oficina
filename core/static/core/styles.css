@@ -203,8 +203,71 @@ a:hover {
     box-shadow: inset 0 -2px 0 var(--accent);
 }
 
+
 .nav-actions {
     gap: 14px !important;
+}
+
+@media (max-width: 1399.98px) {
+    .navbar-dark .navbar-nav .nav-link {
+        font-size: 18px;
+        padding: 8px 0 !important;
+    }
+
+    .nav-pill {
+        margin-right: 10px;
+    }
+
+    .nav-actions {
+        gap: 10px !important;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .navbar-dark .navbar-nav .nav-link {
+        font-size: 17px;
+    }
+
+    .nav-pill {
+        margin-right: 8px;
+    }
+
+    .theme-toggle {
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+    }
+
+    .btn-nav {
+        padding: 6px 12px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 1023.98px) {
+    .navbar-dark .navbar-nav .nav-link {
+        font-size: 16px;
+        padding: 6px 0 !important;
+    }
+
+    .nav-pill {
+        margin-right: 6px;
+    }
+
+    .nav-actions {
+        gap: 8px !important;
+    }
+
+    .theme-toggle {
+        width: 34px;
+        height: 34px;
+        font-size: 15px;
+    }
+
+    .btn-nav {
+        padding: 5px 10px;
+        font-size: 15px;
+    }
 }
 
 .btn-nav {
@@ -692,6 +755,14 @@ body:not(.theme-light) .btn-print:focus {
     box-shadow: 0 12px 30px rgba(13, 110, 253, 0.18);
 }
 
+.usuarios-highlight {
+    color: #22d3ee;
+}
+
+.theme-light .usuarios-highlight {
+    color: #0d6efd;
+}
+
 .theme-light .caixa-page .card {
     border-color: rgba(13, 110, 253, 0.45);
     box-shadow: 0 12px 30px rgba(13, 110, 253, 0.18);
@@ -788,6 +859,39 @@ body:not(.theme-light) .btn-print:focus {
     }
 }
 
+@media (min-width: 992px) {
+    .agenda-page .card {
+        font-size: 0.92rem;
+    }
+
+    .agenda-page .card .form-label,
+    .agenda-page .card .btn {
+        font-size: 0.9rem;
+    }
+
+    .agenda-page .fullcalendar-wrapper {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .agenda-page .form-label {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .agenda-page .form-label {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .agenda-page .form-label {
+        font-size: 0.8rem;
+    }
+}
+
 @media (min-width: 576px) {
     .relatorios-page .relatorio-filter {
         flex-wrap: nowrap;
@@ -878,6 +982,31 @@ body:not(.theme-light) .btn-print:focus {
 
     .caixa-page input[type="date"] {
         font-size: 0.9rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .caixa-page .caixa-kpi-label {
+        font-size: 1.02rem;
+    }
+
+    .caixa-page h2 {
+        font-size: 0.92rem;
+    }
+
+    .caixa-page .app-form label {
+        font-size: 0.87rem;
+    }
+
+    .caixa-page .table th,
+    .caixa-page .table td {
+        font-size: 0.9rem;
+    }
+
+    .caixa-page input::placeholder,
+    .caixa-page textarea::placeholder,
+    .caixa-page input[type="date"] {
+        font-size: 0.87rem;
     }
 }
 
@@ -1026,6 +1155,13 @@ body:not(.theme-light) .btn-print:focus {
 body:not(.theme-light) .table th,
 body:not(.theme-light) .table td {
     color: #cbd5e1 !important;
+}
+
+body:not(.theme-light) .table,
+body:not(.theme-light) .table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--panel);
 }
 
 .phone-actions a {
