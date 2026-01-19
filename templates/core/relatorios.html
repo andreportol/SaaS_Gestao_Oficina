@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="d-flex align-items-center gap-3">
-        {% if request.user.empresa.logomarca %}
-            <img class="report-logo" src="{{ request.user.empresa.logomarca.url }}" alt="Logomarca">
-        {% endif %}
-        <h1 class="h4 mb-0">Relatorios</h1>
+<div class="relatorios-page">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="d-flex align-items-end gap-2">
+        <h1 class="h4 mb-0">Relatórios</h1>
     </div>
     <form class="d-flex gap-2 align-items-end relatorio-filter" method="get">
         <div class="d-flex flex-column">
@@ -50,19 +48,19 @@
 <div class="card p-3 mb-3">
     <ul class="nav nav-tabs" id="relatoriosTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="status-tab" data-bs-toggle="tab" data-bs-target="#status-pane" type="button" role="tab" aria-controls="status-pane" aria-selected="true">
-                Ordem de Servico por Status
-            </button>
+                    <button class="nav-link active relatorio-title" id="status-tab" data-bs-toggle="tab" data-bs-target="#status-pane" type="button" role="tab" aria-controls="status-pane" aria-selected="true">
+                        Ordem de Serviço por Status
+                    </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="periodo-tab" data-bs-toggle="tab" data-bs-target="#periodo-pane" type="button" role="tab" aria-controls="periodo-pane" aria-selected="false">
-                Ordens do Periodo
-            </button>
+                    <button class="nav-link relatorio-title" id="periodo-tab" data-bs-toggle="tab" data-bs-target="#periodo-pane" type="button" role="tab" aria-controls="periodo-pane" aria-selected="false">
+                        Ordens do Período
+                    </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="saldo-tab" data-bs-toggle="tab" data-bs-target="#saldo-pane" type="button" role="tab" aria-controls="saldo-pane" aria-selected="false">
-                Clientes com saldo em aberto
-            </button>
+                    <button class="nav-link relatorio-title" id="saldo-tab" data-bs-toggle="tab" data-bs-target="#saldo-pane" type="button" role="tab" aria-controls="saldo-pane" aria-selected="false">
+                        Clientes com Saldo em Aberto
+                    </button>
         </li>
     </ul>
     <div class="tab-content pt-3" id="relatoriosTabsContent">
@@ -70,9 +68,9 @@
             <div class="row">
                 {% for status, total in os_por_status.items %}
                 <div class="col-md-4">
-                    <div class="d-flex justify-content-between border-bottom py-2">
-                        <span>{{ status }}</span>
-                        <strong>{{ total }}</strong>
+                    <div class="d-flex justify-content-between border-bottom py-2 status-row">
+                        <span class="status-label">{{ status }}</span>
+                        <strong class="status-value">{{ total }}</strong>
                     </div>
                 </div>
                 {% endfor %}
@@ -133,4 +131,5 @@
         btn?.addEventListener('click', () => window.print());
     })();
 </script>
+</div>
 {% endblock %}

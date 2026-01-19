@@ -726,6 +726,50 @@
             });
         });
     })();
+
+    (function() {
+        const toggler = document.querySelector(".navbar-toggler");
+        const collapseEl = document.getElementById("navbarNav");
+        if (!toggler || !collapseEl) return;
+
+        let autoCollapseTimer = null;
+        const collapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, {toggle: false});
+
+        const clearTimer = () => {
+            if (autoCollapseTimer) {
+                clearTimeout(autoCollapseTimer);
+                autoCollapseTimer = null;
+            }
+        };
+
+        collapseEl.addEventListener("shown.bs.collapse", () => {
+            clearTimer();
+            autoCollapseTimer = setTimeout(() => collapse.hide(), 5000);
+        });
+
+        collapseEl.addEventListener("hide.bs.collapse", clearTimer);
+    })();
+
+    (function() {
+        const compactPlaceholder = "Faça uma busca aqui";
+        const selector = 'main input[type="search"][placeholder], main input[type="date"][placeholder]';
+
+        const updatePlaceholders = () => {
+            const useCompact = window.matchMedia("(max-width: 575.98px)").matches;
+            document.querySelectorAll(selector).forEach((input) => {
+                if (!input.dataset.placeholderDefault) {
+                    input.dataset.placeholderDefault = input.getAttribute("placeholder") || "";
+                }
+                input.setAttribute(
+                    "placeholder",
+                    useCompact ? compactPlaceholder : input.dataset.placeholderDefault
+                );
+            });
+        };
+
+        updatePlaceholders();
+        window.addEventListener("resize", updatePlaceholders);
+    })();
 </script>
 {% block extra_js %}{% endblock %}
 </body>

@@ -213,7 +213,13 @@ class AgendaForm(EmpresaFormMixin):
     class Meta:
         model = Agenda
         fields = ["cliente", "veiculo", "data_agendada", "hora_agendada", "tipo", "observacoes"]
-        labels = {"data_agendada": "Data", "hora_agendada": "Hora", "tipo": "Tipo"}
+        labels = {
+            "data_agendada": "Data",
+            "hora_agendada": "Hora",
+            "tipo": "Tipo",
+            "veiculo": "Veículo",
+            "observacoes": "Observações",
+        }
         widgets = {
             "cliente": forms.Select(attrs={"class": "form-select"}),
             "veiculo": forms.Select(attrs={"class": "form-select", "data-client-filter": "1"}),

@@ -10,7 +10,7 @@
     <h1 class="h4 mb-0">Agenda</h1>
 </div>
 
-<div class="card p-3 mb-3">
+<div class="card p-3 mb-3 dashboard-card">
     <form method="post" class="row g-3">
         {% csrf_token %}
         <div class="col-md-4">
@@ -51,7 +51,7 @@
 
 <form class="row g-2 mb-3" method="get" id="agendaSearchForm">
     <div class="col-auto flex-grow-1">
-        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar por cliente ou veículo">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control agenda-search-input" placeholder="Buscar por cliente ou veículo">
     </div>
     <input type="hidden" name="mes" value="{{ current_month }}">
     <input type="hidden" name="ano" value="{{ current_year }}">
@@ -73,11 +73,11 @@
 </div>
 {% endif %}
 
-<div class="card p-3 mb-3">
+<div class="card p-3 mb-3 dashboard-card">
     <div class="d-flex justify-content-between align-items-center mb-2 gap-3 flex-wrap">
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <strong>Calendário</strong>
-            <div class="text-muted small">Mostrando agendamentos de <strong>{{ request.user.empresa.nome|default:"sua empresa" }}</strong></div>
+            <div class="text-muted small">Mostrando agendamentos de <strong class="empresa-nome">{{ request.user.empresa.nome|default:"sua empresa" }}</strong></div>
         </div>
     </div>
     <div id="agendaCalendar" class="fullcalendar-wrapper"></div>

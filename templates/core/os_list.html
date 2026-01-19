@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="os-page">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 os-header">
     <h1 class="h4 mb-0">Ordens de Serviço</h1>
     <a class="btn btn-primary" href="{% url 'os_create' %}">Nova OS</a>
 </div>
-<form class="row g-2 mb-3 align-items-end relatorio-filter" method="get">
-    <div class="col-md-3">
+<form class="d-flex flex-wrap gap-2 mb-3 align-items-end relatorio-filter os-filter" method="get">
+    <div class="os-filter-field os-filter-status">
         <select name="status" class="form-select">
             <option value="">Status</option>
             {% for value,label in statuses %}
@@ -13,19 +14,21 @@
             {% endfor %}
         </select>
     </div>
-    <div class="col-md-2">
-        <label class="form-label mb-1 small text-muted">Início</label>
-        <input type="date" name="inicio" value="{{ request.GET.inicio }}" class="form-control" placeholder="Início">
+    <div class="os-filter-dates">
+        <div class="os-filter-field">
+            <label class="form-label mb-1 small text-muted">Início</label>
+            <input type="date" name="inicio" value="{{ request.GET.inicio }}" class="form-control" placeholder="Início">
+        </div>
+        <div class="os-filter-field">
+            <label class="form-label mb-1 small text-muted">Fim</label>
+            <input type="date" name="fim" value="{{ request.GET.fim }}" class="form-control" placeholder="Fim">
+        </div>
     </div>
-    <div class="col-md-2">
-        <label class="form-label mb-1 small text-muted">Fim</label>
-        <input type="date" name="fim" value="{{ request.GET.fim }}" class="form-control" placeholder="Fim">
-    </div>
-    <div class="col-md-3">
+    <div class="os-filter-field os-filter-search flex-grow-1">
         <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Cliente ou placa">
     </div>
-    <div class="col-md-2 d-grid">
-        <button class="btn btn-outline-secondary">Filtrar</button>
+    <div class="os-filter-field os-filter-submit">
+        <button class="btn btn-outline-secondary w-100">Filtrar</button>
     </div>
 </form>
 <div class="card p-0">
@@ -35,10 +38,10 @@
                 <tr>
                     <th>#</th>
                     <th>Cliente</th>
-                    <th>Veículo</th>
-                    <th>Status</th>
-                    <th>Entrada</th>
-                    <th class="text-end">Total</th>
+                    <th class="col-veiculo">Veículo</th>
+                    <th class="col-status">Status</th>
+                    <th class="col-entrada">Entrada</th>
+                    <th class="text-end col-total">Total</th>
                     <th></th>
                 </tr>
             </thead>
@@ -47,10 +50,10 @@
                 <tr>
                     <td>{{ os.id }}</td>
                     <td>{{ os.cliente.nome }}</td>
-                    <td>{{ os.veiculo.placa }}</td>
-                    <td><span class="status-pill status-{{ os.status }}">{{ os.get_status_display }}</span></td>
-                    <td>{{ os.entrada_em }}</td>
-                    <td class="text-end">R$ {{ os.total|floatformat:2 }}</td>
+                    <td class="col-veiculo">{{ os.veiculo.modelo }}</td>
+                    <td class="col-status"><span class="status-pill status-{{ os.status }}">{{ os.get_status_display }}</span></td>
+                    <td class="col-entrada">{{ os.entrada_em }}</td>
+                    <td class="text-end col-total">R$ {{ os.total|floatformat:2 }}</td>
                     <td class="text-end">
                         <a class="chip chip-action chip-ghost no-dot" href="{% url 'os_detail' os.pk %}">Detalhes</a>
                     </td>
@@ -63,4 +66,5 @@
     </div>
 </div>
 {% include "core/pagination.html" %}
+</div>
 {% endblock %}

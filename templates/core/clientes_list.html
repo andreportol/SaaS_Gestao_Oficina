@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
+<div class="clientes-page">
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h4 mb-0 d-inline-flex align-items-baseline">
         Clientes
@@ -10,7 +11,7 @@
 </div>
 <form class="row g-2 mb-3" method="get">
     <div class="col-auto flex-grow-1">
-        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar por nome, telefone ou email">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar por nome, telefone ou e-mail">
     </div>
     <div class="col-auto">
         <button class="btn btn-outline-secondary">Buscar</button>
@@ -22,8 +23,8 @@
             <thead>
                 <tr>
                     <th>Nome</th>
-                    <th>Telefone</th>
-                    <th>Email</th>
+                    <th class="col-phone">Telefone</th>
+                    <th class="col-email">E-mail</th>
                     <th></th>
                 </tr>
             </thead>
@@ -32,7 +33,7 @@
                 <tr>
                     <td>{{ cliente.nome }}</td>
                     {% with cliente.telefone|default_if_none:""|cut:"("|cut:")"|cut:" "|cut:"-"|cut:"." as phone_digits %}
-                    <td class="phone-cell">
+                    <td class="phone-cell col-phone">
                         <div class="phone-wrap">
                             <span class="phone-number">{{ cliente.telefone }}</span>
                             <div class="phone-actions">
@@ -48,7 +49,7 @@
                         </div>
                     </td>
                     {% endwith %}
-                    <td>{{ cliente.email }}</td>
+                    <td class="col-email">{{ cliente.email }}</td>
                     <td class="text-end">
                         <a class="chip chip-action no-dot" href="{% url 'clientes_update' cliente.pk %}">Ver Mais</a>
                     </td>
@@ -61,4 +62,5 @@
     </div>
 </div>
 {% include "core/pagination.html" %}
+</div>
 {% endblock %}
