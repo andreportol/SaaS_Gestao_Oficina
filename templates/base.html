@@ -63,8 +63,12 @@
                 {% endif %}
             </ul>
             <ul class="navbar-nav align-items-center gap-3 nav-actions ms-3">
-                <li class="nav-item">
-                    <a class="nav-link nav-pill" href="#" data-bs-toggle="modal" data-bs-target="#supportModal">Suporte</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link nav-pill dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Ajuda</a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#supportModal">Suporte</button></li>
+                        <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#planModal">Ver plano</button></li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <button class="theme-toggle" id="themeToggle" type="button" aria-label="Alternar tema">🌙</button>
@@ -89,6 +93,15 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
+    {% endif %}
+    {% if user.is_authenticated and user.empresa and user.empresa.is_ativo %}
+        {% with dias=user.empresa.dias_para_vencimento %}
+            {% if dias is not None and dias < 5 and dias >= 0 %}
+                <div class="alert alert-warning shadow-sm" role="alert">
+                    Seu acesso expira em {{ dias }} dia{{ dias|pluralize }}.
+                </div>
+            {% endif %}
+        {% endwith %}
     {% endif %}
     {% block content %}{% endblock %}
 </main>
@@ -121,6 +134,37 @@
                 </form>
                 <div class="alert alert-success d-none mt-3" id="supportSuccess">Mensagem enviada! Responderemos em breve.</div>
                 <div class="alert alert-danger d-none mt-3" id="supportError"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="planModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Plano da empresa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if user.is_authenticated and user.empresa %}
+                    <div class="mb-3">
+                        <div class="small text-muted">Plano atual</div>
+                        <div class="fw-bold">{{ user.empresa.get_plano_display }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="small text-muted">Atualizado em</div>
+                        <div>{{ user.empresa.plano_atualizado_display|date:"d/m/Y" }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="small text-muted">Vencimento</div>
+                        <div>{{ user.empresa.plano_vencimento_calculado|date:"d/m/Y"|default:"-" }}</div>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        Renovado por último por {{ user.empresa.get_plano_periodo_display }}.
+                    </div>
+                {% else %}
+                    <div class="text-muted">Nenhuma empresa vinculada.</div>
+                {% endif %}
             </div>
         </div>
     </div>

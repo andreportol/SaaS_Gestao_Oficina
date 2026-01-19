@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -13,6 +14,11 @@ class Empresa(models.Model):
         BASICO = "BASICO", "Basico"
         PLUS = "PLUS", "Plus"
 
+    class PlanoPeriodo(models.TextChoices):
+        MENSAL = "30d", "30 dias"
+        SEMESTRAL = "6m", "6 meses"
+        ANUAL = "12m", "12 meses"
+
     nome = models.CharField(max_length=150)
     cnpj_cpf = models.CharField(max_length=20, blank=True)
     telefone = models.CharField(max_length=20, blank=True)
@@ -23,6 +29,10 @@ class Empresa(models.Model):
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png", "webp"])],
     )
     plano = models.CharField(max_length=10, choices=Plano.choices, default=Plano.BASICO)
+    plano_periodo = models.CharField(max_length=3, choices=PlanoPeriodo.choices, default=PlanoPeriodo.MENSAL)
+    plano_atualizado_em = models.DateTimeField(blank=True, null=True)
+    plano_vencimento_em = models.DateTimeField(blank=True, null=True)
+    is_ativo = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
@@ -37,6 +47,81 @@ class Empresa(models.Model):
         if self.plano == self.Plano.PLUS:
             return 3
         return 1
+
+    def save(self, *args, **kwargs):
+        previous = None
+        if self.pk:
+            previous = Empresa.objects.filter(pk=self.pk).values(
+                "plano", "plano_periodo", "plano_atualizado_em", "plano_vencimento_em"
+            ).first()
+
+        if self.plano_atualizado_em is None:
+            self.plano_atualizado_em = timezone.now()
+
+        plan_changed = False
+        if previous:
+            plan_changed = (
+                previous["plano"] != self.plano
+                or previous["plano_periodo"] != self.plano_periodo
+            )
+
+        if plan_changed:
+            self.plano_atualizado_em = timezone.now()
+
+        updated_changed = False
+        if previous:
+            updated_changed = previous["plano_atualizado_em"] != self.plano_atualizado_em
+
+        should_recalc = (
+            self.plano_vencimento_em is None
+            or plan_changed
+            or updated_changed
+        )
+
+        if should_recalc and self.plano_atualizado_em:
+            days_map = {
+                self.PlanoPeriodo.MENSAL: 30,
+                self.PlanoPeriodo.SEMESTRAL: 182,
+                self.PlanoPeriodo.ANUAL: 365,
+            }
+            self.plano_vencimento_em = self.plano_atualizado_em + timedelta(
+                days=days_map.get(self.plano_periodo, 30)
+            )
+
+        if self.plano_vencimento_calculado():
+            self.is_ativo = not self.plano_vencido()
+
+        super().save(*args, **kwargs)
+
+    def plano_atualizado_display(self):
+        return self.plano_atualizado_em or self.criado_em
+
+    def plano_vencimento_calculado(self):
+        if self.plano_vencimento_em:
+            return self.plano_vencimento_em
+        base = self.plano_atualizado_em or self.criado_em
+        if not base:
+            return None
+        days_map = {
+            self.PlanoPeriodo.MENSAL: 30,
+            self.PlanoPeriodo.SEMESTRAL: 182,
+            self.PlanoPeriodo.ANUAL: 365,
+        }
+        return base + timedelta(days=days_map.get(self.plano_periodo, 30))
+
+    def plano_vencido(self):
+        vencimento = self.plano_vencimento_calculado()
+        if not vencimento:
+            return False
+        if timezone.is_naive(vencimento):
+            return vencimento.date() <= timezone.now().date()
+        return vencimento.date() <= timezone.localdate()
+
+    def dias_para_vencimento(self):
+        vencimento = self.plano_vencimento_calculado()
+        if not vencimento:
+            return None
+        return (vencimento.date() - timezone.now().date()).days
 
 
 class UsuarioManager(UserManager):

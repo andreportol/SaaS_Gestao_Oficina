@@ -164,7 +164,7 @@ a:hover {
     border-bottom: 2px solid transparent;
     padding: 10px 0 !important;
     transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-    font-size: 20px;
+    font-size: 19px;
 }
 
 .navbar-dark .navbar-nav .nav-link:hover,
@@ -208,9 +208,35 @@ a:hover {
     gap: 14px !important;
 }
 
+.app-nav .dropdown-menu {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px;
+    min-width: 180px;
+}
+
+.app-nav .dropdown-item {
+    color: var(--text);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 600;
+}
+
+.app-nav .dropdown-item:hover,
+.app-nav .dropdown-item:focus {
+    background: var(--panel-strong);
+    color: var(--text);
+}
+
+.app-nav .dropdown-item.active {
+    background: var(--nav-active-bg);
+    color: var(--text);
+}
+
 @media (max-width: 1399.98px) {
     .navbar-dark .navbar-nav .nav-link {
-        font-size: 18px;
+        font-size: 16px;
         padding: 8px 0 !important;
     }
 
@@ -225,7 +251,7 @@ a:hover {
 
 @media (max-width: 1199.98px) {
     .navbar-dark .navbar-nav .nav-link {
-        font-size: 17px;
+        font-size: 15px;
     }
 
     .nav-pill {
@@ -246,7 +272,7 @@ a:hover {
 
 @media (max-width: 1023.98px) {
     .navbar-dark .navbar-nav .nav-link {
-        font-size: 16px;
+        font-size: 14px;
         padding: 6px 0 !important;
     }
 
@@ -761,6 +787,59 @@ body:not(.theme-light) .btn-print:focus {
 
 .theme-light .usuarios-highlight {
     color: #0d6efd;
+}
+
+.os-detail-summary {
+    font-size: 16px;
+}
+
+.os-detail-summary h2 {
+    font-size: 0.85rem;
+}
+
+.os-detail-section {
+    font-size: 16px;
+}
+
+.os-detail-section h2 {
+    font-size: 0.85rem;
+}
+
+.os-detail-section .table th,
+.os-detail-section .table td {
+    font-size: 0.9rem;
+}
+
+.os-detail-section .form-label {
+    font-size: 0.85rem;
+}
+
+@media print {
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    .app-nav,
+    .app-blob,
+    .nav-actions,
+    .theme-toggle,
+    .chip,
+    .btn,
+    .alert,
+    .print-hide {
+        display: none !important;
+    }
+
+    .os-detail-page .card {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+
+    .os-detail-page .status-pill {
+        color: #000 !important;
+        border-color: #000 !important;
+    }
 }
 
 .theme-light .caixa-page .card {
@@ -1666,6 +1745,34 @@ body:not(.theme-light) .user-flag-hints {
     color: var(--text);
 }
 
+.login-page {
+    font-size: 16px;
+}
+
+.login-page {
+    margin-top: 28px;
+}
+
+.login-page .auth-wrapper {
+    margin-top: 20px;
+}
+
+.login-page .auth-card {
+    padding-top: 18px !important;
+}
+
+.login-page .auth-card h2 {
+    font-size: 1.1rem;
+}
+
+.login-page .form-label {
+    font-size: 0.9rem;
+}
+
+.login-page .auth-hero p {
+    font-size: 0.9rem;
+}
+
 @media (max-width: 575.98px) {
     .dashboard-filters {
         display: grid !important;
@@ -2059,6 +2166,26 @@ body:not(.theme-light) .produtos-search-input:focus {
 
 #supportModal .btn-outline-secondary {
     color: var(--text);
+    border-color: var(--border);
+}
+
+/* Plano modal - tema escuro/claro */
+#planModal .modal-content {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+#planModal .modal-header {
+    border-bottom-color: var(--border);
+}
+
+#planModal .modal-body {
+    color: var(--text);
+}
+
+#planModal .alert {
+    background: var(--panel-strong);
     border-color: var(--border);
 }
 

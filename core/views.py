@@ -7,6 +7,7 @@ import urllib.request
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.views import LoginView
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
@@ -17,9 +18,11 @@ from django.http import HttpResponse, JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 from django.views.generic.edit import FormMixin
 from django.views import View
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .forms import (
     ClienteForm,
@@ -1144,6 +1147,11 @@ class FormaPagamentoListView(ManagerRequiredMixin, EmpresaQuerysetMixin, Templat
             messages.success(request, "Forma de pagamento salva.")
             return redirect("formas_pagamento")
         return self.render_to_response(self.get_context_data(form=form))
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CustomLoginView(LoginView):
+    template_name = "registration/login.html"
 
 
 def logout_view(request):

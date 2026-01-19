@@ -7,6 +7,7 @@ from core import views as core_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/login/', core_views.CustomLoginView.as_view(), name='login'),
     path('accounts/logout/', core_views.logout_view, name='logout'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', include('core.urls')),

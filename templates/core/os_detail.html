@@ -1,16 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="os-detail-page">
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">OS #{{ object.id }} - {{ object.cliente.nome }}</h1>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <h1 class="h4 mb-0">OS #{{ object.id }} - {{ object.cliente.nome }}</h1>
+        <button type="button" class="btn btn-print btn-sm" id="printOs">Imprimir</button>
+    </div>
     <div class="d-flex gap-2">
-    <a class="chip chip-action no-dot" href="{% url 'os_update' object.pk %}">Editar</a>
+        <a class="chip chip-action no-dot" href="{% url 'os_update' object.pk %}">Editar</a>
         <a class="chip chip-back no-dot" href="{% url 'os_list' %}">Voltar</a>
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-md-6">
-        <div class="card p-3 h-100">
+        <div class="card p-3 h-100 os-detail-summary">
             <h2 class="h6 text-uppercase text-muted">Dados</h2>
             <p class="mb-1"><strong>Cliente:</strong> {{ object.cliente.nome }}</p>
             <p class="mb-1"><strong>Veículo:</strong> {{ object.veiculo.placa }} - {{ object.veiculo.modelo }}</p>
@@ -24,7 +28,7 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card p-3 h-100">
+        <div class="card p-3 h-100 os-detail-summary">
             <h2 class="h6 text-uppercase text-muted">Totais</h2>
             <p class="mb-1"><strong>Itens:</strong> R$ {{ object.total_itens|floatformat:2 }}</p>
             <p class="mb-1"><strong>Mão de Obra:</strong> R$ {{ object.mao_de_obra|floatformat:2 }}</p>
@@ -37,8 +41,8 @@
 </div>
 
 <div class="row g-3 mt-2">
-    <div class="col-md-7">
-        <div class="card p-3">
+    <div class="col-md-7 print-hide">
+        <div class="card p-3 os-detail-section">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h2 class="h6 text-uppercase text-muted mb-0">Itens</h2>
             </div>
@@ -66,7 +70,7 @@
                     </tbody>
                 </table>
             </div>
-            <form method="post" class="mt-2">
+            <form method="post" class="mt-2 print-hide">
                 {% csrf_token %}
                 <input type="hidden" name="add_item" value="1">
                 <div class="row g-2">
@@ -84,8 +88,9 @@
             </form>
         </div>
     </div>
-    <div class="col-md-5">
-        <div class="card p-3">
+    {% if object.pagamentos.exists %}
+    <div class="col-md-5 print-hide-empty">
+        <div class="card p-3 os-detail-section">
             <h2 class="h6 text-uppercase text-muted mb-2">Pagamentos</h2>
             <div class="table-responsive">
                 <table class="table table-sm">
@@ -103,8 +108,6 @@
                             <td>{{ pagamento.forma_pagamento|default:"-" }}</td>
                             <td class="text-end">R$ {{ pagamento.valor|floatformat:2 }}</td>
                         </tr>
-                        {% empty %}
-                        <tr><td colspan="3" class="text-center">Nenhum pagamento.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -123,6 +126,14 @@
             </form>
         </div>
     </div>
+    {% else %}
+    <div class="col-md-5 print-hide">
+        <div class="card p-3 os-detail-section">
+            <h2 class="h6 text-uppercase text-muted mb-2">Pagamentos</h2>
+            <div class="text-muted">Nenhum pagamento registrado.</div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 <script>
 (function() {
@@ -144,4 +155,11 @@
     setFields();
 })();
 </script>
+<script>
+(function() {
+    const btn = document.getElementById("printOs");
+    btn?.addEventListener("click", () => window.print());
+})();
+</script>
+</div>
 {% endblock %}
