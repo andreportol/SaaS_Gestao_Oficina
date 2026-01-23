@@ -66,7 +66,9 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link nav-pill dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Ajuda</a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#supportModal">Suporte</button></li>
+                        <li><a class="dropdown-item" href="{% url 'manual' %}">Manual</a></li>
+                        <li><a class="dropdown-item" href="{% url 'manual' %}#videos">Ver Vídeos</a></li>
+                        <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#supportModal">Fale conosco</button></li>
                         <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#planModal">Ver plano</button></li>
                     </ul>
                 </li>
@@ -449,6 +451,75 @@
         inputs.forEach((input) => {
             input.addEventListener("input", () => {
                 input.value = formatAnoModelo(input.value);
+            });
+        });
+    })();
+
+    (function() {
+        const toIso = (value) => {
+            const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (!match) return "";
+            return `${match[3]}-${match[2]}-${match[1]}`;
+        };
+
+        const toBr = (value) => {
+            const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!match) return "";
+            return `${match[3]}/${match[2]}/${match[1]}`;
+        };
+
+        const inputs = document.querySelectorAll('input[data-date-picker="br"]');
+        inputs.forEach((input) => {
+            const proxy = document.createElement("input");
+            proxy.type = "date";
+            proxy.tabIndex = -1;
+            proxy.setAttribute("aria-hidden", "true");
+            proxy.className = "date-native-proxy";
+            input.insertAdjacentElement("afterend", proxy);
+
+            const initialIso = toIso(input.value);
+            if (initialIso) {
+                proxy.value = initialIso;
+            }
+
+            const openPicker = () => {
+                if (input.disabled || input.readOnly) return;
+                const syncIso = toIso(input.value);
+                if (syncIso) {
+                    proxy.value = syncIso;
+                }
+                if (typeof proxy.showPicker === "function") {
+                    proxy.showPicker();
+                } else {
+                    proxy.focus({ preventScroll: true });
+                    proxy.click();
+                }
+            };
+
+            input.addEventListener("focus", openPicker);
+            input.addEventListener("click", openPicker);
+
+            proxy.addEventListener("change", () => {
+                const value = toBr(proxy.value);
+                if (value) {
+                    input.value = value;
+                }
+            });
+
+            input.addEventListener("blur", () => {
+                const iso = toIso(input.value);
+                if (iso) {
+                    proxy.value = iso;
+                    input.value = toBr(iso);
+                } else if (!input.value.trim()) {
+                    proxy.value = "";
+                }
+            });
+
+            input.addEventListener("input", () => {
+                if (!input.value.trim()) {
+                    proxy.value = "";
+                }
             });
         });
     })();

@@ -1,4 +1,8 @@
 from datetime import datetime, timedelta
+import base64
+from io import BytesIO
+import mimetypes
+from pathlib import Path
 import csv
 import json
 import urllib.error
@@ -13,8 +17,9 @@ from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
 from django.db.models import Q, Sum
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -251,10 +256,14 @@ class AgendaListView(EmpresaQuerysetMixin, FormMixin, ListView):
     http_method_names = ["get", "post", "head", "options"]
 
     def _parse_date(self, value):
-        try:
-            return datetime.strptime(value, "%Y-%m-%d").date()
-        except (TypeError, ValueError):
+        if not value:
             return None
+        for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(value, fmt).date()
+            except (TypeError, ValueError):
+                continue
+        return None
 
     def get_selected_date(self):
         if not hasattr(self, "_selected_date"):
@@ -765,10 +774,22 @@ class OrdemServicoListView(EmpresaQuerysetMixin, ListView):
     template_name = "core/os_list.html"
 
     def _parse_date(self, value):
-        try:
-            return datetime.strptime(value, "%Y-%m-%d").date()
-        except (TypeError, ValueError):
+        if not value:
             return None
+        for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(value, fmt).date()
+            except (TypeError, ValueError):
+                continue
+        return None
+
+    def _validate_periodo(self, inicio, fim):
+        if inicio and fim and inicio > fim:
+            if not getattr(self, "_range_error_shown", False):
+                messages.error(self.request, "Data de início não pode ser maior que a data final.")
+                self._range_error_shown = True
+            return None, None
+        return inicio, fim
 
     def get_queryset(self):
         qs = os_queryset_for_user(
@@ -778,6 +799,7 @@ class OrdemServicoListView(EmpresaQuerysetMixin, ListView):
         status = self.request.GET.get("status")
         inicio = self._parse_date(self.request.GET.get("inicio"))
         fim = self._parse_date(self.request.GET.get("fim"))
+        inicio, fim = self._validate_periodo(inicio, fim)
         termo = self.request.GET.get("q")
         if status:
             qs = qs.filter(status=status)
@@ -909,19 +931,96 @@ class OrdemServicoDetailView(EmpresaQuerysetMixin, DetailView):
         return self.render_to_response(context)
 
 
+class OrdemServicoPdfView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        try:
+            from weasyprint import HTML
+        except ImportError:
+            messages.error(
+                request,
+                "Para gerar PDF, instale a dependência weasyprint.",
+            )
+            return redirect("os_detail", pk=pk)
+
+        os_obj = get_object_or_404(
+            os_queryset_for_user(request.user)
+            .select_related("cliente", "veiculo", "responsavel")
+            .prefetch_related("itens", "pagamentos"),
+            pk=pk,
+        )
+        empresa = request.user.empresa
+        logo_src = None
+        logo_path = None
+        if empresa and getattr(empresa, "logomarca", None):
+            logo_path = getattr(empresa.logomarca, "path", None)
+            try:
+                with empresa.logomarca.open("rb") as logo_file:
+                    data = logo_file.read()
+                try:
+                    from PIL import Image
+                except ImportError:
+                    Image = None
+                if Image:
+                    try:
+                        image = Image.open(BytesIO(data))
+                        image = image.convert("RGB")
+                        image.thumbnail((600, 600))
+                        buffer = BytesIO()
+                        image.save(buffer, format="PNG", optimize=True)
+                        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+                        logo_src = f"data:image/png;base64,{encoded}"
+                    except Exception:
+                        logo_src = None
+                if not logo_src:
+                    mime_type = mimetypes.guess_type(empresa.logomarca.name or "")[0] or "image/png"
+                    encoded = base64.b64encode(data).decode("ascii")
+                    logo_src = f"data:{mime_type};base64,{encoded}"
+            except OSError:
+                logo_src = None
+            if not logo_src and logo_path:
+                path = Path(logo_path)
+                if path.exists():
+                    logo_src = path.as_uri()
+            if not logo_src:
+                logo_src = request.build_absolute_uri(empresa.logomarca.url)
+
+        context = {
+            "object": os_obj,
+            "empresa": empresa,
+            "logo_src": logo_src,
+            "gerado_em": timezone.now(),
+        }
+        html = render_to_string("core/os_pdf.html", context)
+        pdf_file = HTML(string=html, base_url=request.build_absolute_uri("/")).write_pdf()
+        response = HttpResponse(pdf_file, content_type="application/pdf")
+        response["Content-Disposition"] = f'inline; filename="os_{os_obj.id}.pdf"'
+        return response
+
+
 class CaixaView(ManagerRequiredMixin, EmpresaQuerysetMixin, TemplateView):
     template_name = "core/caixa.html"
 
     def _parse_date(self, value, default):
-        try:
-            return datetime.strptime(value, "%Y-%m-%d").date()
-        except (TypeError, ValueError):
+        if not value:
             return default
+        for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(value, fmt).date()
+            except (TypeError, ValueError):
+                continue
+        return default
 
     def get_periodo(self):
         hoje = timezone.now().date()
-        inicio = self._parse_date(self.request.GET.get("inicio"), hoje)
+        primeiro_dia = hoje.replace(day=1)
+        inicio = self._parse_date(self.request.GET.get("inicio"), primeiro_dia)
         fim = self._parse_date(self.request.GET.get("fim"), hoje)
+        if self.request.GET.get("inicio") and self.request.GET.get("fim") and inicio > fim:
+            if not getattr(self, "_range_error_shown", False):
+                messages.error(self.request, "Data de início não pode ser maior que a data final.")
+                self._range_error_shown = True
+            inicio = primeiro_dia
+            fim = hoje
         return inicio, fim
 
     def get_context_data(self, **kwargs):
@@ -1076,14 +1175,22 @@ class CaixaGraficosView(ManagerRequiredMixin, TemplateView):
         return self.render_to_response(context)
 
 
+class ManualView(LoginRequiredMixin, TemplateView):
+    template_name = "core/manual.html"
+
+
 class RelatoriosView(ManagerRequiredMixin, TemplateView):
     template_name = "core/relatorios.html"
 
     def _parse_date(self, value):
-        try:
-            return datetime.strptime(value, "%Y-%m-%d").date()
-        except (TypeError, ValueError):
+        if not value:
             return None
+        for fmt in ("%d/%m/%Y", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(value, fmt).date()
+            except (TypeError, ValueError):
+                continue
+        return None
 
     def _validar_periodo(self, inicio, fim):
         if inicio and fim and inicio > fim:

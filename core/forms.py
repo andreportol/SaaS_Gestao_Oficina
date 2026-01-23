@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import date, datetime
 from decimal import Decimal
 
 from django import forms
@@ -15,6 +16,18 @@ from .permissions import ROLE_EMPLOYEE, ROLE_MANAGER
 
 
 User = get_user_model()
+
+
+def _coerce_display_date(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        if timezone.is_aware(value):
+            return timezone.localtime(value).date()
+        return value.date()
+    if isinstance(value, date):
+        return value
+    return None
 
 
 class EmpresaFormMixin(forms.ModelForm):
@@ -38,6 +51,21 @@ class EmpresaFormMixin(forms.ModelForm):
 
 
 class ClienteForm(EmpresaFormMixin):
+    data_cadastro = forms.DateField(
+        label="Data de cadastro",
+        required=False,
+        widget=forms.DateInput(
+            format="%d/%m/%Y",
+            attrs={
+                "class": "form-control",
+                "placeholder": "dd/mm/aaaa",
+                "inputmode": "numeric",
+                "data-date-picker": "br",
+                "autocomplete": "off",
+            },
+        ),
+    )
+
     class Meta:
         model = Cliente
         fields = ["nome", "telefone", "email", "documento", "cep", "rua", "numero", "bairro", "cidade"]
@@ -61,8 +89,36 @@ class ClienteForm(EmpresaFormMixin):
         }
         labels = {"documento": "CPF", "cep": "CEP", "rua": "Logradouro"}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        created_at = _coerce_display_date(getattr(self.instance, "criado_em", None))
+        if not created_at:
+            created_at = _coerce_display_date(timezone.now())
+        self.initial.setdefault("data_cadastro", created_at)
+        if "data_cadastro" in self.fields:
+            self.fields["data_cadastro"].input_formats = ["%d/%m/%Y", "%Y-%m-%d"]
+            self.fields["data_cadastro"].disabled = True
+        self.order_fields(
+            ["nome", "telefone", "email", "documento", "cep", "rua", "numero", "bairro", "cidade", "data_cadastro"]
+        )
+
 
 class VeiculoForm(EmpresaFormMixin):
+    data_cadastro = forms.DateField(
+        label="Data de cadastro",
+        required=False,
+        widget=forms.DateInput(
+            format="%d/%m/%Y",
+            attrs={
+                "class": "form-control",
+                "placeholder": "dd/mm/aaaa",
+                "inputmode": "numeric",
+                "data-date-picker": "br",
+                "autocomplete": "off",
+            },
+        ),
+    )
+
     BRANDS_BY_TIPO = {
         Veiculo.Tipo.CARRO: [
             "Aston Martin",
@@ -147,6 +203,17 @@ class VeiculoForm(EmpresaFormMixin):
         # Keep current value available via datalist without enforcing choices server-side
         self.fields["marca"].initial = current or ""
 
+        if self.instance and self.instance.pk:
+            self.fields.pop("data_cadastro", None)
+        if "data_cadastro" in self.fields:
+            self.initial.setdefault("data_cadastro", _coerce_display_date(timezone.now()))
+            self.fields["data_cadastro"].input_formats = ["%d/%m/%Y", "%Y-%m-%d"]
+            self.fields["data_cadastro"].disabled = True
+        order = ["cliente", "tipo", "marca", "modelo", "ano", "cor", "placa"]
+        if "data_cadastro" in self.fields:
+            order.append("data_cadastro")
+        self.order_fields(order)
+
     def clean_marca(self):
         marca = (self.cleaned_data.get("marca") or "").strip()
         return marca
@@ -192,6 +259,21 @@ class VeiculoForm(EmpresaFormMixin):
 
 
 class ProdutoForm(EmpresaFormMixin):
+    data_cadastro = forms.DateField(
+        label="Data de cadastro",
+        required=False,
+        widget=forms.DateInput(
+            format="%d/%m/%Y",
+            attrs={
+                "class": "form-control",
+                "placeholder": "dd/mm/aaaa",
+                "inputmode": "numeric",
+                "data-date-picker": "br",
+                "autocomplete": "off",
+            },
+        ),
+    )
+
     class Meta:
         model = Produto
         fields = ["nome", "descricao", "codigo", "custo", "preco", "estoque_atual", "estoque_minimo"]
@@ -208,6 +290,19 @@ class ProdutoForm(EmpresaFormMixin):
             "estoque_minimo": forms.NumberInput(attrs={"min": "0", "step": "1"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields.pop("data_cadastro", None)
+        if "data_cadastro" in self.fields:
+            self.initial.setdefault("data_cadastro", _coerce_display_date(timezone.now()))
+            self.fields["data_cadastro"].input_formats = ["%d/%m/%Y", "%Y-%m-%d"]
+            self.fields["data_cadastro"].disabled = True
+        order = ["nome", "descricao", "codigo", "custo", "preco", "estoque_atual", "estoque_minimo"]
+        if "data_cadastro" in self.fields:
+            order.append("data_cadastro")
+        self.order_fields(order)
+
 
 class AgendaForm(EmpresaFormMixin):
     class Meta:
@@ -223,11 +318,25 @@ class AgendaForm(EmpresaFormMixin):
         widgets = {
             "cliente": forms.Select(attrs={"class": "form-select"}),
             "veiculo": forms.Select(attrs={"class": "form-select", "data-client-filter": "1"}),
-            "data_agendada": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"}),
+            "data_agendada": forms.DateInput(
+                format="%d/%m/%Y",
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "dd/mm/aaaa",
+                    "inputmode": "numeric",
+                    "data-date-picker": "br",
+                    "autocomplete": "off",
+                },
+            ),
             "hora_agendada": forms.TimeInput(format="%H:%M", attrs={"type": "time", "class": "form-control"}),
             "tipo": forms.Select(attrs={"class": "form-select"}),
             "observacoes": forms.Textarea(attrs={"rows": 2, "class": "form-control"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "data_agendada" in self.fields:
+            self.fields["data_agendada"].input_formats = ["%d/%m/%Y", "%Y-%m-%d"]
 
     def clean(self):
         cleaned = super().clean()
@@ -266,8 +375,24 @@ class OrdemServicoForm(EmpresaFormMixin):
             "anexo",
         ]
         widgets = {
-            "entrada_em": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
-            "previsao_entrega": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+            "entrada_em": forms.DateInput(
+                format="%d/%m/%Y",
+                attrs={
+                    "placeholder": "dd/mm/aaaa",
+                    "inputmode": "numeric",
+                    "data-date-picker": "br",
+                    "autocomplete": "off",
+                },
+            ),
+            "previsao_entrega": forms.DateInput(
+                format="%d/%m/%Y",
+                attrs={
+                    "placeholder": "dd/mm/aaaa",
+                    "inputmode": "numeric",
+                    "data-date-picker": "br",
+                    "autocomplete": "off",
+                },
+            ),
             "veiculo": forms.Select(attrs={"data-placeholder": "Selecione o veículo do cliente"}),
             "mao_de_obra": forms.NumberInput(
                 attrs={"min": "0", "step": "0.01", "data-format": "currency2", "placeholder": "0,00"}
@@ -320,10 +445,10 @@ class OrdemServicoForm(EmpresaFormMixin):
         if not self.instance.pk and not self.data:
             self.initial["mao_de_obra"] = ""
 
-        date_format = "%Y-%m-%d"
+        date_formats = ["%d/%m/%Y", "%Y-%m-%d"]
         for name in ("entrada_em", "previsao_entrega"):
             if name in self.fields:
-                self.fields[name].input_formats = [date_format]
+                self.fields[name].input_formats = date_formats
 
     def clean_anexo(self):
         anexo = self.cleaned_data.get("anexo")
@@ -391,6 +516,20 @@ class DespesaForm(EmpresaFormMixin):
 
 
 class UsuarioBaseForm(forms.ModelForm):
+    data_cadastro = forms.DateField(
+        label="Data de cadastro",
+        required=False,
+        widget=forms.DateInput(
+            format="%d/%m/%Y",
+            attrs={
+                "class": "form-control",
+                "placeholder": "dd/mm/aaaa",
+                "inputmode": "numeric",
+                "data-date-picker": "br",
+                "autocomplete": "off",
+            },
+        ),
+    )
     password1 = forms.CharField(label="Senha", widget=forms.PasswordInput, required=False)
     password2 = forms.CharField(label="Confirmar senha", widget=forms.PasswordInput, required=False)
 
@@ -402,6 +541,13 @@ class UsuarioBaseForm(forms.ModelForm):
         self.request_user = user
         super().__init__(*args, **kwargs)
         empresa = self._get_empresa()
+        joined_at = _coerce_display_date(getattr(self.instance, "date_joined", None))
+        if not joined_at:
+            joined_at = _coerce_display_date(timezone.now())
+        self.initial.setdefault("data_cadastro", joined_at)
+        if "data_cadastro" in self.fields:
+            self.fields["data_cadastro"].input_formats = ["%d/%m/%Y", "%Y-%m-%d"]
+            self.fields["data_cadastro"].disabled = True
         if "is_manager" in self.fields and getattr(empresa, "plano", None) != "PLUS":
             self.fields.pop("is_manager", None)
         if "is_active" in self.fields:

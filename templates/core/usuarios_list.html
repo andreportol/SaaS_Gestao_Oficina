@@ -2,7 +2,17 @@
 {% block content %}
 <div class="usuarios-page">
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">Usuários</h1>
+    <h1 class="h4 mb-0">
+        <span class="page-title-label">
+            <svg class="page-title-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="8" r="3"></circle>
+                <circle cx="17" cy="9" r="2.5"></circle>
+                <path d="M3 20c1.4-3.5 4.2-5 6-5s4.6 1.5 6 5"></path>
+                <path d="M14.5 20c0-2 1.5-3.5 3.5-3.5S21 18 21 20"></path>
+            </svg>
+            Usuários
+        </span>
+    </h1>
     <a class="btn btn-primary" href="{% url 'usuarios_create' %}">Novo usuário</a>
 </div>
 

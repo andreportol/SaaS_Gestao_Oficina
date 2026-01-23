@@ -2,8 +2,16 @@
 {% block content %}
 <div class="veiculos-page">
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0 d-inline-flex align-items-baseline">
-        Veículos
+    <h1 class="h4 mb-0 d-inline-flex align-items-center gap-2">
+        <span class="page-title-label">
+            <svg class="page-title-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 10l2-4h8l2 4"></path>
+                <rect x="3" y="10" width="18" height="6" rx="1.5"></rect>
+                <circle cx="7.5" cy="17" r="1.5"></circle>
+                <circle cx="16.5" cy="17" r="1.5"></circle>
+            </svg>
+            Veículos
+        </span>
         <span class="badge bg-soft ms-2 badge-count">{{ total_veiculos|default:0 }}</span>
     </h1>
     <a class="btn btn-primary" href="{% url 'veiculos_create' %}">Novo Veículo</a>

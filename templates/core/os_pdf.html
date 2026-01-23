@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <title>OS #{{ object.id }} - {{ object.cliente.nome }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 18mm;
+        }
+
+        :root {
+            --primary: #0f3b5f;
+            --primary-light: #1e5a8a;
+            --secondary: #e63946;
+            --accent: #0ea5e9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            color: var(--text);
+            font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            background: var(--background);
+        }
+
+        /* Cabeçalho principal */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+            border-bottom: 3px solid var(--primary);
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 120px;
+            height: 3px;
+            background: var(--secondary);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-container {
+            width: 128px;
+            height: 76px;
+            border-radius: 12px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px var(--shadow);
+            padding: 6px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .company-info {
+            flex: 1;
+        }
+
+        .company-name {
+            font-weight: 800;
+            font-size: 22px;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .company-details {
+            color: var(--text-light);
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .company-contact {
+            font-size: 11px;
+            color: var(--text-light);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .doc-info {
+            text-align: right;
+            background: linear-gradient(140deg, #ffffff 0%, #f8fafc 100%);
+            padding: 16px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--secondary);
+            box-shadow: 0 2px 6px var(--shadow);
+            min-width: 240px;
+        }
+
+        .doc-title {
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 2px;
+            font-size: 12px;
+            color: var(--secondary);
+            margin-bottom: 8px;
+        }
+
+        .doc-number {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 8px 0;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            background-color: #f0f9ff;
+            color: var(--primary);
+            border: 1px solid #bae6fd;
+        }
+
+        .doc-dates {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        /* Layout de cartões */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 3px 10px var(--shadow);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            margin: 0 0 16px;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--primary);
+            font-weight: 700;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+        }
+
+        .card-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: var(--secondary);
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        /* Linhas de informação */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--text-light);
+            font-weight: 500;
+            min-width: 120px;
+        }
+
+        .info-value {
+            font-weight: 600;
+            text-align: right;
+            color: var(--text);
+            word-break: break-word;
+            max-width: 70%;
+        }
+
+        .info-value strong {
+            color: var(--primary);
+        }
+
+        /* Seções de conteúdo */
+        .content-section {
+            margin-bottom: 24px;
+        }
+
+        .page-break {
+            break-before: page;
+            page-break-before: always;
+        }
+
+        .section-block {
+            margin-bottom: 18px;
+        }
+
+        .section-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .block-label {
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .block-label::before {
+            content: '▶';
+            font-size: 10px;
+            margin-right: 8px;
+            color: var(--secondary);
+        }
+
+        .block-content {
+            background: #f8fafc;
+            padding: 14px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        /* Tabelas */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        thead {
+            background: var(--primary);
+            color: white;
+        }
+
+        th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 11px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f9ff;
+        }
+
+        td {
+            padding: 12px 10px;
+            vertical-align: top;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        /* Resumo financeiro */
+        .financial-summary {
+            background: linear-gradient(135deg, #f8fafc 0%, #f0f9ff 100%);
+            border: 1px solid #bae6fd;
+        }
+
+        .financial-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-weight: 600;
+        }
+
+        .financial-row.total {
+            border-top: 2px solid var(--border);
+            border-bottom: 2px solid var(--border);
+            margin: 12px 0;
+            padding: 14px 0;
+            font-size: 16px;
+            color: var(--primary);
+        }
+
+        .financial-row.balance {
+            font-size: 15px;
+            color: var(--success);
+            font-weight: 800;
+        }
+
+        .financial-label {
+            color: var(--text-light);
+        }
+
+        /* Rodapé */
+
+        .footer-info {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Utilitários */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .text-muted {
+            color: var(--text-light);
+        }
+
+        .mb-1 { margin-bottom: 8px; }
+        .mb-2 { margin-bottom: 16px; }
+        .mb-3 { margin-bottom: 24px; }
+        .mt-1 { margin-top: 8px; }
+        .mt-2 { margin-top: 16px; }
+        .mt-3 { margin-top: 24px; }
+
+        @media print {
+            .card {
+                box-shadow: none;
+                border: 1px solid var(--border);
+            }
+            
+            .card:hover {
+                transform: none;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="brand">
+            {% if logo_src %}
+            <div class="logo-container">
+                <img class="logo" src="{{ logo_src }}" alt="Logomarca">
+            </div>
+            {% elif empresa.logomarca %}
+            <div class="logo-container">
+                <img class="logo" src="{{ empresa.logomarca.url }}" alt="Logomarca">
+            </div>
+            {% endif %}
+            <div class="company-info">
+                <div class="company-name">{{ empresa.nome|default:"Oficina Mecânica" }}</div>
+                <div class="company-details">
+                    {% if empresa.cnpj_cpf %}CNPJ: {{ empresa.cnpj_cpf }}{% endif %}
+                    {% if empresa.endereco %}{% if empresa.cnpj_cpf %} • {% endif %}{{ empresa.endereco }}{% endif %}
+                </div>
+                <div class="company-contact">
+                    {% if empresa.telefone %}<span>📞 {{ empresa.telefone }}</span>{% endif %}
+                    {% if empresa.email %}<span>✉️ {{ empresa.email }}</span>{% endif %}
+                    {% if empresa.website %}<span>🌐 {{ empresa.website }}</span>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="doc-info">
+            <div class="doc-title">Ordem de Serviço</div>
+            <div class="doc-number">OS #{{ object.id|stringformat:"05d" }}</div>
+            <div class="status-badge">{{ object.get_status_display }}</div>
+            <div class="doc-dates">
+                <div><strong>Entrada:</strong> {{ object.entrada_em|date:"d/m/Y" }}</div>
+                <div><strong>Previsão:</strong> {{ object.previsao_entrega|date:"d/m/Y"|default:"A definir" }}</div>
+            </div>
+        </div>
+    </header>
+
+    <section class="grid">
+        <div class="card">
+            <div class="card-title">Cliente</div>
+            <div class="info-row">
+                <span class="info-label">Nome</span>
+                <span class="info-value"><strong>{{ object.cliente.nome }}</strong></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Telefone</span>
+                <span class="info-value">{{ object.cliente.telefone|default:"Não informado" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">E-mail</span>
+                <span class="info-value">{{ object.cliente.email|default:"Não informado" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Documento</span>
+                <span class="info-value">{{ object.cliente.documento|default:"Não informado" }}</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">Veículo</div>
+            <div class="info-row">
+                <span class="info-label">Placa</span>
+                <span class="info-value"><strong>{{ object.veiculo.placa }}</strong></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Modelo</span>
+                <span class="info-value">{{ object.veiculo.modelo|default:"Não informado" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Marca</span>
+                <span class="info-value">{{ object.veiculo.marca|default:"Não informado" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Ano/Cor</span>
+                <span class="info-value">
+                    {% if object.veiculo.ano %}{{ object.veiculo.ano }}{% endif %}
+                    {% if object.veiculo.cor %} • {{ object.veiculo.cor }}{% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Km</span>
+                <span class="info-value">{{ object.veiculo.km|default:"Não informado" }}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section page-break">
+        <div class="card">
+            <div class="card-title">Detalhes do Serviço</div>
+            
+            <div class="section-block">
+                <div class="block-label">Problema Relatado</div>
+                <div class="block-content">{{ object.problema|linebreaks }}</div>
+            </div>
+            
+            <div class="section-block">
+                <div class="block-label">Diagnóstico</div>
+                <div class="block-content">{{ object.diagnostico|default:"Diagnóstico a ser realizado."|linebreaks }}</div>
+            </div>
+            
+            <div class="section-block">
+                <div class="block-label">Observações</div>
+                <div class="block-content">{{ object.observacoes|default:"Nenhuma observação adicional."|linebreaks }}</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <div class="card">
+            <div class="card-title">Peças e Materiais</div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th class="text-right">Qtd</th>
+                            <th class="text-right">Valor Unitário</th>
+                            <th class="text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in object.itens.all %}
+                        <tr>
+                            <td>{{ item.descricao }}</td>
+                            <td class="text-right">{{ item.qtd|floatformat:0 }}</td>
+                            <td class="text-right">R$ {{ item.valor_unitario|floatformat:2 }}</td>
+                            <td class="text-right">R$ {{ item.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Nenhum item registrado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <div class="card financial-summary">
+            <div class="card-title">Resumo Financeiro</div>
+            
+            <div class="financial-row">
+                <span class="financial-label">Peças e Materiais:</span>
+                <span>R$ {{ object.total_itens|floatformat:2 }}</span>
+            </div>
+            
+            <div class="financial-row">
+                <span class="financial-label">Mão de Obra:</span>
+                <span>R$ {{ object.mao_de_obra|floatformat:2 }}</span>
+            </div>
+            
+            <div class="financial-row">
+                <span class="financial-label">Desconto:</span>
+                <span>- R$ {{ object.desconto|floatformat:2 }}</span>
+            </div>
+            
+            <div class="financial-row total">
+                <span class="financial-label">TOTAL DO SERVIÇO:</span>
+                <span>R$ {{ object.total|floatformat:2 }}</span>
+            </div>
+            
+        </div>
+    </section>
+
+</body>
+</html>

@@ -4,16 +4,26 @@
 <div class="relatorios-page">
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div class="d-flex align-items-end gap-2">
-        <h1 class="h4 mb-0">Relatórios</h1>
+        <h1 class="h4 mb-0">
+            <span class="page-title-label">
+                <svg class="page-title-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19V10"></path>
+                    <path d="M10 19V5"></path>
+                    <path d="M16 19v-7"></path>
+                    <path d="M3 19h18"></path>
+                </svg>
+                Relatórios
+            </span>
+        </h1>
     </div>
     <form class="d-flex gap-2 align-items-end relatorio-filter" method="get">
         <div class="d-flex flex-column">
             <label class="form-label mb-1 small text-muted">Inicio</label>
-            <input type="date" name="inicio" value="{{ inicio|date:'Y-m-d' }}" class="form-control">
+            <input type="text" name="inicio" value="{{ inicio|date:'d/m/Y' }}" class="form-control" placeholder="dd/mm/aaaa" inputmode="numeric" data-date-picker="br" autocomplete="off">
         </div>
         <div class="d-flex flex-column">
             <label class="form-label mb-1 small text-muted">Fim</label>
-            <input type="date" name="fim" value="{{ fim|date:'Y-m-d' }}" class="form-control">
+            <input type="text" name="fim" value="{{ fim|date:'d/m/Y' }}" class="form-control" placeholder="dd/mm/aaaa" inputmode="numeric" data-date-picker="br" autocomplete="off">
         </div>
         <button class="btn btn-outline-secondary">Filtrar</button>
         <button class="btn btn-print" type="button" id="btnPrint">Imprimir</button>

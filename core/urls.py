@@ -27,8 +27,10 @@ urlpatterns = [
     path('os/', views.OrdemServicoListView.as_view(), name='os_list'),
     path('os/nova/', views.OrdemServicoCreateView.as_view(), name='os_create'),
     path('os/<int:pk>/', views.OrdemServicoDetailView.as_view(), name='os_detail'),
+    path('os/<int:pk>/pdf/', views.OrdemServicoPdfView.as_view(), name='os_pdf'),
     path('os/<int:pk>/editar/', views.OrdemServicoUpdateView.as_view(), name='os_update'),
     path('caixa/', views.CaixaView.as_view(), name='caixa'),
     path('caixa/graficos/', views.CaixaGraficosView.as_view(), name='caixa_graficos'),
+    path('manual/', views.ManualView.as_view(), name='manual'),
     path('relatorios/', views.RelatoriosView.as_view(), name='relatorios'),
 ]

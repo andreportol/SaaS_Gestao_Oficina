@@ -479,6 +479,19 @@ body:not(.theme-light) .btn-print:focus {
     font-weight: 700;
 }
 
+.page-title-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-title-icon {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    flex-shrink: 0;
+}
+
 .glass-card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -850,6 +863,11 @@ body:not(.theme-light) .btn-print:focus {
 .theme-light .relatorios-page .card {
     border-color: rgba(13, 110, 253, 0.45);
     box-shadow: 0 12px 30px rgba(13, 110, 253, 0.18);
+}
+
+.theme-light .manual-page .card {
+    border-color: rgba(13, 110, 253, 0.45) !important;
+    box-shadow: 0 12px 30px rgba(13, 110, 253, 0.18) !important;
 }
 
 .relatorios-page .relatorio-filter {
@@ -1363,6 +1381,12 @@ body:not(.theme-light) .table-responsive {
     }
 }
 
+@media (max-width: 575.98px) {
+    .os-filter-search {
+        margin-top: 14px;
+    }
+}
+
 @media (max-width: 767.98px) {
     .col-ano-modelo,
     .col-tipo {
@@ -1523,6 +1547,14 @@ body:not(.theme-light) .table tbody tr td {
     color: #fff !important;
     border-radius: 10px;
     caret-color: #fff;
+}
+
+.date-native-proxy {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
 }
 
 .app-form select {

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+    .manual-page {
+        font-family: "Merriweather", Georgia, serif;
+    }
+
+    .manual-page h1,
+    .manual-page h2,
+    .manual-page h3 {
+        font-family: "Space Grotesk", "Merriweather", Georgia, serif;
+        letter-spacing: 0.02em;
+    }
+
+    @media (min-width: 1200px) {
+        .manual-page {
+            font-size: 0.98rem;
+        }
+
+        .manual-page h1 {
+            font-size: 1.45rem;
+        }
+
+        .manual-page h2 {
+            font-size: 1rem;
+        }
+
+        .manual-page h3 {
+            font-size: 0.95rem;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .manual-page {
+            font-size: 0.95rem;
+        }
+
+        .manual-page h1 {
+            font-size: 1.2rem;
+        }
+
+        .manual-page h2 {
+            font-size: 0.95rem;
+        }
+
+        .manual-page h3 {
+            font-size: 0.9rem;
+        }
+
+        .manual-page .small {
+            font-size: 0.85rem;
+        }
+
+        .manual-shortcuts {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="manual-page">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">Manual do Sistema</h1>
+        <div class="small text-muted">Guia rápido para operar a oficina do início ao faturamento.</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">Voltar ao início</a>
+</div>
+
+<div class="card p-3 mb-3 manual-shortcuts">
+    <h2 class="h6 text-uppercase text-muted mb-2">Atalhos</h2>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="chip chip-action chip-ghost no-dot" href="#passo-a-passo">Passo a passo</a>
+        <a class="chip chip-action chip-ghost no-dot" href="#fluxo">Fluxo principal</a>
+        <a class="chip chip-action chip-ghost no-dot" href="#menus">Menus e funções</a>
+        <a class="chip chip-action chip-ghost no-dot" href="#dicas">Dicas rápidas</a>
+        <a class="chip chip-action chip-ghost no-dot" href="#videos" id="videos">Ver vídeos</a>
+    </div>
+</div>
+
+<div class="card p-3 mb-3" id="passo-a-passo">
+    <h2 class="h6 text-uppercase text-muted mb-2">Passo a passo inicial</h2>
+    <ol class="mb-0">
+        <li>Cadastre o <strong>Cliente</strong> com nome e contato.</li>
+        <li>Cadastre o <strong>Veículo</strong> e vincule ao cliente (um veículo pertence a um único cliente).</li>
+        <li>Cadastre <strong>Produtos</strong> (peças e serviços) para facilitar a montagem da OS.</li>
+        <li>Crie uma <strong>Ordem de Serviço (OS)</strong> escolhendo cliente e veículo.</li>
+        <li>Na OS, informe problema/diagnóstico, adicione itens e registre pagamentos.</li>
+        <li>Use <strong>Caixa</strong> e <strong>Relatórios</strong> para acompanhar entradas e saídas.</li>
+    </ol>
+</div>
+
+<div class="card p-3 mb-3" id="fluxo">
+    <h2 class="h6 text-uppercase text-muted mb-2">Fluxo principal</h2>
+    <p class="mb-1"><strong>Cliente → Veículo → OS</strong></p>
+    <p class="mb-0 text-muted">
+        A OS sempre precisa de um cliente e de um veículo. Por isso, o cadastro do cliente vem primeiro,
+        depois o veículo (ligado ao cliente) e por fim a abertura da OS.
+    </p>
+</div>
+
+<div class="card p-3 mb-3" id="menus">
+    <h2 class="h6 text-uppercase text-muted mb-2">Menus e funções</h2>
+
+    <div class="mb-3">
+        <h3 class="h6 mb-1">Dashboard</h3>
+        <div class="text-muted">Visão geral do período com indicadores, gráficos e saldo.</div>
+    </div>
+
+    <div class="mb-3">
+        <h3 class="h6 mb-1">Clientes</h3>
+        <div class="text-muted">Cadastro de clientes. E o primeiro passo para abrir OS.</div>
+    </div>
+
+    <div class="mb-3">
+        <h3 class="h6 mb-1">Veiculos</h3>
+        <div class="text-muted">Cadastro de veículos. Cada veículo deve estar ligado a um cliente.</div>
+    </div>
+
+    <div class="mb-3">
+        <h3 class="h6 mb-1">Agenda</h3>
+        <div class="text-muted">Agendamento de entregas, retiradas e anotações do dia.</div>
+    </div>
+
+    <div class="mb-3">
+        <h3 class="h6 mb-1">Produtos</h3>
+        <div class="text-muted">Peças e serviços com preço e estoque para montar a OS rapidamente.</div>
+    </div>
+
+    <div class="mb-3">
+        <h3 class="h6 mb-1">Ordens de Servico</h3>
+        <div class="text-muted">
+            Cadastro e acompanhamento das OS. Precisa de cliente e veículo.
+            Dentro da OS você adiciona itens, registra pagamentos e imprime o PDF.
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <h3 class="h6 mb-1">Caixa</h3>
+        <div class="text-muted">Controle de entradas (pagamentos) e saídas (despesas).</div>
+    </div>
+
+    <div class="mb-3">
+        <h3 class="h6 mb-1">Relatorios</h3>
+        <div class="text-muted">Resumo do período com faturamento, despesas e OS.</div>
+    </div>
+
+    <div class="mb-0">
+        <h3 class="h6 mb-1">Usuarios</h3>
+        <div class="text-muted">Gerencie usuários e níveis de acesso (apenas gerente).</div>
+    </div>
+</div>
+
+<div class="card p-3 mb-3" id="dicas">
+    <h2 class="h6 text-uppercase text-muted mb-2">Dicas rápidas</h2>
+    <ul class="mb-0">
+        <li>Use os filtros por data em OS, Caixa e Relatórios para comparar períodos.</li>
+        <li>Na OS, mantenha o status atualizado para refletir o andamento.</li>
+        <li>O PDF da OS serve como comprovante profissional para o cliente.</li>
+    </ul>
+</div>
+
+<div class="card p-3" id="videos">
+    <h2 class="h6 text-uppercase text-muted mb-2">Ver vídeos</h2>
+    <p class="mb-0 text-muted">Em breve adicionaremos vídeos explicando cada etapa do sistema.</p>
+</div>
+</div>
+{% endblock %}

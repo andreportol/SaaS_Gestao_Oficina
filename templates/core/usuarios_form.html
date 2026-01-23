@@ -40,6 +40,11 @@
                 {% for error in form.last_name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
             </div>
             <div class="col-md-6">
+                <label class="form-label">{{ form.data_cadastro.label }}</label>
+                {{ form.data_cadastro }}
+                {% for error in form.data_cadastro.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
                 <label class="form-label">{{ form.password1.label }}</label>
                 {{ form.password1 }}
                 {% if form.password1.help_text %}

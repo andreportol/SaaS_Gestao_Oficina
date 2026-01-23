@@ -4,7 +4,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div class="d-flex align-items-center gap-2 flex-wrap">
         <h1 class="h4 mb-0">OS #{{ object.id }} - {{ object.cliente.nome }}</h1>
-        <button type="button" class="btn btn-print btn-sm" id="printOs">Imprimir</button>
+        <a class="btn btn-print btn-sm" href="{% url 'os_pdf' object.pk %}" target="_blank" rel="noopener">Imprimir</a>
     </div>
     <div class="d-flex gap-2">
         <a class="chip chip-action no-dot" href="{% url 'os_update' object.pk %}">Editar</a>
@@ -153,12 +153,6 @@
     };
     select.addEventListener("change", setFields);
     setFields();
-})();
-</script>
-<script>
-(function() {
-    const btn = document.getElementById("printOs");
-    btn?.addEventListener("click", () => window.print());
 })();
 </script>
 </div>

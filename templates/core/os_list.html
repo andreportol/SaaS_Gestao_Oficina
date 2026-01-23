@@ -2,7 +2,16 @@
 {% block content %}
 <div class="os-page">
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 os-header">
-    <h1 class="h4 mb-0">Ordens de Serviço</h1>
+    <h1 class="h4 mb-0">
+        <span class="page-title-label">
+            <svg class="page-title-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="5" width="12" height="16" rx="2"></rect>
+                <path d="M9 5V3h6v2"></path>
+                <path d="M9 12l2 2 4-4"></path>
+            </svg>
+            Ordens de Serviço
+        </span>
+    </h1>
     <a class="btn btn-primary" href="{% url 'os_create' %}">Nova OS</a>
 </div>
 <form class="d-flex flex-wrap gap-2 mb-3 align-items-end relatorio-filter os-filter" method="get">
@@ -17,11 +26,11 @@
     <div class="os-filter-dates">
         <div class="os-filter-field">
             <label class="form-label mb-1 small text-muted">Início</label>
-            <input type="date" name="inicio" value="{{ request.GET.inicio }}" class="form-control" placeholder="Início">
+            <input type="text" name="inicio" value="{{ request.GET.inicio }}" class="form-control" placeholder="dd/mm/aaaa" inputmode="numeric" data-date-picker="br" autocomplete="off">
         </div>
         <div class="os-filter-field">
             <label class="form-label mb-1 small text-muted">Fim</label>
-            <input type="date" name="fim" value="{{ request.GET.fim }}" class="form-control" placeholder="Fim">
+            <input type="text" name="fim" value="{{ request.GET.fim }}" class="form-control" placeholder="dd/mm/aaaa" inputmode="numeric" data-date-picker="br" autocomplete="off">
         </div>
     </div>
     <div class="os-filter-field os-filter-search flex-grow-1">

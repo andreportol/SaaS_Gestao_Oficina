@@ -3,7 +3,16 @@
 <div class="produtos-page">
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div class="d-flex align-items-center gap-2">
-        <h1 class="h4 mb-0">Produtos</h1>
+        <h1 class="h4 mb-0">
+            <span class="page-title-label">
+                <svg class="page-title-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 7l8-4 8 4-8 4-8-4z"></path>
+                    <path d="M4 7v10l8 4 8-4V7"></path>
+                    <path d="M12 11v10"></path>
+                </svg>
+                Produtos
+            </span>
+        </h1>
         <a class="btn btn-outline-success export-btn d-none d-sm-inline-flex" href="{% url 'produtos_export' %}{% if querystring %}?{{ querystring }}{% endif %}">Exportar CSV</a>
     </div>
     <a class="btn btn-primary" href="{% url 'produtos_create' %}">Novo Produto</a>
