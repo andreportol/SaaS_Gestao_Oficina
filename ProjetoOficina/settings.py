@@ -11,7 +11,7 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
 DEBUG = True
 ALLOWED_HOSTS = [
-    "minhaoficina.up.railway.app",
+    "alpoficinas.up.railway.app",
     ".up.railway.app",
     ".railway.app",
     "localhost",
@@ -19,7 +19,7 @@ ALLOWED_HOSTS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://minhaoficina.up.railway.app",
+    "https://alpoficinas.up.railway.app",
 ]
 
 

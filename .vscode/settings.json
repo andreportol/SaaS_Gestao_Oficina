@@ -1,0 +1,5 @@
+{
+    "css.lint.unknownPseudoClasses": "ignore",
+    "css.lint.invalidPseudoSelectors": "ignore",
+    "css.validate": false
+}
