@@ -14,6 +14,7 @@ ALLOWED_HOSTS = [
     "alpoficinas.up.railway.app",
     "alpoficinas-h.up.railway.app",
     "alpoficinas.com.br",
+    "www.alpoficinas.com.br",
     ".up.railway.app",
     ".railway.app",
     "localhost",
