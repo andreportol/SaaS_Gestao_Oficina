@@ -12,6 +12,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
 DEBUG = True
 ALLOWED_HOSTS = [
     "alpoficinas.up.railway.app",
+    "alpoficinas-h.up.railway.app",
     "alpoficinas.com.br",
     ".up.railway.app",
     ".railway.app",
@@ -21,6 +22,7 @@ ALLOWED_HOSTS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "https://alpoficinas.up.railway.app",
+    "https://alpoficinas-h.up.railway.app",
     "https://alpoficinas.com.br",
     "https://www.alpoficinas.com.br",
 ]
