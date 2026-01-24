@@ -19,7 +19,7 @@
             --text: #1e293b;
             --text-light: #64748b;
             --border: #e2e8f0;
-            --background: #f8fafc;
+            --background: #ffffff;
             --card-bg: #ffffff;
             --shadow: rgba(0, 0, 0, 0.08);
         }
@@ -66,6 +66,13 @@
             gap: 16px;
         }
 
+        .logo-block {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-start;
+        }
+
         .logo-container {
             width: 128px;
             height: 76px;
@@ -88,6 +95,17 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+        }
+
+        .logo-meta {
+            font-size: 10px;
+            color: var(--text-light);
+            line-height: 1.4;
+            margin-top: 4px;
+        }
+
+        .logo-meta span {
+            display: block;
         }
 
         .company-info {
@@ -172,6 +190,10 @@
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 18px;
             margin-bottom: 24px;
+        }
+
+        .vehicle-card {
+            margin-top: 20px;
         }
 
         .card {
@@ -428,23 +450,31 @@
 <body>
     <header class="header">
         <div class="brand">
-            {% if logo_src %}
-            <div class="logo-container">
-                <img class="logo" src="{{ logo_src }}" alt="Logomarca">
-            </div>
-            {% elif empresa.logomarca %}
-            <div class="logo-container">
-                <img class="logo" src="{{ empresa.logomarca.url }}" alt="Logomarca">
+            {% if logo_src or empresa.logomarca or empresa.cnpj_cpf or empresa.telefone %}
+            <div class="logo-block">
+                {% if logo_src %}
+                <div class="logo-container">
+                    <img class="logo" src="{{ logo_src|safe }}" alt="Logomarca">
+                </div>
+                {% elif empresa.logomarca %}
+                <div class="logo-container">
+                    <img class="logo" src="{{ empresa.logomarca.url }}" alt="Logomarca">
+                </div>
+                {% endif %}
+                {% if empresa.cnpj_cpf or empresa.telefone %}
+                <div class="logo-meta">
+                    {% if empresa.cnpj_cpf %}<span>CNPJ: {{ empresa.cnpj_cpf }}</span>{% endif %}
+                    {% if empresa.telefone %}<span>Telefone: {{ empresa.telefone }}</span>{% endif %}
+                </div>
+                {% endif %}
             </div>
             {% endif %}
             <div class="company-info">
                 <div class="company-name">{{ empresa.nome|default:"Oficina Mecânica" }}</div>
                 <div class="company-details">
-                    {% if empresa.cnpj_cpf %}CNPJ: {{ empresa.cnpj_cpf }}{% endif %}
-                    {% if empresa.endereco %}{% if empresa.cnpj_cpf %} • {% endif %}{{ empresa.endereco }}{% endif %}
+                    {% if empresa.endereco %}{{ empresa.endereco }}{% endif %}
                 </div>
                 <div class="company-contact">
-                    {% if empresa.telefone %}<span>📞 {{ empresa.telefone }}</span>{% endif %}
                     {% if empresa.email %}<span>✉️ {{ empresa.email }}</span>{% endif %}
                     {% if empresa.website %}<span>🌐 {{ empresa.website }}</span>{% endif %}
                 </div>
@@ -482,7 +512,7 @@
             </div>
         </div>
         
-        <div class="card">
+        <div class="card vehicle-card">
             <div class="card-title">Veículo</div>
             <div class="info-row">
                 <span class="info-label">Placa</span>

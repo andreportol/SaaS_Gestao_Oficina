@@ -12,6 +12,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
 DEBUG = True
 ALLOWED_HOSTS = [
     "alpoficinas.up.railway.app",
+    "alpoficinas.com.br",
     ".up.railway.app",
     ".railway.app",
     "localhost",
@@ -20,12 +21,15 @@ ALLOWED_HOSTS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "https://alpoficinas.up.railway.app",
+    "https://alpoficinas.com.br",
+    "https://www.alpoficinas.com.br",
 ]
 
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "alpsistemascg@gmail.com")
 SUPPORT_FROM_EMAIL = os.getenv("SUPPORT_FROM_EMAIL", "no-reply@alpsistemas.app")
+RESEND_TEST_FROM_EMAIL = os.getenv("RESEND_TEST_FROM_EMAIL", "onboarding@resend.dev")
 
 INSTALLED_APPS = [
     'jazzmin',

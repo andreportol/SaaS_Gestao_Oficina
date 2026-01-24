@@ -136,6 +136,9 @@
                 </form>
                 <div class="alert alert-success d-none mt-3" id="supportSuccess">Mensagem enviada! Responderemos em breve.</div>
                 <div class="alert alert-danger d-none mt-3" id="supportError"></div>
+                <div class="d-flex justify-content-end mt-2 d-none" id="supportCloseWrap">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -727,6 +730,7 @@
         const form = document.getElementById("supportForm");
         const successEl = document.getElementById("supportSuccess");
         const errorEl = document.getElementById("supportError");
+        const closeWrap = document.getElementById("supportCloseWrap");
         const modalEl = document.getElementById("supportModal");
         const modal = modalEl ? bootstrap.Modal.getOrCreateInstance(modalEl) : null;
 
@@ -742,10 +746,17 @@
             );
         };
 
+        modalEl?.addEventListener("hidden.bs.modal", () => {
+            successEl?.classList.add("d-none");
+            errorEl?.classList.add("d-none");
+            closeWrap?.classList.add("d-none");
+        });
+
         form?.addEventListener("submit", async (ev) => {
             ev.preventDefault();
             successEl?.classList.add("d-none");
             errorEl?.classList.add("d-none");
+            closeWrap?.classList.add("d-none");
 
             const payload = Object.fromEntries(new FormData(form).entries());
             try {
@@ -762,12 +773,13 @@
                     throw new Error(data.error || "Não foi possível enviar a mensagem.");
                 }
                 successEl?.classList.remove("d-none");
+                closeWrap?.classList.remove("d-none");
                 form.reset();
-                setTimeout(() => modal?.hide(), 1200);
             } catch (err) {
                 if (errorEl) {
                     errorEl.textContent = err.message || "Erro ao enviar.";
                     errorEl.classList.remove("d-none");
+                    closeWrap?.classList.remove("d-none");
                 } else {
                     alert(err.message || "Erro ao enviar.");
                 }

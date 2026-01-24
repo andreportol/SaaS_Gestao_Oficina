@@ -216,6 +216,10 @@ a:hover {
     min-width: 180px;
 }
 
+body:not(.theme-light) .app-nav .dropdown-menu {
+    background: rgba(11, 18, 36, 0.92);
+}
+
 .app-nav .dropdown-item {
     color: var(--text);
     border-radius: 10px;

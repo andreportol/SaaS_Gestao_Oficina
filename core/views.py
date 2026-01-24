@@ -599,22 +599,46 @@ class ContatoSuporteView(View):
             f"Email: {email}\n"
             f"Mensagem:\n{mensagem}\n"
         )
-        data = json.dumps(
-            {"from": from_email, "to": [to_email], "subject": "Ajuda no acesso - Oficina", "text": body}
-        ).encode("utf-8")
+        api_url = "https://api.resend.com/emails"
 
-        req = urllib.request.Request(
-            "https://api.resend.com/emails",
-            data=data,
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
-            method="POST",
-        )
+        def _send_payload(sender):
+            payload = {
+                "from": sender,
+                "to": [to_email],
+                "subject": "Ajuda no acesso - Oficina",
+                "text": body,
+                "reply_to": email,
+            }
+            data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(
+                api_url,
+                data=data,
+                headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=10):
+                return True
+
+        def _parse_resend_error(exc):
+            try:
+                payload = json.loads(exc.read().decode("utf-8"))
+                return payload.get("message") or payload.get("error") or payload.get("statusText")
+            except Exception:
+                return None
+
         try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                if resp.status >= 400:
-                    return JsonResponse({"error": "Falha ao enviar mensagem."}, status=500)
+            _send_payload(from_email)
         except urllib.error.HTTPError as exc:
-            return JsonResponse({"error": f"Erro ao enviar: {exc.status}"}, status=500)
+            if exc.code == 403 and settings.DEBUG:
+                test_from = getattr(settings, "RESEND_TEST_FROM_EMAIL", "")
+                if test_from and test_from != from_email:
+                    try:
+                        _send_payload(test_from)
+                        return JsonResponse({"ok": True})
+                    except urllib.error.HTTPError as retry_exc:
+                        exc = retry_exc
+            detail = _parse_resend_error(exc)
+            return JsonResponse({"error": detail or f"Erro ao enviar: {exc.code}"}, status=500)
         except Exception:
             return JsonResponse({"error": "Erro de comunicação com o serviço de email."}, status=500)
 
@@ -948,14 +972,27 @@ class OrdemServicoPdfView(LoginRequiredMixin, View):
             .prefetch_related("itens", "pagamentos"),
             pk=pk,
         )
-        empresa = request.user.empresa
+        empresa = os_obj.empresa or request.user.empresa
         logo_src = None
         logo_path = None
         if empresa and getattr(empresa, "logomarca", None):
             logo_path = getattr(empresa.logomarca, "path", None)
-            try:
-                with empresa.logomarca.open("rb") as logo_file:
-                    data = logo_file.read()
+            data = None
+            if logo_path:
+                path = Path(logo_path)
+                if path.exists():
+                    try:
+                        data = path.read_bytes()
+                    except OSError:
+                        data = None
+            if data is None:
+                try:
+                    with empresa.logomarca.open("rb") as logo_file:
+                        data = logo_file.read()
+                except OSError:
+                    data = None
+
+            if data:
                 try:
                     from PIL import Image
                 except ImportError:
@@ -963,7 +1000,7 @@ class OrdemServicoPdfView(LoginRequiredMixin, View):
                 if Image:
                     try:
                         image = Image.open(BytesIO(data))
-                        image = image.convert("RGB")
+                        image = image.convert("RGBA")
                         image.thumbnail((600, 600))
                         buffer = BytesIO()
                         image.save(buffer, format="PNG", optimize=True)
@@ -975,8 +1012,6 @@ class OrdemServicoPdfView(LoginRequiredMixin, View):
                     mime_type = mimetypes.guess_type(empresa.logomarca.name or "")[0] or "image/png"
                     encoded = base64.b64encode(data).decode("ascii")
                     logo_src = f"data:{mime_type};base64,{encoded}"
-            except OSError:
-                logo_src = None
             if not logo_src and logo_path:
                 path = Path(logo_path)
                 if path.exists():
