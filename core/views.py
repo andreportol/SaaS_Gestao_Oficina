@@ -99,7 +99,11 @@ class EmpresaFormMixin:
 
     def form_valid(self, form):
         if hasattr(form.instance, "empresa_id"):
-            form.instance.empresa = self.request.user.empresa
+            empresa = getattr(self.request.user, "empresa", None)
+            if not empresa:
+                form.add_error(None, "Empresa não encontrada. Vincule um usuário a uma empresa para cadastrar.")
+                return self.form_invalid(form)
+            form.instance.empresa = empresa
         return super().form_valid(form)
 
 
