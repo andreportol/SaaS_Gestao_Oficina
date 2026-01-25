@@ -1763,6 +1763,15 @@ body:not(.theme-light) .user-flag-hints {
     font-weight: 700;
 }
 
+.signup-note {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.theme-light .signup-note {
+    color: #0d6efd;
+}
+
 .form-control-wrap input {
     width: 100%;
 }

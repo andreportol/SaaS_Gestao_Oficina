@@ -7,7 +7,8 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import password_validators_help_texts, validate_password
-from django.db import models
+from django.core.validators import FileExtensionValidator
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 
@@ -15,6 +16,7 @@ from .models import (
     Agenda,
     Cliente,
     Despesa,
+    Empresa,
     Funcionario,
     OrdemServico,
     OSItem,
@@ -711,6 +713,112 @@ class UsuarioBaseForm(forms.ModelForm):
 
     def _password_is_required(self):
         return False
+
+
+class AutoCadastroForm(forms.Form):
+    empresa_nome = forms.CharField(label="Nome da empresa", max_length=150)
+    cnpj_cpf = forms.CharField(label="CNPJ/CPF", max_length=20, required=False)
+    telefone = forms.CharField(label="Telefone", max_length=20, required=False)
+    logomarca = forms.ImageField(
+        label="Logomarca (opcional)",
+        required=False,
+        validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png", "webp"])],
+    )
+    username = forms.CharField(label="Login", max_length=150)
+    email = forms.EmailField(label="E-mail")
+    first_name = forms.CharField(label="Nome", max_length=150)
+    last_name = forms.CharField(label="Sobrenome", max_length=150, required=False)
+    password1 = forms.CharField(label="Senha", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="Confirmar senha", widget=forms.PasswordInput)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["empresa_nome"].widget.attrs.update(
+            {"placeholder": "Nome da oficina", "autocomplete": "organization"}
+        )
+        self.fields["cnpj_cpf"].widget.attrs.update(
+            {"placeholder": "CNPJ ou CPF", "autocomplete": "off"}
+        )
+        self.fields["telefone"].widget.attrs.update(
+            {"placeholder": "(99)99999-9999", "data-mask": "phone", "autocomplete": "tel"}
+        )
+        self.fields["logomarca"].widget.attrs.update({"accept": "image/*"})
+        self.fields["username"].widget.attrs.update(
+            {"placeholder": "Digite um login", "autocomplete": "username"}
+        )
+        self.fields["email"].widget.attrs.update(
+            {"placeholder": "email@empresa.com", "autocomplete": "email"}
+        )
+        self.fields["first_name"].widget.attrs.update(
+            {"placeholder": "Seu nome", "autocomplete": "given-name"}
+        )
+        self.fields["last_name"].widget.attrs.update(
+            {"placeholder": "Sobrenome", "autocomplete": "family-name"}
+        )
+        self.fields["password1"].widget.attrs.update(
+            {"placeholder": "Crie uma senha", "autocomplete": "new-password"}
+        )
+        self.fields["password2"].widget.attrs.update(
+            {"placeholder": "Confirme a senha", "autocomplete": "new-password"}
+        )
+        for name in self.fields:
+            self.fields[name].widget.attrs.setdefault("class", "form-control")
+        help_texts = password_validators_help_texts()
+        if help_texts:
+            items = "".join(f"<li>{text}</li>" for text in help_texts)
+            self.fields["password1"].help_text = mark_safe(f"<ul class=\"mb-0\">{items}</ul>")
+
+    def clean_empresa_nome(self):
+        nome = (self.cleaned_data.get("empresa_nome") or "").strip()
+        if not nome:
+            raise forms.ValidationError("Informe o nome da empresa.")
+        return nome
+
+    def clean_username(self):
+        username = (self.cleaned_data.get("username") or "").strip()
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("Este login já está em uso.")
+        return username
+
+    def clean_email(self):
+        email = (self.cleaned_data.get("email") or "").strip()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("Este e-mail já está em uso.")
+        return email
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1") or ""
+        password2 = self.cleaned_data.get("password2") or ""
+        if not password1 or not password2:
+            raise forms.ValidationError("Informe a senha duas vezes.")
+        if password1 != password2:
+            raise forms.ValidationError("As senhas não conferem.")
+        validate_password(password1)
+        return password2
+
+    def save(self):
+        data = self.cleaned_data
+        with transaction.atomic():
+            empresa = Empresa.objects.create(
+                nome=data["empresa_nome"],
+                cnpj_cpf=data.get("cnpj_cpf", ""),
+                telefone=data.get("telefone", ""),
+                logomarca=data.get("logomarca"),
+            )
+            user = User.objects.create_user(
+                username=data["username"],
+                email=data["email"],
+                first_name=data.get("first_name", ""),
+                last_name=data.get("last_name", ""),
+                password=data["password1"],
+                empresa=empresa,
+                is_manager=True,
+            )
+            manager_group, _ = Group.objects.get_or_create(name=ROLE_MANAGER)
+            employee_group, _ = Group.objects.get_or_create(name=ROLE_EMPLOYEE)
+            user.groups.add(manager_group)
+            user.groups.remove(employee_group)
+        return user
 
 
 class UsuarioCreateForm(UsuarioBaseForm):

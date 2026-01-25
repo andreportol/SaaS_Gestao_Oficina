@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-wrapper login-page">
+    <div class="col-lg-6 col-md-8 col-11 mx-auto">
+        <p class="signup-note text-center mb-3">Após a confirmação do pagamento liberamos o acesso ao sistema.</p>
+        <div class="card p-2 py-3 auth-card">
+            <h2 class="h5 mb-3 text-center">Crie sua conta</h2>
+            <form method="post" enctype="multipart/form-data" class="app-form text-start">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <div class="mb-3">
+                    <label class="form-label">{{ form.empresa_nome.label }}</label>
+                    {{ form.empresa_nome }}
+                    {{ form.empresa_nome.errors }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.logomarca.label }}</label>
+                    {{ form.logomarca }}
+                    {{ form.logomarca.errors }}
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.cnpj_cpf.label }}</label>
+                            {{ form.cnpj_cpf }}
+                            {{ form.cnpj_cpf.errors }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.telefone.label }}</label>
+                            {{ form.telefone }}
+                            {{ form.telefone.errors }}
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-2 text-uppercase small text-muted">Dados do acesso</div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.username.label }}</label>
+                    {{ form.username }}
+                    <div class="form-text">Exemplo de login: nome.sobrenome</div>
+                    {{ form.username.errors }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.email.label }}</label>
+                    {{ form.email }}
+                    {{ form.email.errors }}
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.first_name.label }}</label>
+                            {{ form.first_name }}
+                            {{ form.first_name.errors }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.last_name.label }}</label>
+                            {{ form.last_name }}
+                            {{ form.last_name.errors }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.password1.label }}</label>
+                            {{ form.password1 }}
+                            {{ form.password1.errors }}
+                            {% if form.password1.help_text %}
+                                <div class="form-text">{{ form.password1.help_text|safe }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.password2.label }}</label>
+                            {{ form.password2 }}
+                            {{ form.password2.errors }}
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Enviar cadastro</button>
+            </form>
+        </div>
+        <div class="auth-hero text-center mt-3">
+            <a class="btn btn-outline-secondary btn-sm" href="{% url 'login' %}">Já tenho acesso</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

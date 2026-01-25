@@ -37,6 +37,18 @@ class EmpresaMiddleware:
 
             if (
                 request.empresa
+                and not request.empresa.pagamento_confirmado
+                and not request.user.is_superuser
+            ):
+                logout(request)
+                messages.error(
+                    request,
+                    "Cadastro recebido. Aguardando confirmação do pagamento para liberar o acesso.",
+                )
+                return redirect("login")
+
+            if (
+                request.empresa
                 and not request.empresa.is_ativo
                 and not request.user.is_superuser
             ):

@@ -71,6 +71,11 @@
                     </ul>
                 </li>
                 {% endif %}
+                {% if user.is_authenticated and user.is_superuser %}
+                <li class="nav-item">
+                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'empresas_aprovacao' %} active{% endif %}" href="{% url 'empresas_aprovacao' %}">Liberações</a>
+                </li>
+                {% endif %}
                 <li class="nav-item dropdown">
                     <a class="nav-link nav-pill dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Ajuda</a>
                     <ul class="dropdown-menu dropdown-menu-end">

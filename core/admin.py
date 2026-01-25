@@ -89,13 +89,24 @@ class EmpresaAdmin(EmpresaAdminMixin, admin.ModelAdmin):
                     "plano_atualizado_em",
                     "plano_vencimento_em",
                     "is_ativo",
+                    "pagamento_confirmado",
                 )
             },
         ),
         ("Controle", {"fields": ("criado_em",)}),
     )
-    list_display = ("nome", "cnpj_cpf", "telefone", "plano", "plano_periodo", "is_ativo", "criado_em")
+    list_display = (
+        "nome",
+        "cnpj_cpf",
+        "telefone",
+        "plano",
+        "plano_periodo",
+        "is_ativo",
+        "pagamento_confirmado",
+        "criado_em",
+    )
     search_fields = ("nome", "cnpj_cpf", "telefone")
+    list_filter = ("plano", "plano_periodo", "is_ativo", "pagamento_confirmado")
     readonly_fields = ("criado_em",)
 
 

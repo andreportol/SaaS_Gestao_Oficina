@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <h1 class="h4 mb-0">Liberação de acesso</h1>
+    <span class="badge bg-soft">Pendentes: {{ pendentes }}</span>
+</div>
+
+<div class="card p-0">
+    <div class="table-responsive">
+        <table class="table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Empresa</th>
+                    <th>Contato</th>
+                    <th>Plano</th>
+                    <th>Pagamento</th>
+                    <th>Criado em</th>
+                    <th class="text-end">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for empresa in empresas %}
+                <tr>
+                    <td>{{ empresa.nome }}</td>
+                    <td>{{ empresa.telefone|default:"-" }}</td>
+                    <td>{{ empresa.get_plano_display }}</td>
+                    <td>{% if empresa.pagamento_confirmado %}Confirmado{% else %}Pendente{% endif %}</td>
+                    <td>{{ empresa.criado_em|date:"d/m/Y" }}</td>
+                    <td class="text-end">
+                        <form method="post" class="d-inline-flex align-items-center gap-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="empresa_id" value="{{ empresa.id }}">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" id="empresa-{{ empresa.id }}" name="pagamento_confirmado"{% if empresa.pagamento_confirmado %} checked{% endif %}>
+                                <label class="form-check-label" for="empresa-{{ empresa.id }}">Liberar</label>
+                            </div>
+                            <button class="chip chip-action chip-outline no-dot" type="submit">Salvar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-3">Nenhuma empresa cadastrada.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -30,6 +30,7 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .forms import (
+    AutoCadastroForm,
     ClienteForm,
     DespesaForm,
     FuncionarioForm,
@@ -46,6 +47,7 @@ from .models import (
     Agenda,
     Cliente,
     Despesa,
+    Empresa,
     Funcionario,
     OrdemServico,
     OrdemServicoLog,
@@ -65,6 +67,16 @@ class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         if callable(checker):
             return checker()
         return bool(checker)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        raise PermissionDenied
+
+
+class SuperuserRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return bool(self.request.user.is_superuser)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -1318,6 +1330,58 @@ class RelatoriosView(ManagerRequiredMixin, TemplateView):
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class CustomLoginView(LoginView):
     template_name = "registration/login.html"
+
+
+class AutoCadastroView(FormMixin, TemplateView):
+    template_name = "registration/signup.html"
+    form_class = AutoCadastroForm
+    success_url = reverse_lazy("login")
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect("dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        form = self.get_form()
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+    def form_valid(self, form):
+        form.save()
+        messages.success(
+            self.request,
+            "Cadastro recebido. Aguarde a confirmação do pagamento para liberar o acesso.",
+        )
+        return super().form_valid(form)
+
+
+class EmpresaAprovacaoView(SuperuserRequiredMixin, TemplateView):
+    template_name = "core/empresas_aprovacao.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        empresas = Empresa.objects.all().order_by("-criado_em")
+        context["empresas"] = empresas
+        context["pendentes"] = empresas.filter(pagamento_confirmado=False).count()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        empresa_id = request.POST.get("empresa_id")
+        empresa = get_object_or_404(Empresa, pk=empresa_id)
+        aprovado = request.POST.get("pagamento_confirmado") == "on"
+        empresa.pagamento_confirmado = aprovado
+        empresa.save(update_fields=["pagamento_confirmado"])
+        if aprovado:
+            messages.success(request, f"Acesso liberado para {empresa.nome}.")
+        else:
+            messages.warning(request, f"Acesso bloqueado para {empresa.nome}.")
+        return redirect("empresas_aprovacao")
 
 
 def logout_view(request):

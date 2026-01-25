@@ -13,8 +13,8 @@ User = get_user_model()
 
 class EmpresaIsolationTest(TestCase):
     def setUp(self):
-        self.empresa1 = Empresa.objects.create(nome="Oficina 1")
-        self.empresa2 = Empresa.objects.create(nome="Oficina 2")
+        self.empresa1 = Empresa.objects.create(nome="Oficina 1", pagamento_confirmado=True)
+        self.empresa2 = Empresa.objects.create(nome="Oficina 2", pagamento_confirmado=True)
         self.user1 = User.objects.create_user(username="u1", password="123", empresa=self.empresa1)
         self.user2 = User.objects.create_user(username="u2", password="123", empresa=self.empresa2)
         self.user2.is_manager = True
@@ -80,7 +80,7 @@ class EmpresaIsolationTest(TestCase):
 class UserManagementTests(TestCase):
     def setUp(self):
         setup_roles()
-        self.empresa = Empresa.objects.create(nome="Oficina X")
+        self.empresa = Empresa.objects.create(nome="Oficina X", pagamento_confirmado=True)
         self.manager = User.objects.create_user(
             username="manager", password="123", empresa=self.empresa, is_manager=True
         )
@@ -165,8 +165,8 @@ class UserManagementTests(TestCase):
 
 class DashboardDataTests(TestCase):
     def setUp(self):
-        self.empresa1 = Empresa.objects.create(nome="Empresa 1")
-        self.empresa2 = Empresa.objects.create(nome="Empresa 2")
+        self.empresa1 = Empresa.objects.create(nome="Empresa 1", pagamento_confirmado=True)
+        self.empresa2 = Empresa.objects.create(nome="Empresa 2", pagamento_confirmado=True)
         self.manager = User.objects.create_user(
             username="manager", password="123", empresa=self.empresa1, is_manager=True
         )
