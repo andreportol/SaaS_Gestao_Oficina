@@ -7,14 +7,78 @@
 <div class="card p-4 form-card dashboard-card">
     <form method="post" enctype="multipart/form-data" class="app-form">
         {% csrf_token %}
-        {% for field in form %}
-            <div class="mb-3">
-                <label class="form-label">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        <div class="row g-3">
+            <div class="col-12 col-sm-4">
+                <div class="mb-3">
+                    <label class="form-label">{{ form.nome.label }}</label>
+                    {{ form.nome }}
+                    {% if form.nome.help_text %}<div class="form-text">{{ form.nome.help_text }}</div>{% endif %}
+                    {% for error in form.nome.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
             </div>
-        {% endfor %}
+            <div class="col-12 col-sm-4">
+                <div class="mb-3">
+                    <label class="form-label">{{ form.telefone.label }}</label>
+                    {{ form.telefone }}
+                    {% if form.telefone.help_text %}<div class="form-text">{{ form.telefone.help_text }}</div>{% endif %}
+                    {% for error in form.telefone.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+            </div>
+            <div class="col-12 col-sm-4">
+                <div class="mb-3">
+                    <label class="form-label">{{ form.cnpj_cpf.label }}</label>
+                    {{ form.cnpj_cpf }}
+                    {% if form.cnpj_cpf.help_text %}<div class="form-text">{{ form.cnpj_cpf.help_text }}</div>{% endif %}
+                    {% for error in form.cnpj_cpf.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12 col-sm-3">
+                <div class="mb-3">
+                    <label class="form-label">{{ form.cep.label }}</label>
+                    {{ form.cep }}
+                    {% if form.cep.help_text %}<div class="form-text">{{ form.cep.help_text }}</div>{% endif %}
+                    {% for error in form.cep.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+            </div>
+            <div class="col-12 col-sm-5">
+                <div class="mb-3">
+                    <label class="form-label">{{ form.rua.label }}</label>
+                    {{ form.rua }}
+                    {% if form.rua.help_text %}<div class="form-text">{{ form.rua.help_text }}</div>{% endif %}
+                    {% for error in form.rua.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+            </div>
+            <div class="col-12 col-sm-2">
+                <div class="mb-3">
+                    <label class="form-label">{{ form.numero.label }}</label>
+                    {{ form.numero }}
+                    {% if form.numero.help_text %}<div class="form-text">{{ form.numero.help_text }}</div>{% endif %}
+                    {% for error in form.numero.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+            </div>
+            <div class="col-12 col-sm-2">
+                <div class="mb-3">
+                    <label class="form-label">{{ form.bairro.label }}</label>
+                    {{ form.bairro }}
+                    {% if form.bairro.help_text %}<div class="form-text">{{ form.bairro.help_text }}</div>{% endif %}
+                    {% for error in form.bairro.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ form.cidade.label }}</label>
+            {{ form.cidade }}
+            {% if form.cidade.help_text %}<div class="form-text">{{ form.cidade.help_text }}</div>{% endif %}
+            {% for error in form.cidade.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ form.logomarca.label }}</label>
+            {{ form.logomarca }}
+            {% if form.logomarca.help_text %}<div class="form-text">{{ form.logomarca.help_text }}</div>{% endif %}
+            {% for error in form.logomarca.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">Salvar</button>
             <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">Cancelar</a>

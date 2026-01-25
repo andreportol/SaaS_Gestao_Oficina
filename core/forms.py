@@ -42,6 +42,55 @@ def _coerce_display_date(value):
     return None
 
 
+def _digits_only(value):
+    return re.sub(r"\D", "", value or "")
+
+
+def _is_valid_cpf(digits):
+    if len(digits) != 11 or digits == digits[0] * 11:
+        return False
+    total = sum(int(d) * weight for d, weight in zip(digits[:9], range(10, 1, -1)))
+    first = (total * 10) % 11
+    first = 0 if first == 10 else first
+    if first != int(digits[9]):
+        return False
+    total = sum(int(d) * weight for d, weight in zip(digits[:10], range(11, 1, -1)))
+    second = (total * 10) % 11
+    second = 0 if second == 10 else second
+    return second == int(digits[10])
+
+
+def _is_valid_cnpj(digits):
+    if len(digits) != 14 or digits == digits[0] * 14:
+        return False
+    weights_first = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    weights_second = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    total = sum(int(d) * w for d, w in zip(digits[:12], weights_first))
+    mod = total % 11
+    first = 0 if mod < 2 else 11 - mod
+    if first != int(digits[12]):
+        return False
+    total = sum(int(d) * w for d, w in zip(digits[:13], weights_second))
+    mod = total % 11
+    second = 0 if mod < 2 else 11 - mod
+    return second == int(digits[13])
+
+
+def _validate_cnpj_cpf(value):
+    digits = _digits_only(value)
+    if not digits:
+        return ""
+    if len(digits) == 11:
+        if not _is_valid_cpf(digits):
+            raise forms.ValidationError("CPF inválido.")
+        return digits
+    if len(digits) == 14:
+        if not _is_valid_cnpj(digits):
+            raise forms.ValidationError("CNPJ inválido.")
+        return digits
+    raise forms.ValidationError("Informe CPF (11 dígitos) ou CNPJ (14 dígitos).")
+
+
 class EmpresaFormMixin(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         self.user = user
@@ -581,17 +630,39 @@ class FuncionarioForm(EmpresaFormMixin):
 class EmpresaUpdateForm(forms.ModelForm):
     class Meta:
         model = Empresa
-        fields = ["nome", "cnpj_cpf", "telefone", "logomarca"]
+        fields = ["nome", "cnpj_cpf", "telefone", "cep", "rua", "numero", "bairro", "cidade", "logomarca"]
         widgets = {
             "nome": forms.TextInput(attrs={"class": "form-control", "autofocus": "autofocus"}),
             "cnpj_cpf": forms.TextInput(
-                attrs={"class": "form-control", "placeholder": "CNPJ ou CPF", "data-mask": "cpf"}
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "CNPJ ou CPF",
+                    "data-mask": "cnpj-cpf",
+                    "inputmode": "numeric",
+                }
             ),
             "telefone": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "(99)99999-9999", "data-mask": "phone"}
             ),
+            "cep": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "00000-000",
+                    "data-mask": "cep",
+                    "inputmode": "numeric",
+                    "data-lookup": "viacep",
+                }
+            ),
+            "rua": forms.TextInput(attrs={"class": "form-control", "placeholder": "Logradouro"}),
+            "numero": forms.TextInput(attrs={"class": "form-control", "placeholder": "Número"}),
+            "bairro": forms.TextInput(attrs={"class": "form-control", "placeholder": "Bairro"}),
+            "cidade": forms.TextInput(attrs={"class": "form-control", "placeholder": "Cidade"}),
         }
-        labels = {"cnpj_cpf": "CNPJ/CPF", "logomarca": "Logomarca"}
+        labels = {"cnpj_cpf": "CNPJ/CPF", "rua": "Logradouro", "logomarca": "Logomarca"}
+
+    def clean_cnpj_cpf(self):
+        value = self.cleaned_data.get("cnpj_cpf", "")
+        return _validate_cnpj_cpf(value)
 
 class UsuarioBaseForm(forms.ModelForm):
     data_cadastro = forms.DateField(
@@ -774,7 +845,7 @@ class AutoCadastroForm(forms.Form):
             {"placeholder": "Nome da oficina", "autocomplete": "organization"}
         )
         self.fields["cnpj_cpf"].widget.attrs.update(
-            {"placeholder": "CNPJ ou CPF", "autocomplete": "off"}
+            {"placeholder": "CNPJ ou CPF", "autocomplete": "off", "data-mask": "cnpj-cpf", "inputmode": "numeric"}
         )
         self.fields["telefone"].widget.attrs.update(
             {"placeholder": "(99)99999-9999", "data-mask": "phone", "autocomplete": "tel"}
@@ -832,6 +903,10 @@ class AutoCadastroForm(forms.Form):
             raise forms.ValidationError("As senhas não conferem.")
         validate_password(password1)
         return password2
+
+    def clean_cnpj_cpf(self):
+        value = self.cleaned_data.get("cnpj_cpf", "")
+        return _validate_cnpj_cpf(value)
 
     def save(self):
         data = self.cleaned_data

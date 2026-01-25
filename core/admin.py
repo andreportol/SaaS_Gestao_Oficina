@@ -78,7 +78,7 @@ class EmpresaAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         (
             "Dados da empresa",
-            {"fields": ("nome", "cnpj_cpf", "telefone", "logomarca")},
+            {"fields": ("nome", "cnpj_cpf", "telefone", "cep", "rua", "numero", "bairro", "cidade", "logomarca")},
         ),
         (
             "Plano",

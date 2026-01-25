@@ -1,8 +1,10 @@
 from datetime import timedelta
+from io import BytesIO
 from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, UserManager
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
@@ -29,6 +31,11 @@ class Empresa(models.Model):
         null=True,
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png", "webp"])],
     )
+    cep = models.CharField(max_length=12, blank=True, default="")
+    rua = models.CharField(max_length=150, blank=True, default="")
+    numero = models.CharField(max_length=20, blank=True, default="")
+    bairro = models.CharField(max_length=100, blank=True, default="")
+    cidade = models.CharField(max_length=100, blank=True, default="")
     plano = models.CharField(max_length=10, choices=Plano.choices, default=Plano.BASICO)
     plano_periodo = models.CharField(max_length=3, choices=PlanoPeriodo.choices, default=PlanoPeriodo.MENSAL)
     plano_atualizado_em = models.DateTimeField(blank=True, null=True)
@@ -54,8 +61,22 @@ class Empresa(models.Model):
         previous = None
         if self.pk:
             previous = Empresa.objects.filter(pk=self.pk).values(
-                "plano", "plano_periodo", "plano_atualizado_em", "plano_vencimento_em"
+                "plano",
+                "plano_periodo",
+                "plano_atualizado_em",
+                "plano_vencimento_em",
+                "logomarca",
             ).first()
+
+        logo_changed = False
+        if self.logomarca:
+            if not previous:
+                logo_changed = True
+            else:
+                logo_changed = previous.get("logomarca") != self.logomarca.name
+
+        if self.logomarca and logo_changed and not getattr(self, "_logomarca_processed", False):
+            self._process_logomarca()
 
         if self.plano_atualizado_em is None:
             self.plano_atualizado_em = timezone.now()
@@ -124,6 +145,55 @@ class Empresa(models.Model):
         if not vencimento:
             return None
         return (vencimento.date() - timezone.now().date()).days
+
+    def _process_logomarca(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            return
+
+        try:
+            file_obj = self.logomarca.file
+        except Exception:
+            return
+
+        try:
+            file_obj.seek(0)
+            image = Image.open(file_obj)
+            image_format = (image.format or "").upper()
+        except Exception:
+            return
+
+        max_size = (600, 600)
+        image.thumbnail(max_size)
+        if image_format not in {"JPEG", "JPG", "PNG", "WEBP"}:
+            image_format = "PNG"
+
+        buffer = BytesIO()
+        save_kwargs = {}
+        if image_format in {"JPEG", "JPG"}:
+            if image.mode not in ("RGB", "L"):
+                image = image.convert("RGB")
+            save_kwargs.update({"format": "JPEG", "quality": 82, "optimize": True})
+            ext = "jpg"
+        elif image_format == "WEBP":
+            save_kwargs.update({"format": "WEBP", "quality": 82, "method": 6})
+            ext = "webp"
+        else:
+            if image.mode not in ("RGB", "RGBA"):
+                image = image.convert("RGBA")
+            save_kwargs.update({"format": "PNG", "optimize": True})
+            ext = "png"
+
+        try:
+            image.save(buffer, **save_kwargs)
+        except Exception:
+            return
+
+        buffer.seek(0)
+        filename = f"logomarca.{ext}"
+        self.logomarca.save(filename, ContentFile(buffer.read()), save=False)
+        self._logomarca_processed = True
 
 
 class UsuarioManager(UserManager):

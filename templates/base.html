@@ -322,6 +322,110 @@
     })();
 
     (function() {
+        const onlyDigits = (value) => value.replace(/\D/g, "");
+
+        const formatCPF = (digits) => {
+            if (digits.length > 9) {
+                return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+            }
+            if (digits.length > 6) {
+                return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+            }
+            if (digits.length > 3) {
+                return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+            }
+            return digits;
+        };
+
+        const formatCNPJ = (digits) => {
+            if (digits.length > 12) {
+                return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12, 14)}`;
+            }
+            if (digits.length > 8) {
+                return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+            }
+            if (digits.length > 5) {
+                return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+            }
+            if (digits.length > 2) {
+                return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+            }
+            return digits;
+        };
+
+        const isValidCPF = (digits) => {
+            if (digits.length !== 11 || digits === digits[0].repeat(11)) return false;
+            let total = 0;
+            for (let i = 0; i < 9; i++) {
+                total += Number(digits[i]) * (10 - i);
+            }
+            let first = (total * 10) % 11;
+            first = first === 10 ? 0 : first;
+            if (first !== Number(digits[9])) return false;
+            total = 0;
+            for (let i = 0; i < 10; i++) {
+                total += Number(digits[i]) * (11 - i);
+            }
+            let second = (total * 10) % 11;
+            second = second === 10 ? 0 : second;
+            return second === Number(digits[10]);
+        };
+
+        const isValidCNPJ = (digits) => {
+            if (digits.length !== 14 || digits === digits[0].repeat(14)) return false;
+            const weightsFirst = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+            const weightsSecond = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+            let total = 0;
+            for (let i = 0; i < 12; i++) {
+                total += Number(digits[i]) * weightsFirst[i];
+            }
+            let mod = total % 11;
+            let first = mod < 2 ? 0 : 11 - mod;
+            if (first !== Number(digits[12])) return false;
+            total = 0;
+            for (let i = 0; i < 13; i++) {
+                total += Number(digits[i]) * weightsSecond[i];
+            }
+            mod = total % 11;
+            const second = mod < 2 ? 0 : 11 - mod;
+            return second === Number(digits[13]);
+        };
+
+        const setDocValidity = (input, digits) => {
+            if (!digits.length) {
+                input.setCustomValidity("");
+                return;
+            }
+            if (digits.length === 11) {
+                input.setCustomValidity(isValidCPF(digits) ? "" : "CPF inválido.");
+                return;
+            }
+            if (digits.length === 14) {
+                input.setCustomValidity(isValidCNPJ(digits) ? "" : "CNPJ inválido.");
+                return;
+            }
+            input.setCustomValidity("Informe CPF (11 dígitos) ou CNPJ (14 dígitos).");
+        };
+
+        const applyDocMask = (input) => {
+            const digits = onlyDigits(input.value).slice(0, 14);
+            if (digits.length > 11) {
+                input.value = formatCNPJ(digits);
+            } else {
+                input.value = formatCPF(digits);
+            }
+            setDocValidity(input, digits);
+        };
+
+        const inputs = document.querySelectorAll('[data-mask="cnpj-cpf"]');
+        inputs.forEach((input) => {
+            applyDocMask(input);
+            input.addEventListener("input", () => applyDocMask(input));
+            input.addEventListener("blur", () => applyDocMask(input));
+        });
+    })();
+
+    (function() {
         const tipoSelect = document.querySelector('select[name="tipo"], #id_tipo');
         const marcaField = document.querySelector('input[name="marca"], select[name="marca"], #id_marca');
         if (!tipoSelect || !marcaField) return;
