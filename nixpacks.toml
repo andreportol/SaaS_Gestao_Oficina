@@ -10,7 +10,7 @@ aptPackages = [
   "libharfbuzz-subset0",
   "libfontconfig1",
   "libfreetype6",
-  "libjpeg62-turbo",
+  "libjpeg-turbo8",
   "libpng16-16",
   "libffi8",
   "fonts-dejavu-core",
