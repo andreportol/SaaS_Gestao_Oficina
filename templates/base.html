@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{% static 'core/styles.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
-<body class="app-bg">
+<body class="app-bg{% if user.is_authenticated %} is-authenticated{% endif %}{% if user.is_superuser %} is-superuser{% endif %}">
 <div class="app-blob app-blob-1"></div>
 <div class="app-blob app-blob-2"></div>
 <nav class="navbar navbar-expand-lg navbar-dark app-nav py-3">
@@ -193,6 +193,9 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     (function() {
+        if (document.querySelector('[data-skip-autofocus="true"]')) {
+            return;
+        }
         const firstInput = document.querySelector('main input:not([type="hidden"]), main select, main textarea');
         if (firstInput && !firstInput.hasAttribute('autofocus')) {
             firstInput.focus();
@@ -657,6 +660,25 @@
 
         moneyInputs.forEach((input) => {
             input.addEventListener("blur", () => formatMoney(input));
+        });
+
+        const liveMoneyInputs = document.querySelectorAll('[data-format="currency2"][data-format-live="true"]');
+        liveMoneyInputs.forEach((input) => {
+            const formatLive = () => {
+                const digits = input.value.replace(/\D/g, "");
+                if (!digits) {
+                    input.value = "";
+                    return;
+                }
+                const cents = parseInt(digits, 10);
+                if (Number.isNaN(cents)) {
+                    input.value = "";
+                    return;
+                }
+                input.value = (cents / 100).toFixed(2);
+            };
+            input.addEventListener("input", formatLive);
+            formatLive();
         });
     })();
 

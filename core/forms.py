@@ -498,9 +498,26 @@ class PagamentoForm(EmpresaFormMixin):
         model = Pagamento
         fields = ["forma_pagamento", "valor", "pago_em"]
         widgets = {
-            "pago_em": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date", "class": "form-control form-control-sm"}),
+            "pago_em": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-sm",
+                    "placeholder": "dd/mm/aaaa",
+                    "inputmode": "numeric",
+                    "data-date-picker": "br",
+                    "autocomplete": "off",
+                }
+            ),
             "forma_pagamento": forms.Select(attrs={"class": "form-control form-control-sm"}),
-            "valor": forms.NumberInput(attrs={"class": "form-control form-control-sm", "min": "0", "step": "0.01"}),
+            "valor": forms.TextInput(
+                attrs={
+                    "class": "form-control form-control-sm",
+                    "placeholder": "0,00",
+                    "inputmode": "decimal",
+                    "data-format": "currency2",
+                    "data-format-live": "true",
+                    "autocomplete": "off",
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -509,6 +526,11 @@ class PagamentoForm(EmpresaFormMixin):
             self.fields["forma_pagamento"].choices = Pagamento.Metodo.choices
         if not self.initial.get("pago_em"):
             self.initial["pago_em"] = timezone.now().date()
+        if "pago_em" in self.fields:
+            self.fields["pago_em"].input_formats = ["%d/%m/%Y", "%Y-%m-%d"]
+            initial = self.initial.get("pago_em")
+            if isinstance(initial, (datetime, date)):
+                self.initial["pago_em"] = initial.strftime("%d/%m/%Y")
 
 
 class DespesaForm(EmpresaFormMixin):

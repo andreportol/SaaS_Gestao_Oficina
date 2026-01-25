@@ -14,6 +14,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LoginView
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.core.files.storage import default_storage
 from django.db import IntegrityError
 from django.db.models import Q, Sum
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear
@@ -1035,9 +1036,38 @@ class OrdemServicoPdfView(LoginRequiredMixin, View):
             pk=pk,
         )
         empresa = os_obj.empresa or request.user.empresa
+        def _logo_exists(company):
+            if not company:
+                return False
+            checker = getattr(company, "logomarca_existe", None)
+            if callable(checker):
+                return checker()
+            logo = getattr(company, "logomarca", None)
+            if not logo:
+                return False
+            storage = getattr(logo, "storage", None) or default_storage
+            try:
+                return storage.exists(logo.name)
+            except Exception:
+                return False
+
+        def _logo_url(company):
+            if not company:
+                return ""
+            getter = getattr(company, "logomarca_url", None)
+            if callable(getter):
+                return getter() or ""
+            logo = getattr(company, "logomarca", None)
+            if not logo:
+                return ""
+            try:
+                return logo.url
+            except Exception:
+                return ""
+
         logo_src = None
         logo_path = None
-        if empresa and empresa.logomarca_existe():
+        if _logo_exists(empresa):
             try:
                 logo_path = empresa.logomarca.path
             except (NotImplementedError, OSError, ValueError):
@@ -1082,7 +1112,7 @@ class OrdemServicoPdfView(LoginRequiredMixin, View):
                 if path.exists():
                     logo_src = path.as_uri()
             if not logo_src:
-                logo_src = empresa.logomarca_url() or None
+                logo_src = _logo_url(empresa) or None
 
         context = {
             "object": os_obj,

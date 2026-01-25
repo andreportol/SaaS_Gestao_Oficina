@@ -15,13 +15,19 @@
     box-sizing: border-box;
 }
 
+html {
+    font-size: 16px;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+}
+
 body {
     font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
     background: var(--bg);
     color: var(--text);
     position: relative;
-    font-size: 20px;
+    font-size: 1rem;
     color-scheme: dark;
 }
 
@@ -177,6 +183,19 @@ a:hover {
 .navbar-dark .navbar-nav .nav-link.active {
     color: var(--text) !important;
     border-color: var(--accent);
+}
+
+.is-authenticated:not(.is-superuser) .app-nav .navbar-nav .nav-link {
+    font-size: 0.95rem;
+}
+
+.is-superuser .app-nav .navbar-nav .nav-link {
+    font-size: 0.85rem;
+}
+
+.is-superuser .app-nav .btn-nav,
+.is-superuser .app-nav .btn-nav-secondary {
+    font-size: 0.9rem;
 }
 
 .nav-pill.active {
