@@ -18,6 +18,7 @@
             <h2 class="h6 text-uppercase text-muted">Dados</h2>
             <p class="mb-1"><strong>Cliente:</strong> {{ object.cliente.nome }}</p>
             <p class="mb-1"><strong>Veículo:</strong> {{ object.veiculo.placa }} - {{ object.veiculo.modelo }}</p>
+            <p class="mb-1"><strong>Executor:</strong> {{ object.executor|default:"-" }}</p>
             <p class="mb-1"><strong>Status:</strong> <span class="status-pill status-{{ object.status }}">{{ object.get_status_display }}</span></p>
             <p class="mb-1"><strong>Entrada:</strong> {{ object.entrada_em }}</p>
             <p class="mb-1"><strong>Previsão:</strong> {{ object.previsao_entrega|default:"-" }}</p>
@@ -36,6 +37,23 @@
             <p class="mb-1"><strong>Total:</strong> R$ {{ object.total|floatformat:2 }}</p>
             <p class="mb-1"><strong>Total Pago:</strong> R$ {{ object.total_pago|floatformat:2 }}</p>
             <p class="mb-1"><strong>Saldo:</strong> <span class="{% if object.saldo > 0 %}text-danger{% else %}text-success{% endif %}">R$ {{ object.saldo|floatformat:2 }}</span></p>
+            {% if object.itens.exists %}
+                <div class="mt-2">
+                    <strong>Itens:</strong>
+                    {% for item in object.itens.all %}
+                        <div class="text-muted small d-flex justify-content-between gap-2">
+                            <span>
+                                {{ item.qtd|floatformat:0 }}x
+                                {% if item.produto %}{{ item.produto.nome }}{% else %}{{ item.descricao }}{% endif %}
+                            </span>
+                            <span>
+                                R$ {{ item.valor_unitario|floatformat:2 }}
+                                <span class="ms-1">(R$ {{ item.subtotal|floatformat:2 }})</span>
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -50,6 +68,7 @@
                 <table class="table table-sm">
                     <thead>
                         <tr>
+                            <th>Produto</th>
                             <th>Descrição</th>
                             <th class="text-end">Qtd</th>
                             <th class="text-end">Valor</th>
@@ -59,13 +78,14 @@
                     <tbody>
                         {% for item in object.itens.all %}
                         <tr>
+                            <td>{{ item.produto.nome|default:"-" }}</td>
                             <td>{{ item.descricao }}</td>
                             <td class="text-end">{{ item.qtd|floatformat:0 }}</td>
                             <td class="text-end">R$ {{ item.valor_unitario|floatformat:2 }}</td>
                             <td class="text-end">R$ {{ item.subtotal|floatformat:2 }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="4" class="text-center">Nenhum item.</td></tr>
+                        <tr><td colspan="5" class="text-center">Nenhum item.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -88,10 +108,10 @@
             </form>
         </div>
     </div>
-    {% if object.pagamentos.exists %}
     <div class="col-md-5 print-hide-empty">
         <div class="card p-3 os-detail-section">
             <h2 class="h6 text-uppercase text-muted mb-2">Pagamentos</h2>
+            {% if object.pagamentos.exists %}
             <div class="table-responsive">
                 <table class="table table-sm">
                     <thead>
@@ -112,6 +132,9 @@
                     </tbody>
                 </table>
             </div>
+            {% else %}
+            <div class="text-muted mb-2">Nenhum pagamento registrado.</div>
+            {% endif %}
             <form method="post" class="mt-2">
                 {% csrf_token %}
                 <input type="hidden" name="add_pagamento" value="1">
@@ -126,14 +149,6 @@
             </form>
         </div>
     </div>
-    {% else %}
-    <div class="col-md-5 print-hide">
-        <div class="card p-3 os-detail-section">
-            <h2 class="h6 text-uppercase text-muted mb-2">Pagamentos</h2>
-            <div class="text-muted">Nenhum pagamento registrado.</div>
-        </div>
-    </div>
-    {% endif %}
 </div>
 <script>
 (function() {

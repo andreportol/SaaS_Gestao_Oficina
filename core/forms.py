@@ -11,7 +11,17 @@ from django.db import models
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 
-from .models import Agenda, Cliente, Despesa, FormaPagamento, OrdemServico, OSItem, Pagamento, Produto, Veiculo
+from .models import (
+    Agenda,
+    Cliente,
+    Despesa,
+    Funcionario,
+    OrdemServico,
+    OSItem,
+    Pagamento,
+    Produto,
+    Veiculo,
+)
 from .permissions import ROLE_EMPLOYEE, ROLE_MANAGER
 
 
@@ -175,15 +185,16 @@ class VeiculoForm(EmpresaFormMixin):
 
     class Meta:
         model = Veiculo
-        fields = ["cliente", "tipo", "marca", "modelo", "ano", "cor", "placa"]
+        fields = ["cliente", "tipo", "marca", "modelo", "ano", "cor", "placa", "km"]
         widgets = {
             "placa": forms.TextInput(attrs={"placeholder": "ABC1D23", "style": "text-transform: uppercase;"}),
             "ano": forms.TextInput(
                 attrs={"placeholder": "2023/2024", "data-mask": "ano-modelo", "inputmode": "numeric"}
             ),
             "modelo": forms.TextInput(attrs={"placeholder": "Onix Plus"}),
+            "km": forms.NumberInput(attrs={"min": "0", "step": "1", "placeholder": "Quilometragem"}),
         }
-        labels = {"ano": "Ano/Modelo"}
+        labels = {"ano": "Ano/Modelo", "km": "Quilometragem (km)"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -209,7 +220,7 @@ class VeiculoForm(EmpresaFormMixin):
             self.initial.setdefault("data_cadastro", _coerce_display_date(timezone.now()))
             self.fields["data_cadastro"].input_formats = ["%d/%m/%Y", "%Y-%m-%d"]
             self.fields["data_cadastro"].disabled = True
-        order = ["cliente", "tipo", "marca", "modelo", "ano", "cor", "placa"]
+        order = ["cliente", "tipo", "marca", "modelo", "ano", "cor", "placa", "km"]
         if "data_cadastro" in self.fields:
             order.append("data_cadastro")
         self.order_fields(order)
@@ -347,23 +358,13 @@ class AgendaForm(EmpresaFormMixin):
         return cleaned
 
 
-class FormaPagamentoForm(EmpresaFormMixin):
-    class Meta:
-        model = FormaPagamento
-        fields = ["nome", "ativo"]
-        widgets = {
-            "nome": forms.TextInput(attrs={"autofocus": "autofocus"}),
-            "ativo": forms.CheckboxInput(attrs={"class": "big-check"}),
-        }
-
-
 class OrdemServicoForm(EmpresaFormMixin):
     class Meta:
         model = OrdemServico
         fields = [
             "cliente",
             "veiculo",
-            "responsavel",
+            "executor",
             "status",
             "entrada_em",
             "previsao_entrega",
@@ -372,7 +373,6 @@ class OrdemServicoForm(EmpresaFormMixin):
             "mao_de_obra",
             "desconto",
             "observacoes",
-            "anexo",
         ]
         widgets = {
             "entrada_em": forms.DateInput(
@@ -400,13 +400,14 @@ class OrdemServicoForm(EmpresaFormMixin):
             "desconto": forms.NumberInput(
                 attrs={"min": "0", "step": "0.01", "data-format": "currency2", "placeholder": "0,00"}
             ),
+            "observacoes": forms.Textarea(attrs={"rows": 2, "class": "form-control"}),
         }
         labels = {
             "mao_de_obra": "Mão de obra",
             "observacoes": "Observações",
             "desconto": "Desconto em Reais (R$)",
             "previsao_entrega": "Previsão de entrega",
-            "responsavel": "Responsável",
+            "executor": "Executor do serviço",
         }
 
     def __init__(self, *args, **kwargs):
@@ -426,6 +427,9 @@ class OrdemServicoForm(EmpresaFormMixin):
                 self.fields["responsavel"].disabled = True
                 self.fields["responsavel"].initial = user.pk
             self.fields["responsavel"].queryset = responsaveis_qs
+
+        if "executor" in self.fields:
+            self.fields["executor"].queryset = self.fields["executor"].queryset.filter(ativo=True)
 
         veiculos_qs = Veiculo.objects.all()
         if empresa:
@@ -499,6 +503,8 @@ class PagamentoForm(EmpresaFormMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if "forma_pagamento" in self.fields:
+            self.fields["forma_pagamento"].choices = Pagamento.Metodo.choices
         if not self.initial.get("pago_em"):
             self.initial["pago_em"] = timezone.now().date()
 
@@ -513,6 +519,39 @@ class DespesaForm(EmpresaFormMixin):
                 attrs={"min": "0", "step": "0.01", "data-format": "currency2", "placeholder": "0,00"}
             ),
         }
+
+
+class FuncionarioForm(EmpresaFormMixin):
+    class Meta:
+        model = Funcionario
+        fields = ["nome", "telefone", "email", "data_ingresso", "ativo"]
+        widgets = {
+            "nome": forms.TextInput(attrs={"class": "form-control", "autofocus": "autofocus"}),
+            "telefone": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "(99)99999-9999", "data-mask": "phone"}
+            ),
+            "email": forms.EmailInput(attrs={"class": "form-control", "placeholder": "email@empresa.com"}),
+            "data_ingresso": forms.DateInput(
+                format="%d/%m/%Y",
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "dd/mm/aaaa",
+                    "inputmode": "numeric",
+                    "data-date-picker": "br",
+                    "autocomplete": "off",
+                },
+            ),
+            "ativo": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+        labels = {"ativo": "Ativo", "data_ingresso": "Data de ingresso na empresa"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.initial.get("data_ingresso"):
+            ingresso = _coerce_display_date(getattr(self.instance, "data_ingresso", None))
+            self.initial["data_ingresso"] = ingresso or _coerce_display_date(timezone.now())
+        if "data_ingresso" in self.fields:
+            self.fields["data_ingresso"].input_formats = ["%d/%m/%Y", "%Y-%m-%d"]
 
 
 class UsuarioBaseForm(forms.ModelForm):

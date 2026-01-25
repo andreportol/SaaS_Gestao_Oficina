@@ -5,7 +5,7 @@ from datetime import timedelta
 from django.db.models import Avg, Count, F, Q, Sum
 from django.db.models.expressions import ExpressionWrapper
 from django.db.models.fields import DateTimeField, DurationField
-from django.db.models.functions import Cast, TruncDate, TruncMonth
+from django.db.models.functions import Cast, Coalesce, TruncDate, TruncMonth
 from django.utils import timezone
 
 from ..models import Despesa, OrdemServico, OSItem, Pagamento, Produto
@@ -141,7 +141,8 @@ def build_dashboard_data(user, range_key=None, start=None, end=None):
 
     os_periodo = os_qs.filter(entrada_em__gte=period_start, entrada_em__lte=period_end)
     os_por_funcionario = (
-        os_periodo.values("responsavel__username")
+        os_periodo.annotate(executor_nome=Coalesce("executor__nome", "responsavel__username"))
+        .values("executor_nome")
         .annotate(total=Count("id"))
         .order_by("-total")
     )
@@ -219,9 +220,7 @@ def build_dashboard_data(user, range_key=None, start=None, end=None):
         },
         "operacional": {
             "os_por_funcionario": {
-                "labels": [
-                    row["responsavel__username"] or "Sem responsavel" for row in os_por_funcionario
-                ],
+                "labels": [row["executor_nome"] or "Sem executor" for row in os_por_funcionario],
                 "valores": [row["total"] for row in os_por_funcionario],
             },
             "status_os": {

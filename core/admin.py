@@ -5,7 +5,7 @@ from .models import (
     Cliente,
     Despesa,
     Empresa,
-    FormaPagamento,
+    Funcionario,
     OrdemServico,
     OrdemServicoLog,
     OSItem,
@@ -61,6 +61,18 @@ class UsuarioAdmin(EmpresaAdminMixin, UserAdmin):
     search_fields = ("username", "email", "first_name", "last_name")
 
 
+@admin.register(Funcionario)
+class FuncionarioAdmin(EmpresaAdminMixin, admin.ModelAdmin):
+    fieldsets = (
+        ("Dados do funcionario", {"fields": ("empresa", "nome", "telefone", "email", "data_ingresso", "ativo")}),
+        ("Controle", {"fields": ("criado_em",)}),
+    )
+    list_display = ("nome", "telefone", "email", "data_ingresso", "ativo", "empresa")
+    list_filter = ("ativo", "empresa")
+    search_fields = ("nome", "telefone", "email")
+    readonly_fields = ("criado_em",)
+
+
 @admin.register(Empresa)
 class EmpresaAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
@@ -105,9 +117,9 @@ class ClienteAdmin(EmpresaAdminMixin, admin.ModelAdmin):
 class VeiculoAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Relacionamentos", {"fields": ("empresa", "cliente")}),
-        ("Veiculo", {"fields": ("tipo", "placa", "marca", "modelo", "ano", "cor")}),
+        ("Veiculo", {"fields": ("tipo", "placa", "marca", "modelo", "ano", "cor", "km")}),
     )
-    list_display = ("placa", "modelo", "cliente", "empresa")
+    list_display = ("placa", "modelo", "km", "cliente", "empresa")
     search_fields = ("placa", "modelo", "marca")
     list_filter = ("tipo", "empresa")
 
@@ -124,21 +136,11 @@ class ProdutoAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     list_filter = ("empresa",)
 
 
-@admin.register(FormaPagamento)
-class FormaPagamentoAdmin(EmpresaAdminMixin, admin.ModelAdmin):
-    fieldsets = (
-        ("Forma de pagamento", {"fields": ("empresa", "nome", "ativo")}),
-    )
-    list_display = ("nome", "ativo", "empresa")
-    list_filter = ("ativo", "empresa")
-    search_fields = ("nome",)
-
-
 @admin.register(OrdemServico)
 class OrdemServicoAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     fieldsets = (
         ("Identificacao", {"fields": ("empresa", "status")}),
-        ("Cliente e veiculo", {"fields": ("cliente", "veiculo", "responsavel")}),
+        ("Cliente e veiculo", {"fields": ("cliente", "veiculo", "responsavel", "executor")}),
         ("Datas", {"fields": ("entrada_em", "previsao_entrega")}),
         ("Descricao", {"fields": ("problema", "diagnostico", "observacoes")}),
         ("Valores", {"fields": ("mao_de_obra", "desconto", "total_cache")}),

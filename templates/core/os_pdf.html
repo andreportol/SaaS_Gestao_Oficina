@@ -126,6 +126,17 @@
             margin-bottom: 6px;
         }
 
+        .company-logo img {
+            display: block;
+            max-width: 180px;
+            max-height: 80px;
+            object-fit: contain;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 4px;
+            margin: 6px 0 8px;
+        }
+
         .company-contact {
             font-size: 11px;
             color: var(--text-light);
@@ -135,7 +146,7 @@
         }
 
         .doc-info {
-            text-align: right;
+            text-align: left;
             background: linear-gradient(140deg, #ffffff 0%, #f8fafc 100%);
             padding: 16px 18px;
             border-radius: 14px;
@@ -449,37 +460,6 @@
 </head>
 <body>
     <header class="header">
-        <div class="brand">
-            {% if logo_src or empresa.logomarca or empresa.cnpj_cpf or empresa.telefone %}
-            <div class="logo-block">
-                {% if logo_src %}
-                <div class="logo-container">
-                    <img class="logo" src="{{ logo_src|safe }}" alt="Logomarca">
-                </div>
-                {% elif empresa.logomarca %}
-                <div class="logo-container">
-                    <img class="logo" src="{{ empresa.logomarca.url }}" alt="Logomarca">
-                </div>
-                {% endif %}
-                {% if empresa.cnpj_cpf or empresa.telefone %}
-                <div class="logo-meta">
-                    {% if empresa.cnpj_cpf %}<span>CNPJ: {{ empresa.cnpj_cpf }}</span>{% endif %}
-                    {% if empresa.telefone %}<span>Telefone: {{ empresa.telefone }}</span>{% endif %}
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-            <div class="company-info">
-                <div class="company-name">{{ empresa.nome|default:"Oficina Mecânica" }}</div>
-                <div class="company-details">
-                    {% if empresa.endereco %}{{ empresa.endereco }}{% endif %}
-                </div>
-                <div class="company-contact">
-                    {% if empresa.email %}<span>✉️ {{ empresa.email }}</span>{% endif %}
-                    {% if empresa.website %}<span>🌐 {{ empresa.website }}</span>{% endif %}
-                </div>
-            </div>
-        </div>
         <div class="doc-info">
             <div class="doc-title">Ordem de Serviço</div>
             <div class="doc-number">OS #{{ object.id|stringformat:"05d" }}</div>
@@ -487,6 +467,26 @@
             <div class="doc-dates">
                 <div><strong>Entrada:</strong> {{ object.entrada_em|date:"d/m/Y" }}</div>
                 <div><strong>Previsão:</strong> {{ object.previsao_entrega|date:"d/m/Y"|default:"A definir" }}</div>
+                <div><strong>Executor:</strong> {{ object.executor|default:"-" }}</div>
+                <div><strong>CNPJ:</strong> {{ empresa.cnpj_cpf|default:"-" }}</div>
+                <div><strong>Telefone:</strong> {{ empresa.telefone|default:"-" }}</div>
+            </div>
+        </div>
+        <div class="brand">
+            <div class="company-info">
+                <div class="company-name">{{ empresa.nome|default:"Oficina Mecânica" }}</div>
+                {% if logo_src %}
+                <div class="company-logo">
+                    <img src="{{ logo_src|safe }}" alt="Logomarca">
+                </div>
+                {% endif %}
+                <div class="company-details">
+                    {% if empresa.endereco %}{{ empresa.endereco }}{% endif %}
+                </div>
+                <div class="company-contact">
+                    {% if empresa.email %}<span>✉️ {{ empresa.email }}</span>{% endif %}
+                    {% if empresa.website %}<span>🌐 {{ empresa.website }}</span>{% endif %}
+                </div>
             </div>
         </div>
     </header>
@@ -568,6 +568,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>Produto</th>
                             <th>Descrição</th>
                             <th class="text-right">Qtd</th>
                             <th class="text-right">Valor Unitário</th>
@@ -577,6 +578,7 @@
                     <tbody>
                         {% for item in object.itens.all %}
                         <tr>
+                            <td>{{ item.produto.nome|default:"-" }}</td>
                             <td>{{ item.descricao }}</td>
                             <td class="text-right">{{ item.qtd|floatformat:0 }}</td>
                             <td class="text-right">R$ {{ item.valor_unitario|floatformat:2 }}</td>
@@ -584,7 +586,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted">Nenhum item registrado.</td>
+                            <td colspan="5" class="text-center text-muted">Nenhum item registrado.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -32,7 +32,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from .forms import (
     ClienteForm,
     DespesaForm,
-    FormaPagamentoForm,
+    FuncionarioForm,
     OrdemServicoForm,
     OSItemForm,
     PagamentoForm,
@@ -46,7 +46,7 @@ from .models import (
     Agenda,
     Cliente,
     Despesa,
-    FormaPagamento,
+    Funcionario,
     OrdemServico,
     OrdemServicoLog,
     OSItem,
@@ -730,6 +730,52 @@ class UsuarioDeactivateView(ManagerRequiredMixin, View):
         return redirect("usuarios_list")
 
 
+class FuncionarioListView(ManagerRequiredMixin, EmpresaQuerysetMixin, ListView):
+    model = Funcionario
+    paginate_by = 10
+    template_name = "core/funcionarios_list.html"
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        termo = self.request.GET.get("q")
+        if termo:
+            qs = qs.filter(
+                Q(nome__icontains=termo)
+                | Q(email__icontains=termo)
+                | Q(telefone__icontains=termo)
+            )
+        return qs.order_by("nome")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["total_funcionarios"] = self.get_queryset().count()
+        return context
+
+
+class FuncionarioCreateView(ManagerRequiredMixin, EmpresaFormMixin, CreateView):
+    model = Funcionario
+    form_class = FuncionarioForm
+    template_name = "core/funcionarios_form.html"
+    success_url = reverse_lazy("funcionarios_list")
+    extra_context = {"title": "Novo funcionario"}
+
+    def form_valid(self, form):
+        messages.success(self.request, "Funcionario criado.")
+        return super().form_valid(form)
+
+
+class FuncionarioUpdateView(ManagerRequiredMixin, EmpresaFormMixin, EmpresaQuerysetMixin, UpdateView):
+    model = Funcionario
+    form_class = FuncionarioForm
+    template_name = "core/funcionarios_form.html"
+    success_url = reverse_lazy("funcionarios_list")
+    extra_context = {"title": "Editar funcionario"}
+
+    def form_valid(self, form):
+        messages.success(self.request, "Funcionario atualizado.")
+        return super().form_valid(form)
+
+
 class ProdutoListView(EmpresaQuerysetMixin, ListView):
     model = Produto
     paginate_by = 10
@@ -818,7 +864,7 @@ class OrdemServicoListView(EmpresaQuerysetMixin, ListView):
     def get_queryset(self):
         qs = os_queryset_for_user(
             self.request.user,
-            OrdemServico.objects.select_related("cliente", "veiculo", "responsavel"),
+            OrdemServico.objects.select_related("cliente", "veiculo", "responsavel", "executor"),
         )
         status = self.request.GET.get("status")
         inicio = self._parse_date(self.request.GET.get("inicio"))
@@ -968,7 +1014,7 @@ class OrdemServicoPdfView(LoginRequiredMixin, View):
 
         os_obj = get_object_or_404(
             os_queryset_for_user(request.user)
-            .select_related("cliente", "veiculo", "responsavel")
+            .select_related("cliente", "veiculo", "responsavel", "executor")
             .prefetch_related("itens", "pagamentos"),
             pk=pk,
         )
@@ -1263,32 +1309,6 @@ class RelatoriosView(ManagerRequiredMixin, TemplateView):
             }
         )
         return context
-
-
-class FormaPagamentoListView(ManagerRequiredMixin, EmpresaQuerysetMixin, TemplateView, FormMixin):
-    template_name = "core/formas_pagamento.html"
-    form_class = FormaPagamentoForm
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.request.user
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["formas"] = FormaPagamento.objects.filter(empresa=self.request.user.empresa)
-        context["form"] = kwargs.get("form") or self.get_form()
-        return context
-
-    def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        if form.is_valid():
-            forma = form.save(commit=False)
-            forma.empresa = request.user.empresa
-            forma.save()
-            messages.success(request, "Forma de pagamento salva.")
-            return redirect("formas_pagamento")
-        return self.render_to_response(self.get_context_data(form=form))
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")

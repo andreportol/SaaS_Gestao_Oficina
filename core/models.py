@@ -149,6 +149,22 @@ class Usuario(AbstractUser):
         return self.groups.filter(name="Gerente").exists()
 
 
+class Funcionario(models.Model):
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name="funcionarios")
+    nome = models.CharField(max_length=150)
+    telefone = models.CharField(max_length=30, blank=True)
+    email = models.EmailField(blank=True)
+    data_ingresso = models.DateField(default=timezone.now)
+    ativo = models.BooleanField(default=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["nome"]
+
+    def __str__(self) -> str:
+        return self.nome
+
+
 class Cliente(models.Model):
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name="clientes")
     nome = models.CharField(max_length=150)
@@ -188,6 +204,7 @@ class Veiculo(models.Model):
     modelo = models.CharField(max_length=50)
     ano = models.CharField(max_length=9, blank=True, null=True)
     cor = models.CharField(max_length=30, blank=True)
+    km = models.IntegerField(blank=True, null=True, validators=[MinValueValidator(0)])
 
     class Meta:
         ordering = ["placa"]
@@ -242,19 +259,6 @@ class Produto(models.Model):
         return self.nome
 
 
-class FormaPagamento(models.Model):
-    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name="formas_pagamento")
-    nome = models.CharField(max_length=60)
-    ativo = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["nome"]
-        unique_together = ("empresa", "nome")
-
-    def __str__(self) -> str:
-        return self.nome
-
-
 class OrdemServico(models.Model):
     class Status(models.TextChoices):
         ABERTA = "ABERTA", "Aberta"
@@ -270,6 +274,13 @@ class OrdemServico(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         related_name="os_responsavel",
+        null=True,
+        blank=True,
+    )
+    executor = models.ForeignKey(
+        Funcionario,
+        on_delete=models.SET_NULL,
+        related_name="os_execucoes",
         null=True,
         blank=True,
     )

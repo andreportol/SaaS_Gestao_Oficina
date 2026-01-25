@@ -770,27 +770,17 @@ body:not(.theme-light) .btn-print:focus {
     box-shadow: var(--shadow);
 }
 
+.theme-light .card {
+    border-color: rgba(13, 110, 253, 0.45);
+    box-shadow: 0 12px 30px rgba(13, 110, 253, 0.18);
+}
+
 .dashboard-stat-card {
     min-height: 120px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 6px;
-}
-
-.theme-light .dashboard-stat-card {
-    border-color: rgba(13, 110, 253, 0.45);
-    box-shadow: 0 12px 30px rgba(13, 110, 253, 0.18);
-}
-
-.theme-light .dashboard-card {
-    border-color: rgba(13, 110, 253, 0.45);
-    box-shadow: 0 12px 30px rgba(13, 110, 253, 0.18);
-}
-
-.theme-light .usuarios-page .card {
-    border-color: rgba(13, 110, 253, 0.45);
-    box-shadow: 0 12px 30px rgba(13, 110, 253, 0.18);
 }
 
 .theme-light .usuarios-page .alert {

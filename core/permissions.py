@@ -13,7 +13,6 @@ ROLE_MODELS = [
     "core.Veiculo",
     "core.Agenda",
     "core.Produto",
-    "core.FormaPagamento",
     "core.OrdemServico",
     "core.OSItem",
     "core.Pagamento",

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="clientes-page">
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0 d-inline-flex align-items-center gap-2">
+        <span class="page-title-label">
+            <svg class="page-title-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="8" r="3"></circle>
+                <circle cx="17" cy="9" r="2.5"></circle>
+                <path d="M3 20c1.4-3.5 4.2-5 6-5s4.6 1.5 6 5"></path>
+                <path d="M14.5 20c0-2 1.5-3.5 3.5-3.5S21 18 21 20"></path>
+            </svg>
+            Funcionários
+        </span>
+        <span class="badge bg-soft ms-2 badge-count">{{ total_funcionarios|default:0 }}</span>
+    </h1>
+    <a class="btn btn-primary" href="{% url 'funcionarios_create' %}">Novo Funcionário</a>
+</div>
+<form class="row g-2 mb-3" method="get">
+    <div class="col-auto flex-grow-1">
+        <input type="search" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar por nome, telefone ou e-mail">
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-secondary">Buscar</button>
+    </div>
+</form>
+<div class="card p-0">
+    <div class="table-responsive">
+        <table class="table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>E-mail</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in object_list %}
+                <tr>
+                    <td>{{ f.nome }}</td>
+                    {% with f.telefone|default_if_none:""|cut:"("|cut:")"|cut:" "|cut:"-"|cut:"." as phone_digits %}
+                    <td class="phone-cell col-phone">
+                        <div class="phone-wrap">
+                            <span class="phone-number">{{ f.telefone }}</span>
+                            <div class="phone-actions">
+                                <a class="phone-call" href="tel:{{ f.telefone }}" title="Ligar">
+                                    <img src="{% static 'core/img/telefone.png' %}" alt="Ligar">
+                                </a>
+                                {% if phone_digits %}
+                                    <a class="phone-wa" href="https://wa.me/55{{ phone_digits }}" target="_blank" rel="noopener" title="WhatsApp">
+                                        <img src="{% static 'core/img/whatsapp.png' %}" alt="WhatsApp">
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    {% endwith %}
+                    <td>{{ f.email|default:"-" }}</td>
+                    <td>{% if f.ativo %}Ativo{% else %}Inativo{% endif %}</td>
+                    <td class="text-end">
+                        <a class="chip chip-action no-dot" href="{% url 'funcionarios_update' f.pk %}">Ver Mais</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center py-3">Nenhum funcionário encontrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% include "core/pagination.html" %}
+</div>
+{% endblock %}
