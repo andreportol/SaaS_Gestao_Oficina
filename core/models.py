@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, UserManager
+from django.core.files.storage import default_storage
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -164,6 +165,23 @@ class Funcionario(models.Model):
 
     def __str__(self) -> str:
         return self.nome
+
+    def logomarca_existe(self) -> bool:
+        if not self.logomarca:
+            return False
+        storage = getattr(self.logomarca, "storage", None) or default_storage
+        try:
+            return storage.exists(self.logomarca.name)
+        except Exception:
+            return False
+
+    def logomarca_url(self) -> str:
+        if not self.logomarca_existe():
+            return ""
+        try:
+            return self.logomarca.url
+        except Exception:
+            return ""
 
 
 class Cliente(models.Model):

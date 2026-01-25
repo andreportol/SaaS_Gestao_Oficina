@@ -1037,8 +1037,11 @@ class OrdemServicoPdfView(LoginRequiredMixin, View):
         empresa = os_obj.empresa or request.user.empresa
         logo_src = None
         logo_path = None
-        if empresa and getattr(empresa, "logomarca", None):
-            logo_path = getattr(empresa.logomarca, "path", None)
+        if empresa and empresa.logomarca_existe():
+            try:
+                logo_path = empresa.logomarca.path
+            except (NotImplementedError, OSError, ValueError):
+                logo_path = None
             data = None
             if logo_path:
                 path = Path(logo_path)
@@ -1079,7 +1082,7 @@ class OrdemServicoPdfView(LoginRequiredMixin, View):
                 if path.exists():
                     logo_src = path.as_uri()
             if not logo_src:
-                logo_src = request.build_absolute_uri(empresa.logomarca.url)
+                logo_src = empresa.logomarca_url() or None
 
         context = {
             "object": os_obj,
