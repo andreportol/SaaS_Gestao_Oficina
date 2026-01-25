@@ -37,5 +37,6 @@ urlpatterns = [
     path('caixa/graficos/', views.CaixaGraficosView.as_view(), name='caixa_graficos'),
     path('manual/', views.ManualView.as_view(), name='manual'),
     path('empresas/aprovacoes/', views.EmpresaAprovacaoView.as_view(), name='empresas_aprovacao'),
+    path('empresa/editar/', views.EmpresaUpdateView.as_view(), name='empresa_update'),
     path('relatorios/', views.RelatoriosView.as_view(), name='relatorios'),
 ]

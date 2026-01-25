@@ -34,6 +34,7 @@ from .forms import (
     AutoCadastroForm,
     ClienteForm,
     DespesaForm,
+    EmpresaUpdateForm,
     FuncionarioForm,
     OrdemServicoForm,
     OSItemForm,
@@ -1415,6 +1416,20 @@ class EmpresaAprovacaoView(SuperuserRequiredMixin, TemplateView):
         else:
             messages.warning(request, f"Acesso bloqueado para {empresa.nome}.")
         return redirect("empresas_aprovacao")
+
+
+class EmpresaUpdateView(ManagerRequiredMixin, UpdateView):
+    model = Empresa
+    form_class = EmpresaUpdateForm
+    template_name = "core/empresa_form.html"
+    success_url = reverse_lazy("dashboard")
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(Empresa, pk=self.request.user.empresa_id)
+
+    def form_valid(self, form):
+        messages.success(self.request, "Dados da empresa atualizados.")
+        return super().form_valid(form)
 
 
 def logout_view(request):

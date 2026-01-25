@@ -81,6 +81,9 @@
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="{% url 'manual' %}">Manual</a></li>
                         <li><a class="dropdown-item" href="{% url 'manual' %}#videos">Ver Vídeos</a></li>
+                        {% if user.is_authenticated and user.is_gerente %}
+                        <li><a class="dropdown-item" href="{% url 'empresa_update' %}">Atualizar dados</a></li>
+                        {% endif %}
                         {% if user.is_authenticated and user.is_superuser %}
                         <li><a class="dropdown-item" href="/admin/">Admin</a></li>
                         {% endif %}

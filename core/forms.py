@@ -578,6 +578,21 @@ class FuncionarioForm(EmpresaFormMixin):
             self.fields["data_ingresso"].input_formats = ["%d/%m/%Y", "%Y-%m-%d"]
 
 
+class EmpresaUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Empresa
+        fields = ["nome", "cnpj_cpf", "telefone", "logomarca"]
+        widgets = {
+            "nome": forms.TextInput(attrs={"class": "form-control", "autofocus": "autofocus"}),
+            "cnpj_cpf": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "CNPJ ou CPF", "data-mask": "cpf"}
+            ),
+            "telefone": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "(99)99999-9999", "data-mask": "phone"}
+            ),
+        }
+        labels = {"cnpj_cpf": "CNPJ/CPF", "logomarca": "Logomarca"}
+
 class UsuarioBaseForm(forms.ModelForm):
     data_cadastro = forms.DateField(
         label="Data de cadastro",
