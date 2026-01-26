@@ -76,6 +76,16 @@
                     <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'empresas_aprovacao' %} active{% endif %}" href="{% url 'empresas_aprovacao' %}">Liberações</a>
                 </li>
                 {% endif %}
+                {% if user.is_authenticated and user.is_superuser and renovacoes_pendentes_count %}
+                <li class="nav-item">
+                    <button class="btn btn-sm btn-nav position-relative" type="button" data-bs-toggle="collapse" data-bs-target="#renovacoesCollapse" aria-expanded="false" aria-controls="renovacoesCollapse" title="Notificações de renovação">
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                            <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2z" fill="currentColor"/>
+                        </svg>
+                        <span class="badge bg-danger ms-1">{{ renovacoes_pendentes_count }}</span>
+                    </button>
+                </li>
+                {% endif %}
                 <li class="nav-item dropdown">
                     <a class="nav-link nav-pill dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Ajuda</a>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -106,6 +116,28 @@
         </div>
     </div>
 </nav>
+{% if user.is_authenticated and user.is_superuser and renovacoes_pendentes_count %}
+    <div class="collapse" id="renovacoesCollapse">
+        <div class="container-xl mt-3">
+            <div class="alert alert-warning shadow-sm mb-0" role="alert">
+                <div class="fw-bold">Pedidos de renovação pendentes: {{ renovacoes_pendentes_count }}</div>
+                <div class="small mt-1">
+                    {% for empresa in renovacoes_pendentes %}
+                        <div>
+                            {{ empresa.nome }} — {{ empresa.get_renovacao_periodo_display }}
+                            {% if empresa.renovacao_solicitada_em %}
+                                ({{ empresa.renovacao_solicitada_em|date:"d \\d\\e F \\d\\e Y \\à\\s H:i" }})
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-2">
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'empresas_aprovacao' %}">Ver solicitações</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
 <main class="container-xl app-content">
     {% if messages %}
         {% for message in messages %}
@@ -114,24 +146,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
-    {% endif %}
-    {% if user.is_authenticated and user.is_superuser and renovacoes_pendentes_count %}
-        <div class="alert alert-warning shadow-sm" role="alert">
-            <div class="fw-bold">Pedidos de renovação pendentes: {{ renovacoes_pendentes_count }}</div>
-            <div class="small mt-1">
-                {% for empresa in renovacoes_pendentes %}
-                    <div>
-                        {{ empresa.nome }} — {{ empresa.get_renovacao_periodo_display }}
-                        {% if empresa.renovacao_solicitada_em %}
-                            ({{ empresa.renovacao_solicitada_em|date:"d \\d\\e F \\d\\e Y \\à\\s H:i" }})
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-            <div class="mt-2">
-                <a class="btn btn-sm btn-outline-secondary" href="{% url 'empresas_aprovacao' %}">Ver solicitações</a>
-            </div>
-        </div>
     {% endif %}
     {% if user.is_authenticated and user.empresa and user.empresa.is_ativo %}
         {% with dias=user.empresa.dias_para_vencimento %}
