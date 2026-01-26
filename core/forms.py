@@ -1024,8 +1024,17 @@ class AutoCadastroForm(forms.Form):
 
     def clean_email(self):
         email = (self.cleaned_data.get("email") or "").strip()
-        if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("Este e-mail já está em uso.")
+        existing_user = User.objects.filter(email__iexact=email).select_related("empresa").first()
+        if existing_user:
+            empresa = getattr(existing_user, "empresa", None)
+            if empresa and not empresa.pagamento_confirmado:
+                raise forms.ValidationError(
+                    "Já existe um cadastro pendente para este e-mail. "
+                    "Aguarde a liberação ou entre em contato com o suporte."
+                )
+            raise forms.ValidationError(
+                "Este e-mail já está em uso. Se você já possui conta, faça login ou recupere a senha."
+            )
         return email
 
     def clean_email_recuperacao(self):
@@ -1072,7 +1081,6 @@ class AutoCadastroForm(forms.Form):
             employee_group, _ = Group.objects.get_or_create(name=ROLE_EMPLOYEE)
             user.groups.add(manager_group)
             user.groups.remove(employee_group)
-            transaction.on_commit(lambda: _notify_nova_liberacao(empresa, user))
         return user
 
 

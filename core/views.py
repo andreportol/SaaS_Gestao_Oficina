@@ -39,6 +39,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from .forms import (
     LoginForm,
     _notify_aprovacao_acesso,
+    _notify_nova_liberacao,
     AutoCadastroForm,
     ClienteForm,
     DespesaForm,
@@ -1410,12 +1411,19 @@ class AutoCadastroView(FormMixin, TemplateView):
         return self.render_to_response(self.get_context_data(form=form))
 
     def form_valid(self, form):
-        form.save()
+        user = form.save()
         messages.success(
             self.request,
             "Cadastro recebido. Assim que o pagamento for confirmado, liberaremos o acesso ao sistema "
             "e enviaremos uma notificação por e-mail ou WhatsApp.",
         )
+        enviado, erro = _notify_nova_liberacao(user.empresa, user)
+        if not enviado:
+            messages.warning(
+                self.request,
+                "Cadastro recebido, mas não foi possível enviar o e-mail de notificação. "
+                "Verifique as configurações de e-mail.",
+            )
         return super().form_valid(form)
 
 
