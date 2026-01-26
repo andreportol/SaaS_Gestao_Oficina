@@ -24,6 +24,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.utils.crypto import get_random_string
 from django.utils.decorators import method_decorator
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 from django.views.generic.edit import FormMixin
@@ -31,6 +32,8 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .forms import (
+    LoginForm,
+    _notify_aprovacao_acesso,
     AutoCadastroForm,
     ClienteForm,
     DespesaForm,
@@ -606,8 +609,8 @@ class ContatoSuporteView(View):
             return JsonResponse({"error": "Preencha nome, email e mensagem."}, status=400)
 
         api_key = getattr(settings, "RESEND_API_KEY", "")
-        to_email = getattr(settings, "SUPPORT_EMAIL", "alpsistemascg@gmail.com")
-        from_email = getattr(settings, "SUPPORT_FROM_EMAIL", "no-reply@alpsistemas.app")
+        to_email = getattr(settings, "CONTACT_EMAIL", "alpsistemascg@gmail.com")
+        from_email = getattr(settings, "EMAIL_FROM", "no-reply@alpsistemas.app")
         if not api_key:
             return JsonResponse({"error": "Serviço de email não configurado. Informe o suporte."}, status=500)
 
@@ -1364,6 +1367,7 @@ class RelatoriosView(ManagerRequiredMixin, TemplateView):
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class CustomLoginView(LoginView):
     template_name = "registration/login.html"
+    authentication_form = LoginForm
 
 
 class AutoCadastroView(FormMixin, TemplateView):
@@ -1386,11 +1390,25 @@ class AutoCadastroView(FormMixin, TemplateView):
             return self.form_valid(form)
         return self.form_invalid(form)
 
+    def form_invalid(self, form):
+        # Remove mensagens antigas para evitar confusao quando o formulario falha.
+        list(messages.get_messages(self.request))
+        for error in form.non_field_errors():
+            messages.error(self.request, error)
+        for field, errors in form.errors.items():
+            if field == "__all__":
+                continue
+            label = form.fields.get(field).label if field in form.fields else field
+            for error in errors:
+                messages.error(self.request, f"{label}: {error}")
+        return self.render_to_response(self.get_context_data(form=form))
+
     def form_valid(self, form):
         form.save()
         messages.success(
             self.request,
-            "Cadastro recebido. Aguarde a confirmação do pagamento para liberar o acesso.",
+            "Cadastro recebido. Aguarde a confirmação do pagamento para liberar o acesso. "
+            "Será enviado um e-mail com os dados de acesso.",
         )
         return super().form_valid(form)
 
@@ -1403,16 +1421,43 @@ class EmpresaAprovacaoView(SuperuserRequiredMixin, TemplateView):
         empresas = Empresa.objects.all().order_by("-criado_em")
         context["empresas"] = empresas
         context["pendentes"] = empresas.filter(pagamento_confirmado=False).count()
+        home_url = self.request.build_absolute_uri("/")
+        context["whatsapp_message"] = (
+            "Seu acesso ao sistema foi liberado. "
+            f"Link de acesso: {home_url} "
+            "As credenciais foram enviadas ao email cadastrado."
+        )
         return context
 
     def post(self, request, *args, **kwargs):
         empresa_id = request.POST.get("empresa_id")
         empresa = get_object_or_404(Empresa, pk=empresa_id)
+        was_aprovado = empresa.pagamento_confirmado
         aprovado = request.POST.get("pagamento_confirmado") == "on"
         empresa.pagamento_confirmado = aprovado
         empresa.save(update_fields=["pagamento_confirmado"])
         if aprovado:
             messages.success(request, f"Acesso liberado para {empresa.nome}.")
+            if not was_aprovado:
+                usuario = empresa.usuarios.order_by("date_joined").first()
+                if not usuario:
+                    messages.warning(request, "Nao foi encontrado usuario para esta empresa.")
+                    return redirect("empresas_aprovacao")
+                senha = empresa.senha_temporaria
+                if not senha:
+                    senha = get_random_string(12)
+                    usuario.set_password(senha)
+                    usuario.save(update_fields=["password"])
+                enviado, erro = _notify_aprovacao_acesso(empresa, usuario, senha)
+                if enviado:
+                    if empresa.senha_temporaria:
+                        empresa.senha_temporaria = ""
+                        empresa.save(update_fields=["senha_temporaria"])
+                else:
+                    messages.warning(
+                        request,
+                        f"Email de acesso nao enviado. {erro or 'Verifique RESEND_API_KEY e EMAIL_FROM.'}",
+                    )
         else:
             messages.warning(request, f"Acesso bloqueado para {empresa.nome}.")
         return redirect("empresas_aprovacao")

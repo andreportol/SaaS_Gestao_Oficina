@@ -1477,7 +1477,7 @@ body:not(.theme-light) .table tbody tr td {
 
 .theme-light .os-page .os-filter .form-control,
 .theme-light .os-page .os-filter .form-select {
-    border-color: rgba(13, 110, 253, 0.45);
+    border-color: var(--border);
 }
 
 .theme-light .os-page .os-filter .form-control:focus,
@@ -1693,6 +1693,8 @@ body:not(.theme-light) .user-flag-hints {
 .theme-light .app-form textarea {
     color: var(--text) !important;
     caret-color: var(--text);
+    background: #fff;
+    border-color: #cbd5e1;
 }
 
 .app-form input:not([type="checkbox"]):not([type="radio"]):-webkit-autofill,
@@ -1793,6 +1795,45 @@ body:not(.theme-light) .user-flag-hints {
 
 .form-control-wrap input {
     width: 100%;
+}
+
+.form-control-wrap {
+    position: relative;
+}
+
+.password-wrap input {
+    padding-right: 42px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    opacity: 0.7;
+}
+
+.password-toggle:hover,
+.password-toggle:focus {
+    color: var(--accent);
+    opacity: 1;
+}
+
+.password-toggle.is-visible {
+    color: var(--accent);
+    opacity: 1;
+}
+
+.password-toggle svg {
+    display: block;
+    width: 18px;
+    height: 18px;
 }
 
 .auth-footer {
@@ -2243,6 +2284,11 @@ body:not(.theme-light) .produtos-search-input:focus {
     border-color: var(--border);
 }
 
+.theme-light .form-control:not(:focus),
+.theme-light .form-select:not(:focus) {
+    border-color: var(--border);
+}
+
 /* Plano modal - tema escuro/claro */
 #planModal .modal-content {
     background: var(--panel);
@@ -2290,6 +2336,30 @@ body.app-bg:not(.theme-light) .dashboard-muted {
 
 .theme-light .export-btn {
     color: #0f172a;
+}
+
+.whatsapp-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    color: #25d366;
+    border: 1px solid rgba(37, 211, 102, 0.35);
+    background: rgba(37, 211, 102, 0.12);
+}
+
+.whatsapp-link:hover,
+.whatsapp-link:focus {
+    color: #1ea955;
+    border-color: rgba(37, 211, 102, 0.6);
+}
+
+.whatsapp-link svg {
+    width: 16px;
+    height: 16px;
+    display: block;
 }
 
 /* Suporte modal - tema escuro/claro */

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load core_extras %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <h1 class="h4 mb-0">Liberação de acesso</h1>
@@ -22,7 +23,25 @@
                 {% for empresa in empresas %}
                 <tr>
                     <td>{{ empresa.nome }}</td>
-                    <td>{{ empresa.telefone|default:"-" }}</td>
+                    <td>
+                        {% if empresa.telefone %}
+                            <div class="d-inline-flex align-items-center gap-2">
+                                <span>{{ empresa.telefone }}</span>
+                                {% with phone=empresa.telefone|whatsapp_number %}
+                                    {% if phone %}
+                                        <a class="whatsapp-link" href="https://wa.me/{{ phone }}?text={{ whatsapp_message|urlencode }}" target="_blank" rel="noopener" aria-label="Enviar WhatsApp">
+                                            <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                                                <path d="M16 3C9.1 3 3.5 8.5 3.5 15.3c0 2.4.7 4.7 2 6.7L3 29l7.2-2.4c1.9 1 4.1 1.6 6.4 1.6 6.9 0 12.5-5.5 12.5-12.3S22.9 3 16 3z" fill="currentColor"/>
+                                                <path d="M11.3 9.7c.3-.7.6-.7.9-.7h.7c.2 0 .5 0 .7.4.2.4.9 2.2 1 2.4.1.2.1.5 0 .7-.1.2-.2.4-.4.6-.2.2-.4.4-.5.6-.2.2-.4.4-.2.8.2.4 1 1.6 2.1 2.6 1.4 1.2 2.6 1.6 3 1.8.4.2.6.2.8 0 .2-.2 1-.9 1.2-1.2.2-.3.4-.2.7-.1.3.1 1.9.9 2.2 1.1.3.2.5.2.6.4.1.2.1 1-.2 2-.3.9-1.7 1.7-2.3 1.8-.6.1-1.3.2-2.1-.1-.5-.2-1.1-.3-1.9-.7-3.3-1.4-5.4-4.6-5.6-4.9-.2-.3-1.4-1.8-1.4-3.5 0-1.7.9-2.5 1.2-2.9z" fill="#0b1224"/>
+                                            </svg>
+                                        </a>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td>{{ empresa.get_plano_display }}</td>
                     <td>{% if empresa.pagamento_confirmado %}Confirmado{% else %}Pendente{% endif %}</td>
                     <td>{{ empresa.criado_em|date:"d/m/Y" }}</td>

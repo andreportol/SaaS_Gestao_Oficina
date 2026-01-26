@@ -42,6 +42,7 @@ class Empresa(models.Model):
     plano_vencimento_em = models.DateTimeField(blank=True, null=True)
     is_ativo = models.BooleanField(default=True)
     pagamento_confirmado = models.BooleanField(default=False)
+    senha_temporaria = models.CharField(max_length=128, blank=True, default="")
     criado_em = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:

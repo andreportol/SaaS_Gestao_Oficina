@@ -30,9 +30,10 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "alpsistemascg@gmail.com")
-SUPPORT_FROM_EMAIL = os.getenv("SUPPORT_FROM_EMAIL", "no-reply@alpsistemas.app")
+CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "alpsistemascg@gmail.com")
+EMAIL_FROM = os.getenv("EMAIL_FROM", "no-reply@alpsistemas.app")
 RESEND_TEST_FROM_EMAIL = os.getenv("RESEND_TEST_FROM_EMAIL", "onboarding@resend.dev")
+
 
 INSTALLED_APPS = [
     'jazzmin',
@@ -131,11 +132,16 @@ LOGOUT_REDIRECT_URL = 'login'
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
+ADMIN_HOME_URL = "http://127.0.0.1:8000/" if DEBUG else "/"
+
 JAZZMIN_SETTINGS = {
     "site_title": "Oficina Admin",
     "site_header": "Oficina",
     "site_brand": "Oficina",
     "welcome_sign": "Bem-vindo ao painel",
+    "topmenu_links": [
+        {"name": "Inicio", "url": ADMIN_HOME_URL, "new_window": False},
+    ],
     "search_model": ["core.Cliente", "core.Veiculo", "core.OrdemServico"],
     "show_ui_builder": False,
 }

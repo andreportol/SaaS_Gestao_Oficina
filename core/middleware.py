@@ -43,7 +43,8 @@ class EmpresaMiddleware:
                 logout(request)
                 messages.error(
                     request,
-                    "Cadastro recebido. Aguardando confirmação do pagamento para liberar o acesso.",
+                    "Cadastro recebido. Aguarde a confirmação do pagamento para liberar o acesso. "
+                    "Será enviado um e-mail com os dados de acesso.",
                 )
                 return redirect("login")
 

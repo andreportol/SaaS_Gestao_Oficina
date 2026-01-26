@@ -16,8 +16,14 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Senha</label>
-                    <div class="form-control-wrap">
+                    <div class="form-control-wrap password-wrap">
                         {{ form.password }}
+                        <button class="password-toggle" type="button" aria-label="Mostrar senha" data-password-toggle>
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+                            </svg>
+                        </button>
                     </div>
                     {{ form.password.errors }}
                 </div>
@@ -33,4 +39,18 @@
         </div>
     </div>
 </div>
+<script>
+    (function() {
+        const toggle = document.querySelector("[data-password-toggle]");
+        if (!toggle) return;
+        const input = document.getElementById("id_password");
+        if (!input) return;
+        toggle.addEventListener("click", () => {
+            const isPassword = input.getAttribute("type") === "password";
+            input.setAttribute("type", isPassword ? "text" : "password");
+            toggle.setAttribute("aria-label", isPassword ? "Ocultar senha" : "Mostrar senha");
+            toggle.classList.toggle("is-visible", isPassword);
+        });
+    })();
+</script>
 {% endblock %}

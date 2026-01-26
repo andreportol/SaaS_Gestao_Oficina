@@ -1,10 +1,15 @@
 import json
+import logging
 import re
+import urllib.error
+import urllib.request
 from datetime import date, datetime
 from decimal import Decimal
 
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import password_validators_help_texts, validate_password
 from django.core.validators import FileExtensionValidator
@@ -28,6 +33,7 @@ from .permissions import ROLE_EMPLOYEE, ROLE_MANAGER
 
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 def _coerce_display_date(value):
@@ -89,6 +95,99 @@ def _validate_cnpj_cpf(value):
             raise forms.ValidationError("CNPJ inválido.")
         return digits
     raise forms.ValidationError("Informe CPF (11 dígitos) ou CNPJ (14 dígitos).")
+
+
+def _send_resend_email(subject, body, to_email, reply_to=None):
+    api_key = getattr(settings, "RESEND_API_KEY", "")
+    if not api_key:
+        return False, "RESEND_API_KEY nao configurada."
+    from_email = getattr(settings, "EMAIL_FROM", "no-reply@alpsistemas.app")
+    api_url = "https://api.resend.com/emails"
+
+    def _send_payload(sender):
+        payload = {
+            "from": sender,
+            "to": [to_email],
+            "subject": subject,
+            "text": body,
+        }
+        if reply_to:
+            payload["reply_to"] = reply_to
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            api_url,
+            data=data,
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10):
+            return True
+
+    def _parse_resend_error(exc):
+        try:
+            payload = json.loads(exc.read().decode("utf-8"))
+            return payload.get("message") or payload.get("error") or payload.get("statusText")
+        except Exception:
+            return None
+
+    try:
+        _send_payload(from_email)
+    except urllib.error.HTTPError as exc:
+        if settings.DEBUG:
+            test_from = getattr(settings, "RESEND_TEST_FROM_EMAIL", "")
+            if test_from and test_from != from_email:
+                try:
+                    _send_payload(test_from)
+                    return True, None
+                except urllib.error.HTTPError as retry_exc:
+                    exc = retry_exc
+        detail = _parse_resend_error(exc)
+        logger.warning("Resend email failed: %s", detail or f"HTTP {exc.code}")
+        return False, detail or f"HTTP {exc.code}"
+    except Exception:
+        logger.exception("Resend email failed")
+        return False, "Erro de comunicacao com o servico de email."
+
+    return True, None
+
+
+def _notify_nova_liberacao(empresa, user):
+    to_email = getattr(settings, "CONTACT_EMAIL", "alpsistemascg@gmail.com")
+    nome_responsavel = user.get_full_name() or user.username
+    subject = "Nova solicitacao de liberacao de acesso"
+    body = (
+        "Solicitação de liberação de acesso ao SaaS Gestão de Oficina.\n\n"
+        f"Empresa: {empresa.nome}\n"
+        f"Responsavel: {nome_responsavel}\n"
+        f"Email: {user.email or '-'}\n"
+        f"Telefone: {empresa.telefone or '-'}\n"
+        f"CNPJ/CPF: {empresa.cnpj_cpf or '-'}\n"
+    )
+    return _send_resend_email(subject, body, to_email, reply_to=user.email or None)
+
+
+def _notify_aprovacao_acesso(empresa, user, senha):
+    if not user.email:
+        return False, "Usuario sem email cadastrado."
+    subject = "Acesso liberado - SaaS Gestão de Oficina"
+    body = (
+        "Seu acesso ao SaaS Gestão de Oficina foi liberado.\n\n"
+        f"Login: {user.username}\n"
+        f"Senha: {senha}\n"
+        f"Empresa: {empresa.nome}\n"
+    )
+    return _send_resend_email(subject, body, user.email)
+
+
+class LoginForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        username = self.fields.get("username")
+        if username:
+            username.widget.attrs.setdefault("autofocus", "autofocus")
+        password = self.fields.get("password")
+        if password:
+            password.widget.attrs.setdefault("autocomplete", "current-password")
 
 
 class EmpresaFormMixin(forms.ModelForm):
@@ -916,6 +1015,7 @@ class AutoCadastroForm(forms.Form):
                 cnpj_cpf=data.get("cnpj_cpf", ""),
                 telefone=data.get("telefone", ""),
                 logomarca=data.get("logomarca"),
+                senha_temporaria=data.get("password1", ""),
             )
             user = User.objects.create_user(
                 username=data["username"],
@@ -930,6 +1030,7 @@ class AutoCadastroForm(forms.Form):
             employee_group, _ = Group.objects.get_or_create(name=ROLE_EMPLOYEE)
             user.groups.add(manager_group)
             user.groups.remove(employee_group)
+            transaction.on_commit(lambda: _notify_nova_liberacao(empresa, user))
         return user
 
 
