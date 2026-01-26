@@ -29,6 +29,20 @@
                 {{ form.email }}
                 {% for error in form.email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
             </div>
+            {% if form.email_recuperacao %}
+            <div class="col-md-6">
+                <label class="form-label">{{ form.email_recuperacao.label }}</label>
+                {{ form.email_recuperacao }}
+                {% for error in form.email_recuperacao.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+            {% endif %}
+            {% if form.telefone_recuperacao %}
+            <div class="col-md-6">
+                <label class="form-label">{{ form.telefone_recuperacao.label }}</label>
+                {{ form.telefone_recuperacao }}
+                {% for error in form.telefone_recuperacao.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+            {% endif %}
             <div class="col-md-6">
                 <label class="form-label">{{ form.first_name.label }}</label>
                 {{ form.first_name }}

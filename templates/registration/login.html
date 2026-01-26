@@ -28,6 +28,9 @@
                     {{ form.password.errors }}
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Acessar</button>
+                <div class="text-center mt-2">
+                    <a class="small" href="{% url 'password_recovery' %}">Esqueceu a senha?</a>
+                </div>
                 <div class="text-center mt-3">
                     <a class="btn btn-outline-secondary btn-sm" href="{% url 'cadastro' %}">Criar conta</a>
                 </div>

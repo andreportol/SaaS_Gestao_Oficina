@@ -30,7 +30,7 @@ class EmpresaMiddleware:
 
             if request.empresa:
                 vencido = request.empresa.plano_vencido()
-                desired_status = not vencido
+                desired_status = (not vencido) and request.empresa.pagamento_confirmado
                 if request.empresa.is_ativo != desired_status:
                     request.empresa.is_ativo = desired_status
                     request.empresa.save(update_fields=["is_ativo"])
@@ -43,8 +43,8 @@ class EmpresaMiddleware:
                 logout(request)
                 messages.error(
                     request,
-                    "Cadastro recebido. Aguarde a confirmação do pagamento para liberar o acesso. "
-                    "Será enviado um e-mail com os dados de acesso.",
+                    "Cadastro recebido. Assim que o pagamento for confirmado, liberaremos o acesso ao sistema "
+                    "e enviaremos uma notificação por e-mail ou WhatsApp.",
                 )
                 return redirect("login")
 

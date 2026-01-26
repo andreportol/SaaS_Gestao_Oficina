@@ -42,7 +42,10 @@ class EmpresaAdminMixin:
 class UsuarioAdmin(EmpresaAdminMixin, UserAdmin):
     fieldsets = (
         ("Credenciais", {"fields": ("username", "password")}),
-        ("Dados pessoais", {"fields": ("first_name", "last_name", "email")}),
+        (
+            "Dados pessoais",
+            {"fields": ("first_name", "last_name", "email", "email_recuperacao", "telefone_recuperacao")},
+        ),
         ("Empresa", {"fields": ("empresa", "is_manager")}),
         ("Permissoes", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
         ("Datas importantes", {"fields": ("last_login", "date_joined")}),
@@ -52,13 +55,22 @@ class UsuarioAdmin(EmpresaAdminMixin, UserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("username", "email", "empresa", "is_manager", "password1", "password2"),
+                "fields": (
+                    "username",
+                    "email",
+                    "email_recuperacao",
+                    "telefone_recuperacao",
+                    "empresa",
+                    "is_manager",
+                    "password1",
+                    "password2",
+                ),
             },
         ),
     )
-    list_display = ("username", "email", "empresa", "is_manager", "is_staff")
+    list_display = ("username", "email", "email_recuperacao", "telefone_recuperacao", "empresa", "is_manager", "is_staff")
     list_filter = ("empresa", "is_manager", "is_staff", "is_superuser", "is_active")
-    search_fields = ("username", "email", "first_name", "last_name")
+    search_fields = ("username", "email", "email_recuperacao", "telefone_recuperacao", "first_name", "last_name")
 
 
 @admin.register(Funcionario)
@@ -75,6 +87,13 @@ class FuncionarioAdmin(EmpresaAdminMixin, admin.ModelAdmin):
 
 @admin.register(Empresa)
 class EmpresaAdmin(EmpresaAdminMixin, admin.ModelAdmin):
+    def save_model(self, request, obj, form, change):
+        if "is_ativo" in form.changed_data and "pagamento_confirmado" not in form.changed_data:
+            obj.pagamento_confirmado = obj.is_ativo
+        if "pagamento_confirmado" in form.changed_data and "is_ativo" not in form.changed_data:
+            obj.is_ativo = obj.pagamento_confirmado
+        return super().save_model(request, obj, form, change)
+
     fieldsets = (
         (
             "Dados da empresa",
@@ -88,6 +107,8 @@ class EmpresaAdmin(EmpresaAdminMixin, admin.ModelAdmin):
                     "plano_periodo",
                     "plano_atualizado_em",
                     "plano_vencimento_em",
+                    "renovacao_periodo",
+                    "renovacao_solicitada_em",
                     "is_ativo",
                     "pagamento_confirmado",
                 )
@@ -107,7 +128,7 @@ class EmpresaAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     )
     search_fields = ("nome", "cnpj_cpf", "telefone")
     list_filter = ("plano", "plano_periodo", "is_ativo", "pagamento_confirmado")
-    readonly_fields = ("criado_em",)
+    readonly_fields = ("criado_em", "renovacao_solicitada_em")
 
 
 @admin.register(Cliente)

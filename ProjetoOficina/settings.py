@@ -32,7 +32,7 @@ CSRF_TRUSTED_ORIGINS = [
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "alpsistemascg@gmail.com")
 EMAIL_FROM = os.getenv("EMAIL_FROM", "no-reply@alpsistemas.app")
-RESEND_TEST_FROM_EMAIL = os.getenv("RESEND_TEST_FROM_EMAIL", "onboarding@resend.dev")
+RESEND_TEST_FROM_EMAIL = os.getenv("RESEND_TEST_FROM_EMAIL", "")
 
 
 INSTALLED_APPS = [
@@ -72,6 +72,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.renovacoes_pendentes',
             ],
         },
     },

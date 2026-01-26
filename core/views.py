@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import re
+import urllib.parse
 import base64
 from io import BytesIO
 import mimetypes
@@ -10,6 +12,7 @@ import urllib.request
 
 from django.contrib import messages
 from django.contrib.auth import logout
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LoginView
 from django.conf import settings
@@ -23,6 +26,8 @@ from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from django.utils.dateparse import parse_date
 from django.utils.crypto import get_random_string
 from django.utils.decorators import method_decorator
@@ -47,6 +52,7 @@ from .forms import (
     AgendaForm,
     ProdutoForm,
     VeiculoForm,
+    PasswordRecoveryForm,
 )
 from .models import (
     Agenda,
@@ -1407,9 +1413,126 @@ class AutoCadastroView(FormMixin, TemplateView):
         form.save()
         messages.success(
             self.request,
-            "Cadastro recebido. Aguarde a confirmação do pagamento para liberar o acesso. "
-            "Será enviado um e-mail com os dados de acesso.",
+            "Cadastro recebido. Assim que o pagamento for confirmado, liberaremos o acesso ao sistema "
+            "e enviaremos uma notificação por e-mail ou WhatsApp.",
         )
+        return super().form_valid(form)
+
+
+class EmpresaRenovacaoView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        empresa = getattr(request.user, "empresa", None)
+        if not empresa:
+            messages.error(request, "Empresa não encontrada.")
+            return redirect("dashboard")
+        periodo = request.POST.get("periodo")
+        choices = {value for value, _ in Empresa.PlanoPeriodo.choices}
+        if periodo not in choices:
+            messages.error(request, "Selecione um período válido.")
+            return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+        empresa.renovacao_periodo = periodo
+        empresa.renovacao_solicitada_em = timezone.now()
+        empresa.save(update_fields=["renovacao_periodo", "renovacao_solicitada_em"])
+        messages.success(request, "Solicitação de renovação enviada. Confirmação após o pagamento.")
+        return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+
+
+class PasswordRecoveryView(FormMixin, TemplateView):
+    template_name = "registration/password_recovery.html"
+    form_class = PasswordRecoveryForm
+    success_url = reverse_lazy("login")
+
+    def get(self, request, *args, **kwargs):
+        form = self.get_form()
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+    def form_valid(self, form):
+        from .forms import _send_resend_email
+
+        identificador = form.cleaned_data["identificador"]
+        digits = re.sub(r"\D", "", identificador)
+        user = None
+        if "@" in identificador:
+            user = Usuario.objects.filter(email__iexact=identificador).first()
+            if not user:
+                user = Usuario.objects.filter(email_recuperacao__iexact=identificador).first()
+        else:
+            if digits:
+                user = Usuario.objects.filter(telefone_recuperacao__icontains=digits).first()
+                if not user:
+                    user = Usuario.objects.filter(empresa__telefone__icontains=digits).first()
+
+        if not user:
+            form.add_error("identificador", "Nenhuma conta encontrada com esse e-mail ou telefone.")
+            return self.form_invalid(form)
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        reset_url = self.request.build_absolute_uri(reverse("password_reset_confirm", args=[uid, token]))
+        destino = user.email_recuperacao or user.email
+        subject = "Recuperacao de senha - SaaS Gestao de Oficina"
+        body = (
+            "Recebemos uma solicitacao de recuperacao de senha.\n\n"
+            f"Para definir uma nova senha, acesse o link abaixo:\n{reset_url}\n\n"
+            "Se voce nao solicitou, ignore esta mensagem."
+        )
+
+        email_sent = False
+        if destino:
+            enviado, erro = _send_resend_email(subject, body, destino)
+            if not enviado:
+                messages.error(
+                    self.request,
+                    f"Nao foi possivel enviar o email de recuperacao. {erro or ''}".strip(),
+                )
+                return self.form_invalid(form)
+            email_sent = True
+
+        if "@" not in identificador and digits:
+            phone_digits = re.sub(r"\D", "", user.telefone_recuperacao or "")
+            if not phone_digits:
+                phone_digits = re.sub(r"\D", "", user.empresa.telefone or "")
+            if phone_digits and not phone_digits.startswith("55") and len(phone_digits) in (10, 11):
+                phone_digits = f"55{phone_digits}"
+            whatsapp_link = ""
+            if phone_digits:
+                whatsapp_text = (
+                    "Recebemos sua solicitacao de recuperacao de senha. "
+                    f"Para definir uma nova senha, acesse: {reset_url}"
+                )
+                whatsapp_link = (
+                    f"https://wa.me/{phone_digits}?text={urllib.parse.quote(whatsapp_text)}"
+                )
+            if whatsapp_link:
+                context = self.get_context_data(form=form)
+                context.update(
+                    {
+                        "whatsapp_link": whatsapp_link,
+                        "email_sent": email_sent,
+                    }
+                )
+                if email_sent:
+                    messages.success(
+                        self.request,
+                        "Enviamos um e-mail com as instruções para recuperar sua senha.",
+                    )
+                return self.render_to_response(context)
+
+        if email_sent:
+            messages.success(
+                self.request,
+                "Enviamos um e-mail com as instruções para recuperar sua senha.",
+            )
+        else:
+            form.add_error("identificador", "Nenhum e-mail ou telefone cadastrado para recuperar a senha.")
+            return self.form_invalid(form)
+
         return super().form_valid(form)
 
 
@@ -1421,11 +1544,11 @@ class EmpresaAprovacaoView(SuperuserRequiredMixin, TemplateView):
         empresas = Empresa.objects.all().order_by("-criado_em")
         context["empresas"] = empresas
         context["pendentes"] = empresas.filter(pagamento_confirmado=False).count()
-        home_url = self.request.build_absolute_uri("/")
+        context["planos"] = Empresa.Plano.choices
+        context["periodos"] = Empresa.PlanoPeriodo.choices
         context["whatsapp_message"] = (
             "Seu acesso ao sistema foi liberado. "
-            f"Link de acesso: {home_url} "
-            "As credenciais foram enviadas ao email cadastrado."
+            "Link de acesso: https://alpoficinas.com.br/"
         )
         return context
 
@@ -1434,8 +1557,28 @@ class EmpresaAprovacaoView(SuperuserRequiredMixin, TemplateView):
         empresa = get_object_or_404(Empresa, pk=empresa_id)
         was_aprovado = empresa.pagamento_confirmado
         aprovado = request.POST.get("pagamento_confirmado") == "on"
+        plano = request.POST.get("plano")
+        plano_periodo = request.POST.get("plano_periodo")
+        confirmar_renovacao = request.POST.get("confirmar_renovacao") == "on"
+
+        plano_choices = {value for value, _ in Empresa.Plano.choices}
+        periodo_choices = {value for value, _ in Empresa.PlanoPeriodo.choices}
+        if plano in plano_choices:
+            empresa.plano = plano
+        if plano_periodo in periodo_choices:
+            empresa.plano_periodo = plano_periodo
+
         empresa.pagamento_confirmado = aprovado
-        empresa.save(update_fields=["pagamento_confirmado"])
+        if confirmar_renovacao and empresa.renovacao_periodo:
+            if not empresa.pagamento_confirmado:
+                messages.warning(request, "Confirme o pagamento antes de renovar o plano.")
+            else:
+                empresa.plano_periodo = plano_periodo if plano_periodo in periodo_choices else empresa.renovacao_periodo
+                empresa.plano_atualizado_em = timezone.now()
+                empresa.renovacao_periodo = ""
+                empresa.renovacao_solicitada_em = None
+                messages.success(request, f"Renovação confirmada para {empresa.nome}.")
+        empresa.save()
         if aprovado:
             messages.success(request, f"Acesso liberado para {empresa.nome}.")
             if not was_aprovado:

@@ -14,6 +14,8 @@
                     <th>Empresa</th>
                     <th>Contato</th>
                     <th>Plano</th>
+                    <th>Período</th>
+                    <th>Renovação</th>
                     <th>Pagamento</th>
                     <th>Criado em</th>
                     <th class="text-end">Ação</th>
@@ -42,28 +44,76 @@
                             -
                         {% endif %}
                     </td>
-                    <td>{{ empresa.get_plano_display }}</td>
-                    <td>{% if empresa.pagamento_confirmado %}Confirmado{% else %}Pendente{% endif %}</td>
+                    <td>
+                        <select class="form-select form-select-sm" name="plano" form="empresa-form-{{ empresa.id }}">
+                            {% for value,label in planos %}
+                                <option value="{{ value }}" {% if empresa.plano == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" name="plano_periodo" form="empresa-form-{{ empresa.id }}">
+                            {% for value,label in periodos %}
+                                <option value="{{ value }}" {% if empresa.plano_periodo == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        {% if empresa.renovacao_periodo %}
+                            <div class="small">Solicitado: {{ empresa.get_renovacao_periodo_display }}</div>
+                            {% if empresa.renovacao_solicitada_em %}
+                                <div class="text-muted small">{{ empresa.renovacao_solicitada_em|date:"d/m/Y" }}</div>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if empresa.pagamento_confirmado %}
+                            Confirmado
+                        {% else %}
+                            Pendente
+                        {% endif %}
+                        {% if empresa.plano_vencido %}
+                            <div class="small text-muted">Plano vencido</div>
+                        {% elif not empresa.is_ativo %}
+                            <div class="small text-muted">Inativo</div>
+                        {% endif %}
+                    </td>
                     <td>{{ empresa.criado_em|date:"d/m/Y" }}</td>
                     <td class="text-end">
-                        <form method="post" class="d-inline-flex align-items-center gap-2">
+                        <form method="post" id="empresa-form-{{ empresa.id }}" class="d-inline-flex align-items-center gap-2">
                             {% csrf_token %}
                             <input type="hidden" name="empresa_id" value="{{ empresa.id }}">
-                            <div class="form-check form-switch m-0">
-                                <input class="form-check-input" type="checkbox" id="empresa-{{ empresa.id }}" name="pagamento_confirmado"{% if empresa.pagamento_confirmado %} checked{% endif %}>
+                            <div class="form-check form-switch m-0"{% if empresa.plano_vencido %} data-bs-toggle="tooltip" data-bs-title="Plano vencido — ajuste o período para liberar."{% endif %}>
+                                <input class="form-check-input" type="checkbox" id="empresa-{{ empresa.id }}" name="pagamento_confirmado"{% if empresa.pagamento_confirmado and not empresa.plano_vencido %} checked{% endif %}{% if empresa.plano_vencido %} disabled{% endif %}>
                                 <label class="form-check-label" for="empresa-{{ empresa.id }}">Liberar</label>
                             </div>
+                            {% if empresa.renovacao_periodo %}
+                            <div class="form-check m-0">
+                                <input class="form-check-input" type="checkbox" id="renovar-{{ empresa.id }}" name="confirmar_renovacao">
+                                <label class="form-check-label" for="renovar-{{ empresa.id }}">Confirmar renovação</label>
+                            </div>
+                            {% endif %}
                             <button class="chip chip-action chip-outline no-dot" type="submit">Salvar</button>
                         </form>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center py-3">Nenhuma empresa cadastrada.</td>
+                    <td colspan="7" class="text-center py-3">Nenhuma empresa cadastrada.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+<script>
+    (function() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach((triggerEl) => {
+            new bootstrap.Tooltip(triggerEl);
+        });
+    })();
+</script>
 {% endblock %}

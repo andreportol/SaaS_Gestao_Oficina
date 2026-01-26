@@ -783,7 +783,16 @@ class UsuarioBaseForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["username", "email", "first_name", "last_name", "is_manager", "is_active"]
+        fields = [
+            "username",
+            "email",
+            "email_recuperacao",
+            "telefone_recuperacao",
+            "first_name",
+            "last_name",
+            "is_manager",
+            "is_active",
+        ]
 
     def __init__(self, *args, user=None, **kwargs):
         self.request_user = user
@@ -820,8 +829,21 @@ class UsuarioBaseForm(forms.ModelForm):
             self.fields["username"].widget.attrs.setdefault("autocomplete", "username")
             self.fields["username"].widget.attrs.setdefault("autofocus", "autofocus")
         if "email" in self.fields:
+            self.fields["email"].label = "Endereço de e-mail"
             self.fields["email"].widget.attrs.setdefault("placeholder", "email@empresa.com")
             self.fields["email"].widget.attrs.setdefault("autocomplete", "email")
+        if "email_recuperacao" in self.fields:
+            self.fields["email_recuperacao"].label = "E-mail para recuperação de senha"
+            self.fields["email_recuperacao"].widget.attrs.setdefault(
+                "placeholder", "email@recuperacao.com"
+            )
+            self.fields["email_recuperacao"].widget.attrs.setdefault("autocomplete", "email")
+        if "telefone_recuperacao" in self.fields:
+            self.fields["telefone_recuperacao"].label = "Telefone para recuperação de senha"
+            self.fields["telefone_recuperacao"].widget.attrs.setdefault(
+                "placeholder", "(99)99999-9999"
+            )
+            self.fields["telefone_recuperacao"].widget.attrs.setdefault("data-mask", "phone")
         if "first_name" in self.fields:
             self.fields["first_name"].widget.attrs.setdefault("placeholder", "Nome")
             self.fields["first_name"].widget.attrs.setdefault("autocomplete", "given-name")
@@ -834,7 +856,16 @@ class UsuarioBaseForm(forms.ModelForm):
         if "password2" in self.fields:
             self.fields["password2"].widget.attrs.setdefault("placeholder", "Confirme a senha")
             self.fields["password2"].widget.attrs.setdefault("autocomplete", "new-password")
-        for name in ("username", "email", "first_name", "last_name", "password1", "password2"):
+        for name in (
+            "username",
+            "email",
+            "email_recuperacao",
+            "telefone_recuperacao",
+            "first_name",
+            "last_name",
+            "password1",
+            "password2",
+        ):
             if name in self.fields:
                 self.fields[name].widget.attrs.setdefault("class", "form-control")
         for name in ("is_manager", "is_active"):
@@ -933,6 +964,7 @@ class AutoCadastroForm(forms.Form):
     )
     username = forms.CharField(label="Login", max_length=150)
     email = forms.EmailField(label="E-mail")
+    email_recuperacao = forms.EmailField(label="E-mail para recuperação de senha")
     first_name = forms.CharField(label="Nome", max_length=150)
     last_name = forms.CharField(label="Sobrenome", max_length=150, required=False)
     password1 = forms.CharField(label="Senha", widget=forms.PasswordInput)
@@ -955,6 +987,9 @@ class AutoCadastroForm(forms.Form):
         )
         self.fields["email"].widget.attrs.update(
             {"placeholder": "email@empresa.com", "autocomplete": "email"}
+        )
+        self.fields["email_recuperacao"].widget.attrs.update(
+            {"placeholder": "email@recuperacao.com", "autocomplete": "email"}
         )
         self.fields["first_name"].widget.attrs.update(
             {"placeholder": "Seu nome", "autocomplete": "given-name"}
@@ -993,6 +1028,12 @@ class AutoCadastroForm(forms.Form):
             raise forms.ValidationError("Este e-mail já está em uso.")
         return email
 
+    def clean_email_recuperacao(self):
+        email = (self.cleaned_data.get("email_recuperacao") or "").strip()
+        if not email:
+            raise forms.ValidationError("Informe um e-mail para recuperação de senha.")
+        return email
+
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1") or ""
         password2 = self.cleaned_data.get("password2") or ""
@@ -1020,6 +1061,7 @@ class AutoCadastroForm(forms.Form):
             user = User.objects.create_user(
                 username=data["username"],
                 email=data["email"],
+                email_recuperacao=data.get("email_recuperacao", ""),
                 first_name=data.get("first_name", ""),
                 last_name=data.get("last_name", ""),
                 password=data["password1"],
@@ -1046,3 +1088,25 @@ class UsuarioCreateForm(UsuarioBaseForm):
 
 class UsuarioUpdateForm(UsuarioBaseForm):
     pass
+
+
+class PasswordRecoveryForm(forms.Form):
+    identificador = forms.CharField(
+        label="E-mail ou telefone",
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Digite seu e-mail ou telefone",
+                "autocomplete": "email",
+                "data-mask": "phone",
+                "data-allow-email": "true",
+            }
+        ),
+    )
+
+    def clean_identificador(self):
+        value = (self.cleaned_data.get("identificador") or "").strip()
+        if not value:
+            raise forms.ValidationError("Informe e-mail ou telefone para recuperar a senha.")
+        return value

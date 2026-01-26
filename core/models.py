@@ -40,6 +40,8 @@ class Empresa(models.Model):
     plano_periodo = models.CharField(max_length=3, choices=PlanoPeriodo.choices, default=PlanoPeriodo.MENSAL)
     plano_atualizado_em = models.DateTimeField(blank=True, null=True)
     plano_vencimento_em = models.DateTimeField(blank=True, null=True)
+    renovacao_periodo = models.CharField(max_length=3, choices=PlanoPeriodo.choices, blank=True, default="")
+    renovacao_solicitada_em = models.DateTimeField(blank=True, null=True)
     is_ativo = models.BooleanField(default=True)
     pagamento_confirmado = models.BooleanField(default=False)
     senha_temporaria = models.CharField(max_length=128, blank=True, default="")
@@ -108,12 +110,21 @@ class Empresa(models.Model):
                 self.PlanoPeriodo.SEMESTRAL: 182,
                 self.PlanoPeriodo.ANUAL: 365,
             }
-            self.plano_vencimento_em = self.plano_atualizado_em + timedelta(
+            base_date = self.plano_atualizado_em
+            if previous and (plan_changed or updated_changed):
+                prev_vencimento = previous.get("plano_vencimento_em")
+                now = timezone.now()
+                if prev_vencimento and prev_vencimento > now:
+                    base_date = prev_vencimento
+                else:
+                    base_date = now
+            self.plano_vencimento_em = base_date + timedelta(
                 days=days_map.get(self.plano_periodo, 30)
             )
 
-        if self.plano_vencimento_calculado():
-            self.is_ativo = not self.plano_vencido()
+        vencido = self.plano_vencido()
+        # Mantém histórico de pagamento confirmado; bloqueio depende da validade do plano.
+        self.is_ativo = bool(self.pagamento_confirmado) and not vencido
 
         super().save(*args, **kwargs)
 
@@ -196,6 +207,23 @@ class Empresa(models.Model):
         self.logomarca.save(filename, ContentFile(buffer.read()), save=False)
         self._logomarca_processed = True
 
+    def logomarca_existe(self) -> bool:
+        if not self.logomarca:
+            return False
+        storage = getattr(self.logomarca, "storage", None) or default_storage
+        try:
+            return storage.exists(self.logomarca.name)
+        except Exception:
+            return False
+
+    def logomarca_url(self) -> str:
+        if not self.logomarca_existe():
+            return ""
+        try:
+            return self.logomarca.url
+        except Exception:
+            return ""
+
 
 class UsuarioManager(UserManager):
     def _create_user(self, username, email, password, **extra_fields):
@@ -208,6 +236,8 @@ class UsuarioManager(UserManager):
 class Usuario(AbstractUser):
     empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT, related_name="usuarios", null=True, blank=True)
     is_manager = models.BooleanField(default=False)
+    email_recuperacao = models.EmailField(blank=True)
+    telefone_recuperacao = models.CharField(max_length=20, blank=True, default="")
     REQUIRED_FIELDS = ["email"]
 
     objects = UsuarioManager()
@@ -236,24 +266,6 @@ class Funcionario(models.Model):
 
     def __str__(self) -> str:
         return self.nome
-
-    def logomarca_existe(self) -> bool:
-        if not self.logomarca:
-            return False
-        storage = getattr(self.logomarca, "storage", None) or default_storage
-        try:
-            return storage.exists(self.logomarca.name)
-        except Exception:
-            return False
-
-    def logomarca_url(self) -> str:
-        if not self.logomarca_existe():
-            return ""
-        try:
-            return self.logomarca.url
-        except Exception:
-            return ""
-
 
 class Cliente(models.Model):
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name="clientes")

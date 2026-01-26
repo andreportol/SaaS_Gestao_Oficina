@@ -2,7 +2,7 @@
 {% block content %}
 <div class="auth-wrapper login-page">
     <div class="col-lg-6 col-md-8 col-11 mx-auto">
-        <p class="signup-note text-center mb-3">Após a confirmação do pagamento liberamos o acesso ao sistema.</p>
+        <p class="signup-note text-center mb-3">Assim que o pagamento for confirmado, liberaremos o acesso ao sistema e enviaremos uma notificação por e-mail ou WhatsApp.</p>
         <div class="card p-2 py-3 auth-card">
             <h2 class="h5 mb-3 text-center">Crie sua conta</h2>
             <form method="post" enctype="multipart/form-data" class="app-form text-start">
@@ -35,6 +35,7 @@
                     </div>
                 </div>
                 <div class="mb-2 text-uppercase small text-muted">Dados do acesso</div>
+                <div class="form-text mb-3">A recuperação da senha será por e-mail ou telefone cadastrados.</div>
                 <div class="mb-3">
                     <label class="form-label">{{ form.username.label }}</label>
                     {{ form.username }}
@@ -45,6 +46,11 @@
                     <label class="form-label">{{ form.email.label }}</label>
                     {{ form.email }}
                     {{ form.email.errors }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.email_recuperacao.label }}</label>
+                    {{ form.email_recuperacao }}
+                    {{ form.email_recuperacao.errors }}
                 </div>
                 <div class="row g-3">
                     <div class="col-md-6">
