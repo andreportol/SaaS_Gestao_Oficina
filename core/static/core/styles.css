@@ -215,6 +215,12 @@ a:hover {
     transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
+.nav-pill-with-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .nav-pill:hover,
 .nav-pill:focus {
     border: none;
