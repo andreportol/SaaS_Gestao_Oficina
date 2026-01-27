@@ -74,7 +74,12 @@
                 {% endif %}
                 {% if user.is_authenticated and user.is_superuser %}
                 <li class="nav-item">
-                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'empresas_aprovacao' %} active{% endif %}" href="{% url 'empresas_aprovacao' %}">Liberações</a>
+                    <a class="nav-link nav-pill{% if request.resolver_match.url_name == 'empresas_aprovacao' %} active{% endif %}" href="{% url 'empresas_aprovacao' %}">
+                        Liberações
+                        {% if cadastros_pendentes_count %}
+                            <span class="badge bg-danger ms-1">{{ cadastros_pendentes_count }}</span>
+                        {% endif %}
+                    </a>
                 </li>
                 {% endif %}
                 {% if user.is_authenticated and user.is_superuser and renovacoes_pendentes_count %}

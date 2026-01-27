@@ -19,7 +19,7 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
 from django.db import IntegrityError
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Case, When, Value, IntegerField
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear
 from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
@@ -1557,9 +1557,30 @@ class EmpresaAprovacaoView(SuperuserRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        empresas = Empresa.objects.all().order_by("-criado_em")
+        renovacao_q = Q(renovacao_periodo__isnull=False) & ~Q(renovacao_periodo="")
+        cadastro_q = Q(pagamento_confirmado=False) & ~renovacao_q
+        pendente_q = Q(pagamento_confirmado=False) | renovacao_q
+        empresas = (
+            Empresa.objects.all()
+            .annotate(
+                pendente_rank=Case(
+                    When(pendente_q, then=Value(0)),
+                    default=Value(1),
+                    output_field=IntegerField(),
+                )
+            )
+            .order_by("pendente_rank", "-renovacao_solicitada_em", "-criado_em")
+        )
+        tipo_filtro = (self.request.GET.get("tipo") or "todos").strip().lower()
+        if tipo_filtro == "pendentes":
+            empresas = empresas.filter(pendente_q)
+        elif tipo_filtro == "cadastro":
+            empresas = empresas.filter(cadastro_q)
+        elif tipo_filtro == "renovacao":
+            empresas = empresas.filter(renovacao_q)
         context["empresas"] = empresas
-        context["pendentes"] = empresas.filter(pagamento_confirmado=False).count()
+        context["pendentes"] = Empresa.objects.filter(pendente_q).count()
+        context["tipo_filtro"] = tipo_filtro
         context["planos"] = Empresa.Plano.choices
         context["periodos"] = Empresa.PlanoPeriodo.choices
         context["whatsapp_message"] = (
@@ -1573,23 +1594,14 @@ class EmpresaAprovacaoView(SuperuserRequiredMixin, TemplateView):
         empresa = get_object_or_404(Empresa, pk=empresa_id)
         was_aprovado = empresa.pagamento_confirmado
         aprovado = request.POST.get("pagamento_confirmado") == "on"
-        plano = request.POST.get("plano")
-        plano_periodo = request.POST.get("plano_periodo")
         confirmar_renovacao = request.POST.get("confirmar_renovacao") == "on"
-
-        plano_choices = {value for value, _ in Empresa.Plano.choices}
-        periodo_choices = {value for value, _ in Empresa.PlanoPeriodo.choices}
-        if plano in plano_choices:
-            empresa.plano = plano
-        if plano_periodo in periodo_choices:
-            empresa.plano_periodo = plano_periodo
 
         empresa.pagamento_confirmado = aprovado
         if confirmar_renovacao and empresa.renovacao_periodo:
             if not empresa.pagamento_confirmado:
                 messages.warning(request, "Confirme o pagamento antes de renovar o plano.")
             else:
-                empresa.plano_periodo = plano_periodo if plano_periodo in periodo_choices else empresa.renovacao_periodo
+                empresa.plano_periodo = empresa.renovacao_periodo
                 empresa.plano_atualizado_em = timezone.now()
                 empresa.renovacao_periodo = ""
                 empresa.renovacao_solicitada_em = None

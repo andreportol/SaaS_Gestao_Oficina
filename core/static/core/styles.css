@@ -2493,6 +2493,23 @@ body.app-bg:not(.theme-light) .dashboard-muted {
     display: block;
 }
 
+.empresas-aprovacao-actions .form-check,
+.empresas-aprovacao-actions .form-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding-left: 0;
+}
+
+.empresas-aprovacao-actions .form-check-input {
+    margin: 0;
+}
+
+.empresas-aprovacao-actions .form-check-label {
+    margin: 0;
+}
+
 /* Suporte modal - tema escuro/claro */
 #supportModal .modal-content {
     background: var(--panel);
