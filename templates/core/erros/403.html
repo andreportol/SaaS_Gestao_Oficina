@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="card auth-card p-4 p-md-5 text-center">
+        <div class="small text-uppercase text-muted mb-2">Erro 403</div>
+        <div class="display-1 fw-bold mb-3">403</div>
+        <h1 class="h4 mb-3">Acesso não permitido</h1>
+        <p class="text-muted mb-1">Você não tem permissão para acessar este conteúdo.</p>
+        <p class="text-muted">Se acredita que isso é um engano, fale com o suporte.</p>
+        {% if request %}
+            <div class="small text-muted mt-3">
+                Caminho: <span class="text-break">{{ request.path }}</span>
+            </div>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-2 justify-content-center mt-4">
+            {% if user.is_authenticated %}
+                <a class="btn btn-cta" href="{% url 'dashboard' %}">Ir para o dashboard</a>
+            {% else %}
+                <a class="btn btn-cta" href="{% url 'login' %}">Fazer login</a>
+            {% endif %}
+            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#supportModal">Falar com suporte</button>
+            <button class="btn btn-outline-secondary" type="button" onclick="history.back()">Voltar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

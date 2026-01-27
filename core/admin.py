@@ -10,6 +10,7 @@ from .models import (
     OrdemServicoLog,
     OSItem,
     Pagamento,
+    PlanoValor,
     Produto,
     Usuario,
     Veiculo,
@@ -129,6 +130,19 @@ class EmpresaAdmin(EmpresaAdminMixin, admin.ModelAdmin):
     search_fields = ("nome", "cnpj_cpf", "telefone")
     list_filter = ("plano", "plano_periodo", "is_ativo", "pagamento_confirmado")
     readonly_fields = ("criado_em", "renovacao_solicitada_em")
+
+
+@admin.register(PlanoValor)
+class PlanoValorAdmin(admin.ModelAdmin):
+    list_display = ("plano", "periodo", "valor", "atualizado_em")
+    list_filter = ("plano", "periodo")
+    search_fields = ("plano", "periodo")
+    readonly_fields = ("atualizado_em",)
+    fieldsets = (
+        ("Plano", {"fields": ("plano", "periodo", "valor")}),
+        ("Pagamento (Pix)", {"fields": ("pix_qr_code", "pix_copia_cola")}),
+        ("Controle", {"fields": ("atualizado_em",)}),
+    )
 
 
 @admin.register(Cliente)

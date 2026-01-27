@@ -22,6 +22,19 @@ class Empresa(models.Model):
         SEMESTRAL = "6m", "6 meses"
         ANUAL = "12m", "12 meses"
 
+    PLANO_VALORES = {
+        Plano.BASICO: {
+            PlanoPeriodo.MENSAL: Decimal("0.00"),
+            PlanoPeriodo.SEMESTRAL: Decimal("0.00"),
+            PlanoPeriodo.ANUAL: Decimal("0.00"),
+        },
+        Plano.PLUS: {
+            PlanoPeriodo.MENSAL: Decimal("0.00"),
+            PlanoPeriodo.SEMESTRAL: Decimal("0.00"),
+            PlanoPeriodo.ANUAL: Decimal("0.00"),
+        },
+    }
+
     nome = models.CharField(max_length=150)
     cnpj_cpf = models.CharField(max_length=20, blank=True)
     telefone = models.CharField(max_length=20, blank=True)
@@ -59,6 +72,25 @@ class Empresa(models.Model):
         if self.plano == self.Plano.PLUS:
             return 3
         return 1
+
+    def periodos_com_valores(self):
+        valores_db = dict(
+            PlanoValor.objects.filter(plano=self.plano).values_list("periodo", "valor")
+        )
+        valores_padrao = self.PLANO_VALORES.get(self.plano, {})
+        return [
+            (periodo, label, valores_db.get(periodo, valores_padrao.get(periodo, Decimal("0.00"))))
+            for periodo, label in self.PlanoPeriodo.choices
+        ]
+
+    def renovacao_plano_valor(self):
+        if not self.renovacao_periodo:
+            return None
+        return (
+            PlanoValor.objects.filter(plano=self.plano, periodo=self.renovacao_periodo)
+            .only("pix_qr_code", "pix_copia_cola")
+            .first()
+        )
 
     def save(self, *args, **kwargs):
         previous = None
@@ -223,6 +255,24 @@ class Empresa(models.Model):
             return self.logomarca.url
         except Exception:
             return ""
+
+
+class PlanoValor(models.Model):
+    plano = models.CharField(max_length=10, choices=Empresa.Plano.choices)
+    periodo = models.CharField(max_length=3, choices=Empresa.PlanoPeriodo.choices)
+    valor = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    pix_qr_code = models.ImageField(upload_to="planos/qrcode/", blank=True, null=True)
+    pix_copia_cola = models.TextField(blank=True, default="")
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("plano", "periodo")
+        ordering = ("plano", "periodo")
+        verbose_name = "Valor do plano"
+        verbose_name_plural = "Valores do plano"
+
+    def __str__(self) -> str:
+        return f"{self.get_plano_display()} - {self.get_periodo_display()}"
 
 
 class UsuarioManager(UserManager):

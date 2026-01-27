@@ -957,6 +957,11 @@ class AutoCadastroForm(forms.Form):
     empresa_nome = forms.CharField(label="Nome da empresa", max_length=150)
     cnpj_cpf = forms.CharField(label="CNPJ/CPF", max_length=20, required=False)
     telefone = forms.CharField(label="Telefone", max_length=20, required=False)
+    cep = forms.CharField(label="CEP", max_length=12)
+    rua = forms.CharField(label="Logradouro", max_length=150, required=False)
+    numero = forms.CharField(label="Número", max_length=20, required=False)
+    bairro = forms.CharField(label="Bairro", max_length=100, required=False)
+    cidade = forms.CharField(label="Cidade", max_length=100, required=False)
     logomarca = forms.ImageField(
         label="Logomarca (opcional)",
         required=False,
@@ -980,6 +985,27 @@ class AutoCadastroForm(forms.Form):
         )
         self.fields["telefone"].widget.attrs.update(
             {"placeholder": "(99)99999-9999", "data-mask": "phone", "autocomplete": "tel"}
+        )
+        self.fields["cep"].widget.attrs.update(
+            {
+                "placeholder": "00000-000",
+                "data-mask": "cep",
+                "inputmode": "numeric",
+                "data-lookup": "viacep",
+                "autocomplete": "postal-code",
+            }
+        )
+        self.fields["rua"].widget.attrs.update(
+            {"placeholder": "Logradouro", "autocomplete": "street-address"}
+        )
+        self.fields["numero"].widget.attrs.update(
+            {"placeholder": "Número", "autocomplete": "address-line2"}
+        )
+        self.fields["bairro"].widget.attrs.update(
+            {"placeholder": "Bairro", "autocomplete": "address-level3"}
+        )
+        self.fields["cidade"].widget.attrs.update(
+            {"placeholder": "Cidade", "autocomplete": "address-level2"}
         )
         self.fields["logomarca"].widget.attrs.update({"accept": "image/*"})
         self.fields["username"].widget.attrs.update(
@@ -1057,6 +1083,15 @@ class AutoCadastroForm(forms.Form):
         value = self.cleaned_data.get("cnpj_cpf", "")
         return _validate_cnpj_cpf(value)
 
+    def clean_cep(self):
+        cep = (self.cleaned_data.get("cep") or "").strip().upper()
+        digits = re.sub(r"\D", "", cep)
+        if not digits:
+            raise forms.ValidationError("Informe o CEP.")
+        if len(digits) != 8:
+            raise forms.ValidationError("CEP deve ter 8 dígitos.")
+        return f"{digits[:5]}-{digits[5:]}"
+
     def save(self):
         data = self.cleaned_data
         with transaction.atomic():
@@ -1064,6 +1099,11 @@ class AutoCadastroForm(forms.Form):
                 nome=data["empresa_nome"],
                 cnpj_cpf=data.get("cnpj_cpf", ""),
                 telefone=data.get("telefone", ""),
+                cep=data.get("cep", ""),
+                rua=data.get("rua", ""),
+                numero=data.get("numero", ""),
+                bairro=data.get("bairro", ""),
+                cidade=data.get("cidade", ""),
                 logomarca=data.get("logomarca"),
                 senha_temporaria=data.get("password1", ""),
             )

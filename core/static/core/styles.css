@@ -1860,6 +1860,38 @@ body:not(.theme-light) .user-flag-hints {
     font-size: 1.1rem;
 }
 
+.signup-section {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: var(--panel-strong);
+}
+
+.signup-section-title {
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--muted);
+    font-weight: 700;
+    font-style: italic;
+    text-align: center;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.theme-light .signup-section {
+    border-color: rgba(13, 110, 253, 0.45);
+    background: linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
+    box-shadow: 0 14px 28px rgba(13, 110, 253, 0.12);
+}
+
+.theme-light .signup-section-title {
+    color: #0d6efd;
+}
+
 .login-page .form-label {
     font-size: 0.9rem;
 }
@@ -2290,23 +2322,122 @@ body:not(.theme-light) .produtos-search-input:focus {
 }
 
 /* Plano modal - tema escuro/claro */
-#planModal .modal-content {
+#planModal .modal-content,
+#planRenewalModal .modal-content {
     background: var(--panel);
     border: 1px solid var(--border);
     color: var(--text);
 }
 
-#planModal .modal-header {
+body:not(.theme-light) #planRenewalModal .modal-content {
+    background: var(--panel) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+body:not(.theme-light) #planRenewalModal {
+    --bs-modal-bg: var(--panel);
+    --bs-modal-border-color: var(--border);
+    --bs-modal-color: var(--text);
+    --bs-body-color: var(--text);
+    --bs-secondary-color: #d6e1ee;
+}
+
+
+#planRenewalModal .modal-dialog {
+    max-width: 360px;
+}
+
+#planModal .modal-header,
+#planRenewalModal .modal-header {
     border-bottom-color: var(--border);
 }
 
-#planModal .modal-body {
+#planModal .modal-body,
+#planRenewalModal .modal-body {
     color: var(--text);
+}
+
+body:not(.theme-light) #planModal .btn-close,
+body:not(.theme-light) #planRenewalModal .btn-close {
+    background: none;
+    opacity: 1;
+    width: 1.4rem;
+    height: 1.4rem;
+    color: var(--text);
+    position: relative;
+}
+
+body:not(.theme-light) #planModal .btn-close::before,
+body:not(.theme-light) #planRenewalModal .btn-close::before {
+    content: "X";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
 }
 
 #planModal .alert {
     background: var(--panel-strong);
     border-color: var(--border);
+}
+
+#planModal .plan-renewal-controls .form-select {
+    height: 32px;
+    padding: 0.2rem 2rem 0.2rem 0.6rem;
+    font-size: 0.85rem;
+    width: clamp(150px, 45vw, 220px);
+}
+
+#planModal .plan-renewal-controls .btn {
+    height: 32px;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.85rem;
+    line-height: 1.2;
+}
+
+#planModal .plan-renewal-qr,
+#planRenewalModal .plan-renewal-qr {
+    width: 120px !important;
+    height: 120px !important;
+    max-width: 120px !important;
+    max-height: 120px !important;
+    border-radius: 4px;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    object-fit: contain;
+}
+
+#planModal .plan-renewal-copy,
+#planRenewalModal .plan-renewal-copy {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+#planRenewalModal .plan-renewal-copy-wrap {
+    text-align: center;
+}
+
+#planRenewalModal .plan-renewal-copy-wrap a {
+    text-decoration: underline;
+}
+
+body:not(.theme-light) #planModal .text-muted,
+body:not(.theme-light) #planRenewalModal .text-muted {
+    color: #d6e1ee !important;
+}
+
+body:not(.theme-light) #planRenewalModal .modal-title,
+body:not(.theme-light) #planRenewalModal .modal-body,
+body:not(.theme-light) #planRenewalModal .plan-renewal-copy-wrap a,
+body:not(.theme-light) #planRenewalModal .text-muted,
+body:not(.theme-light) #planRenewalModal .small {
+    color: var(--text) !important;
 }
 
 body.app-bg:not(.theme-light) .dashboard-muted {

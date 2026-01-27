@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="card auth-card p-4 p-md-5 text-center">
+        <div class="small text-uppercase text-muted mb-2">Erro 500</div>
+        <div class="display-1 fw-bold mb-3">500</div>
+        <h1 class="h4 mb-3">Algo deu errado por aqui</h1>
+        <p class="text-muted mb-1">O sistema encontrou uma falha inesperada.</p>
+        <p class="text-muted">Tente novamente em instantes ou fale com o suporte.</p>
+        {% if request %}
+            <div class="small text-muted mt-3">
+                Caminho: <span class="text-break">{{ request.path }}</span>
+            </div>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-2 justify-content-center mt-4">
+            <button class="btn btn-cta" type="button" onclick="window.location.reload()">Tentar novamente</button>
+            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#supportModal">Falar com suporte</button>
+            {% if user.is_authenticated %}
+                <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">Ir para o dashboard</a>
+            {% else %}
+                <a class="btn btn-outline-secondary" href="{% url 'login' %}">Fazer login</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

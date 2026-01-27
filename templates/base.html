@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ProjetoOficina</title>
     <meta name="theme-color" content="#0f172a">
+    <link rel="icon" type="image/svg+xml" href="{% static 'core/favicon.svg' %}">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'core/styles.css' %}">
@@ -91,14 +92,16 @@
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="{% url 'manual' %}">Manual</a></li>
                         <li><a class="dropdown-item" href="{% url 'manual' %}#videos">Ver Vídeos</a></li>
-                        {% if user.is_authenticated and user.is_gerente %}
+                        {% if user.is_authenticated and user.is_gerente or user.is_superuser %}
                         <li><a class="dropdown-item" href="{% url 'empresa_update' %}">Atualizar dados</a></li>
                         {% endif %}
                         {% if user.is_authenticated and user.is_superuser %}
                         <li><a class="dropdown-item" href="/admin/">Admin</a></li>
                         {% endif %}
                         <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#supportModal">Fale conosco</button></li>
+                        {% if user.is_authenticated and user.is_gerente or user.is_superuser %}
                         <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#planModal">Ver plano</button></li>
+                        {% endif %}
                     </ul>
                 </li>
                 <li class="nav-item">
@@ -215,19 +218,26 @@
                         <div class="small text-muted">Vencimento</div>
                         <div>{{ user.empresa.plano_vencimento_calculado|date:"d/m/Y"|default:"-" }}</div>
                     </div>
-                    <div class="alert alert-info mt-3">
-                        Renovado por último por {{ user.empresa.get_plano_periodo_display }}.
-                    </div>
+                    {% if not user.empresa.renovacao_periodo %}
+                        <div class="alert alert-info mt-3 d-flex align-items-center justify-content-between plan-last-renewal" id="plan-last-renewal">
+                            <span>Renovado por último por {{ user.empresa.get_plano_periodo_display }}.</span>
+                            <button type="button" class="btn-close" aria-label="Fechar" data-dismiss-last-renewal="true"></button>
+                        </div>
+                    {% endif %}
                     <div class="mt-3">
                         <div class="small text-muted mb-2">Renovar período</div>
-                        <form method="post" action="{% url 'empresa_renovar' %}" class="d-flex gap-2">
+                        <form method="post" action="{% url 'empresa_renovar' %}" class="d-flex gap-2 align-items-center plan-renewal-controls">
                             {% csrf_token %}
-                            <select name="periodo" class="form-select form-select-sm">
-                                <option value="30d" {% if user.empresa.plano_periodo == "30d" %}selected{% endif %}>30 dias</option>
-                                <option value="6m" {% if user.empresa.plano_periodo == "6m" %}selected{% endif %}>6 meses</option>
-                                <option value="12m" {% if user.empresa.plano_periodo == "12m" %}selected{% endif %}>12 meses</option>
+                            <select name="periodo" class="form-select form-select-sm plan-renewal-select" id="renovacao-periodo-select">
+                                {% for value, label, valor in user.empresa.periodos_com_valores %}
+                                    <option value="{{ value }}" {% if user.empresa.plano_periodo == value %}selected{% endif %}>
+                                        {{ label }} — R$ {{ valor|floatformat:2 }}
+                                    </option>
+                                {% endfor %}
                             </select>
-                            <button type="submit" class="btn btn-primary btn-sm">Solicitar renovação</button>
+                            <button type="submit" class="btn btn-primary btn-sm" {% if user.empresa.renovacao_periodo %}disabled aria-disabled="true"{% endif %}>
+                                Solicitar renovação
+                            </button>
                         </form>
                         {% if user.empresa.renovacao_periodo %}
                             <div class="text-muted small mt-2">
@@ -236,8 +246,60 @@
                                     ({{ user.empresa.renovacao_solicitada_em|date:"d/m/Y" }})
                                 {% endif %}
                             </div>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#planRenewalModal">
+                                    Ver QR Pix
+                                </button>
+                            </div>
                         {% endif %}
                     </div>
+                {% else %}
+                    <div class="text-muted">Nenhuma empresa vinculada.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="planRenewalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pagamento da renovação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if user.is_authenticated and user.empresa %}
+                    {% if user.empresa.renovacao_periodo %}
+                        <div class="small text-muted mb-2">
+                            Renovação solicitada para {{ user.empresa.get_renovacao_periodo_display }}.
+                        </div>
+                        {% with plano_valor=user.empresa.renovacao_plano_valor %}
+                            {% if plano_valor and plano_valor.pix_qr_code %}
+                                <div class="mt-3 text-center">
+                                    <div class="small text-muted mb-2">Pagamento via Pix</div>
+                                    <img src="{{ plano_valor.pix_qr_code.url }}" alt="QR Code Pix" class="plan-renewal-qr" width="120" height="120">
+                                    {% if plano_valor.pix_copia_cola %}
+                                        <div class="plan-renewal-copy-wrap mt-2">
+                                            <textarea class="visually-hidden" id="pix-copia-cola">{{ plano_valor.pix_copia_cola }}</textarea>
+                                            <a href="#" class="small text-muted" data-copy-target="pix-copia-cola">Copia e cola qrcode</a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% elif plano_valor and plano_valor.pix_copia_cola %}
+                                <div class="mt-3 text-center">
+                                    <div class="plan-renewal-copy-wrap">
+                                        <textarea class="visually-hidden" id="pix-copia-cola">{{ plano_valor.pix_copia_cola }}</textarea>
+                                        <a href="#" class="small text-muted" data-copy-target="pix-copia-cola">Copia e cola qrcode</a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if not plano_valor or not plano_valor.pix_qr_code and not plano_valor.pix_copia_cola %}
+                                <div class="text-muted">Dados de pagamento indisponíveis.</div>
+                            {% endif %}
+                        {% endwith %}
+                    {% else %}
+                        <div class="text-muted">Nenhuma renovação pendente.</div>
+                    {% endif %}
                 {% else %}
                     <div class="text-muted">Nenhuma empresa vinculada.</div>
                 {% endif %}
@@ -255,6 +317,79 @@
         if (firstInput && !firstInput.hasAttribute('autofocus')) {
             firstInput.focus();
         }
+    })();
+
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        if (!params.has("renovacao")) return;
+        const modalEl = document.getElementById("planRenewalModal");
+        if (!modalEl || typeof bootstrap === "undefined") return;
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+        params.delete("renovacao");
+        const newQuery = params.toString();
+        const newUrl = `${window.location.pathname}${newQuery ? `?${newQuery}` : ""}${window.location.hash}`;
+        window.history.replaceState({}, "", newUrl);
+    })();
+
+    (function() {
+        const storageKey = "hidePlanLastRenewal";
+        const container = document.getElementById("plan-last-renewal");
+        if (!container) return;
+        if (localStorage.getItem(storageKey) === "1") {
+            container.remove();
+            return;
+        }
+        const closeBtn = container.querySelector("[data-dismiss-last-renewal]");
+        if (!closeBtn) return;
+        closeBtn.addEventListener("click", () => {
+            localStorage.setItem(storageKey, "1");
+            container.remove();
+        });
+    })();
+
+    (function() {
+        const buttons = document.querySelectorAll("[data-copy-target]");
+        if (!buttons.length) return;
+        const copyText = async (text) => {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            }
+            return false;
+        };
+
+        buttons.forEach((button) => {
+            button.addEventListener("click", async (event) => {
+                event.preventDefault();
+                const targetId = button.getAttribute("data-copy-target");
+                const target = targetId ? document.getElementById(targetId) : null;
+                const text = target?.value || target?.textContent || "";
+                if (!text) return;
+                let copied = false;
+                try {
+                    copied = await copyText(text);
+                } catch (e) {
+                    copied = false;
+                }
+                if (!copied) {
+                    const temp = document.createElement("textarea");
+                    temp.value = text;
+                    temp.setAttribute("readonly", "");
+                    temp.style.position = "absolute";
+                    temp.style.left = "-9999px";
+                    document.body.appendChild(temp);
+                    temp.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(temp);
+                }
+                const original = button.textContent;
+                button.textContent = "Copiado!";
+                setTimeout(() => {
+                    button.textContent = original;
+                }, 1500);
+            });
+        });
     })();
 
     (function() {

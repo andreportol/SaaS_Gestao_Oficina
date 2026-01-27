@@ -1442,7 +1442,15 @@ class EmpresaRenovacaoView(LoginRequiredMixin, View):
         empresa.renovacao_solicitada_em = timezone.now()
         empresa.save(update_fields=["renovacao_periodo", "renovacao_solicitada_em"])
         messages.success(request, "Solicitação de renovação enviada. Confirmação após o pagamento.")
-        return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+        redirect_url = request.META.get("HTTP_REFERER") or reverse("dashboard")
+        parts = urllib.parse.urlsplit(redirect_url)
+        query = urllib.parse.parse_qs(parts.query)
+        query["renovacao"] = ["1"]
+        new_query = urllib.parse.urlencode(query, doseq=True)
+        redirect_url = urllib.parse.urlunsplit(
+            (parts.scheme, parts.netloc, parts.path, new_query, parts.fragment)
+        )
+        return redirect(redirect_url)
 
 
 class PasswordRecoveryView(FormMixin, TemplateView):

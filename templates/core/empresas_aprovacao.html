@@ -116,4 +116,13 @@
         });
     })();
 </script>
+<script>
+    (function() {
+        const refreshMs = 30000;
+        setInterval(() => {
+            if (document.hidden) return;
+            window.location.reload();
+        }, refreshMs);
+    })();
+</script>
 {% endblock %}
