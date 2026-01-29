@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-0">
+            <span class="page-title-label">
+                <svg class="page-title-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <circle cx="12" cy="17" r="1"></circle>
+                </svg>
+                Estoque crítico
+            </span>
+        </h1>
+        <div class="small text-muted dashboard-muted">Produtos com estoque abaixo do mínimo</div>
+    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'dashboard' %}">Voltar</a>
+</div>
+
+<div class="card p-3 dashboard-card">
+    <div class="table-responsive">
+        <table class="table table-sm table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th class="text-end">Estoque atual</th>
+                    <th class="text-end">Estoque mínimo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if estoque_critico %}
+                    {% for produto in estoque_critico %}
+                        <tr>
+                            <td>{{ produto.nome }}</td>
+                            <td class="text-end">{{ produto.estoque_atual|default:"-" }}</td>
+                            <td class="text-end">{{ produto.estoque_minimo|default:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">Sem itens críticos.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

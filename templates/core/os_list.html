@@ -49,7 +49,9 @@
                     <th>Cliente</th>
                     <th class="col-veiculo">Veículo</th>
                     <th class="col-status">Status</th>
+                    <th class="col-executor">Executor</th>
                     <th class="col-entrada">Entrada</th>
+                    <th class="col-finalizacao">Saída</th>
                     <th class="text-end col-total">Total</th>
                     <th></th>
                 </tr>
@@ -61,14 +63,18 @@
                     <td>{{ os.cliente.nome }}</td>
                     <td class="col-veiculo">{{ os.veiculo.modelo }}</td>
                     <td class="col-status"><span class="status-pill status-{{ os.status }}">{{ os.get_status_display }}</span></td>
+                    <td class="col-executor">{% if os.executor %}{{ os.executor.nome }}{% else %}-{% endif %}</td>
                     <td class="col-entrada">{{ os.entrada_em }}</td>
-                    <td class="text-end col-total">R$ {{ os.total|floatformat:2 }}</td>
+                    <td class="col-finalizacao">{{ os.previsao_entrega|date:"d/m/Y"|default:"-" }}</td>
+                    <td class="text-end col-total{% if os.status == 'FINALIZADA' %} status-text-FINALIZADA{% endif %}">
+                        R$ {{ os.total|floatformat:2 }}
+                    </td>
                     <td class="text-end">
                         <a class="chip chip-action chip-ghost no-dot" href="{% url 'os_detail' os.pk %}">Detalhes</a>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center py-3">Nenhuma ordem encontrada.</td></tr>
+                <tr><td colspan="9" class="text-center py-3">Nenhuma ordem encontrada.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

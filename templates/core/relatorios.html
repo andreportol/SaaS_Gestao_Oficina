@@ -126,6 +126,9 @@
                                 {% endif %}
                             </div>
                         </div>
+                        <a class="btn btn-sm btn-outline-primary" href="{% url 'os_detail' item.os_id %}">
+                            Editar pagamento
+                        </a>
                     </li>
                     {% endwith %}
                 {% empty %}

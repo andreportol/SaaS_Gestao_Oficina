@@ -7,7 +7,32 @@
     </a>
     </div>
 <div class="card p-4 form-card dashboard-card">
-    <form method="post" enctype="multipart/form-data" class="app-form">
+    {% if is_os_form %}
+        <div
+            id="osDateAlert"
+            class="alert alert-danger os-date-alert{% if form.errors.previsao_entrega or form.errors.entrada_em %}{% else %} d-none{% endif %}"
+            role="alert"
+        >
+            A data de entrada deve ser menor ou igual à data de entrega.
+        </div>
+        {% if form.errors.status %}
+            <div id="osPaymentAlert" class="alert alert-warning mt-2 os-payment-alert" role="alert">
+                <span class="me-2 fw-bold" aria-hidden="true">$</span>
+                Registre um pagamento antes de finalizar a OS.
+            </div>
+        {% else %}
+            <div id="osPaymentAlert" class="alert alert-warning mt-2 d-none os-payment-alert" role="alert">
+                <span class="me-2 fw-bold" aria-hidden="true">$</span>
+                Registre um pagamento antes de finalizar a OS.
+            </div>
+        {% endif %}
+    {% endif %}
+    <form
+        method="post"
+        enctype="multipart/form-data"
+        class="app-form js-os-form"
+        data-has-pagamentos="{% if form.instance and form.instance.pk and form.instance.pagamentos.exists %}1{% else %}0{% endif %}"
+    >
         {% csrf_token %}
         {% for field in form %}
             {% if field.name == "codigo" %}
@@ -36,6 +61,11 @@
                             {{ field }}
                             {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% if form.custo and form.preco %}
+                                <div id="produtoCustoAviso" class="text-warning small d-none mt-1">
+                                    Atenção: o custo está maior que o preço.
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
             {% elif field.name == "estoque_atual" %}
@@ -54,6 +84,19 @@
                             {{ field }}
                             {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            {% if is_os_form %}
+                                {% if form.errors.status %}
+                                    <div class="alert alert-warning mt-2 os-payment-alert" role="alert">
+                                        <span class="me-2 fw-bold" aria-hidden="true">$</span>
+                                        Registre um pagamento antes de finalizar a OS.
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning mt-2 d-none os-payment-alert" role="alert">
+                                        <span class="me-2 fw-bold" aria-hidden="true">$</span>
+                                        Registre um pagamento antes de finalizar a OS.
+                                    </div>
+                                {% endif %}
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -94,6 +137,9 @@
                             {{ field }}
                             {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            <div id="osDateWarning" class="text-danger small d-none">
+                                A data de entrada deve ser menor ou igual à data de entrega.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -361,4 +407,156 @@
         </div>
     </form>
 </div>
+{% if form.custo and form.preco %}
+<script>
+    (function() {
+        const custoInput = document.getElementById("id_custo");
+        const precoInput = document.getElementById("id_preco");
+        const aviso = document.getElementById("produtoCustoAviso");
+        if (!custoInput || !precoInput || !aviso) return;
+        const parseValue = (value) => {
+            if (!value) return null;
+            let text = String(value).replace("R$", "").replace(/\s/g, "");
+            if (text.includes(",") && text.includes(".")) {
+                text = text.replace(/\./g, "").replace(",", ".");
+            } else if (text.includes(",")) {
+                text = text.replace(",", ".");
+            }
+            const parsed = parseFloat(text);
+            return Number.isFinite(parsed) ? parsed : null;
+        };
+        const updateAviso = () => {
+            const custo = parseValue(custoInput.value);
+            const preco = parseValue(precoInput.value);
+            const show = custo !== null && preco !== null && custo > preco;
+            aviso.classList.toggle("d-none", !show);
+        };
+        custoInput.addEventListener("input", updateAviso);
+        precoInput.addEventListener("input", updateAviso);
+        updateAviso();
+    })();
+</script>
+{% endif %}
+{% if is_os_form %}
+<script>
+    (function() {
+        const formEl = document.querySelector(".js-os-form");
+        const entradaEl = document.getElementById("id_entrada_em");
+        const previsaoEl = document.getElementById("id_previsao_entrega");
+        const statusEl = document.getElementById("id_status");
+        const dateWarningEl = document.getElementById("osDateWarning");
+        const dateAlertEl = document.getElementById("osDateAlert");
+        if (!formEl || !entradaEl || !previsaoEl || !dateWarningEl || !dateAlertEl) return;
+
+        const parseDateValue = (value) => {
+            if (!value) return null;
+            if (value.includes("-")) {
+                const [year, month, day] = value.split("-").map(Number);
+                if (!year || !month || !day) return null;
+                return new Date(year, month - 1, day);
+            }
+            if (value.includes("/")) {
+                const [day, month, year] = value.split("/").map(Number);
+                if (!year || !month || !day) return null;
+                return new Date(year, month - 1, day);
+            }
+            return null;
+        };
+
+        const validateDates = () => {
+            const entrada = parseDateValue(entradaEl.value);
+            const previsao = parseDateValue(previsaoEl.value);
+            const invalid = Boolean(entrada && previsao && entrada > previsao);
+            if (invalid) {
+                dateWarningEl.classList.remove("d-none");
+                dateAlertEl.classList.remove("d-none");
+                entradaEl.classList.add("is-invalid");
+                previsaoEl.classList.add("is-invalid");
+            } else {
+                dateWarningEl.classList.add("d-none");
+                dateAlertEl.classList.add("d-none");
+                entradaEl.classList.remove("is-invalid");
+                previsaoEl.classList.remove("is-invalid");
+            }
+            return !invalid;
+        };
+
+        const formatToday = () => {
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, "0");
+            const month = String(today.getMonth() + 1).padStart(2, "0");
+            const year = today.getFullYear();
+            return `${day}/${month}/${year}`;
+        };
+
+        const syncEntregaFromStatus = () => {
+            if (!statusEl) return;
+            if (statusEl.value === "FINALIZADA" || statusEl.value === "CANCELADA") {
+                if (!previsaoEl.value) {
+                    previsaoEl.value = formatToday();
+                }
+            } else {
+                previsaoEl.value = "";
+            }
+            previsaoEl.readOnly = true;
+            validateDates();
+        };
+
+        entradaEl.addEventListener("input", validateDates);
+        previsaoEl.addEventListener("input", validateDates);
+        validateDates();
+        syncEntregaFromStatus();
+
+        statusEl?.addEventListener("change", syncEntregaFromStatus);
+
+        formEl.addEventListener("submit", (event) => {
+            if (validateDates() === false) {
+                event.preventDefault();
+                dateAlertEl.scrollIntoView({ behavior: "smooth", block: "start" });
+                previsaoEl.focus();
+            }
+        });
+    })();
+</script>
+{% endif %}
+
+{% if is_os_form %}
+<script>
+    (function() {
+        const initPaymentAlert = () => {
+            const statusField = document.getElementById("id_status");
+            const formEl = document.querySelector(".js-os-form");
+            const paymentAlertEls = document.querySelectorAll(".os-payment-alert");
+            if (!statusField || !formEl || paymentAlertEls.length === 0) return false;
+            const hasPagamentos = formEl.dataset.hasPagamentos === "1";
+            const showPaymentAlert = () => {
+                paymentAlertEls.forEach((el) => el.classList.remove("d-none"));
+                paymentAlertEls[0].scrollIntoView({ behavior: "smooth", block: "start" });
+            };
+            const hidePaymentAlert = () => {
+                paymentAlertEls.forEach((el) => el.classList.add("d-none"));
+            };
+
+            statusField.addEventListener("change", () => {
+                if (statusField.value === "FINALIZADA" && !hasPagamentos) {
+                    showPaymentAlert();
+                } else {
+                    hidePaymentAlert();
+                }
+            });
+            formEl.addEventListener("submit", (event) => {
+                if (statusField.value === "FINALIZADA" && !hasPagamentos) {
+                    event.preventDefault();
+                    showPaymentAlert();
+                }
+            });
+            return true;
+        };
+
+        if (!initPaymentAlert()) {
+            window.addEventListener("load", initPaymentAlert, { once: true });
+        }
+    })();
+</script>
+{% endif %}
 {% endblock %}

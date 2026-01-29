@@ -13,9 +13,25 @@
                 Produtos
             </span>
         </h1>
-        <a class="btn btn-outline-success export-btn d-none d-sm-inline-flex" href="{% url 'produtos_export' %}{% if querystring %}?{{ querystring }}{% endif %}">Exportar CSV</a>
+        <div class="d-none d-sm-inline-flex align-items-center gap-2">
+            <form
+                class="d-inline-flex align-items-center"
+                method="post"
+                action="{% url 'produtos_import' %}"
+                enctype="multipart/form-data"
+                id="importCsvForm"
+            >
+                {% csrf_token %}
+                <input type="file" name="csv_file" id="importCsvInput" accept=".csv" class="d-none">
+                <label class="btn btn-outline-success export-btn mb-0" for="importCsvInput">Importar CSV</label>
+            </form>
+            <span class="small text-muted">Ordem: Nome, Descrição, Código, Custo, Preço, Estoque</span>
+        </div>
     </div>
     <a class="btn btn-primary" href="{% url 'produtos_create' %}">Novo Produto</a>
+</div>
+<div class="small text-muted d-sm-none mb-2">
+    Ordem do CSV: Nome, Descrição, Código, Custo, Preço, Estoque.
 </div>
 <form class="row g-2 mb-3" method="get">
     <div class="col-auto flex-grow-1">
@@ -61,4 +77,15 @@
 </div>
 {% include "core/pagination.html" %}
  </div>
+<script>
+    const importCsvInput = document.getElementById("importCsvInput");
+    const importCsvForm = document.getElementById("importCsvForm");
+    if (importCsvInput && importCsvForm) {
+        importCsvInput.addEventListener("change", () => {
+            if (importCsvInput.files && importCsvInput.files.length) {
+                importCsvForm.submit();
+            }
+        });
+    }
+</script>
 {% endblock %}

@@ -1,14 +1,13 @@
 import calendar
-from collections import defaultdict
 from datetime import timedelta
 
-from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models import Avg, Count, F, Q, Sum, OuterRef, Subquery
 from django.db.models.expressions import ExpressionWrapper
 from django.db.models.fields import DateTimeField, DurationField
 from django.db.models.functions import Cast, Coalesce, TruncDate, TruncMonth
 from django.utils import timezone
 
-from ..models import Despesa, OrdemServico, OSItem, Pagamento, Produto
+from ..models import Despesa, OrdemServico, OrdemServicoLog, OSItem, Pagamento, Produto
 from . import is_manager_user, os_queryset_for_user
 
 
@@ -69,6 +68,14 @@ def _resolve_period(range_key=None, start=None, end=None, default_months=6, defa
     return start, today
 
 
+def _coerce_limit(value, fallback=10):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return fallback
+    return parsed if parsed > 0 else fallback
+
+
 def _merge_monthly(entradas, saidas):
     data = {}
     for row in entradas:
@@ -92,18 +99,24 @@ def _merge_monthly(entradas, saidas):
     return items
 
 
-def build_dashboard_data(user, range_key=None, start=None, end=None):
+def build_dashboard_data(
+    user,
+    range_key=None,
+    start=None,
+    end=None,
+    clientes_limit=10,
+    recorrencia_limit=10,
+    produtos_limit=10,
+):
     empresa = getattr(user, "empresa", None)
     if not empresa:
         return {}
 
+    clientes_limit = _coerce_limit(clientes_limit, 10)
+    recorrencia_limit = _coerce_limit(recorrencia_limit, 10)
+    produtos_limit = _coerce_limit(produtos_limit, 10)
     period_start, period_end = _resolve_period(range_key, start, end, default_months=6)
-    if start and end:
-        op_start, op_end = period_start, period_end
-    elif range_key and str(range_key).lower().endswith("d"):
-        op_start, op_end = _resolve_period(range_key, None, None, default_days=30)
-    else:
-        op_start, op_end = _resolve_period(None, None, None, default_days=30)
+    op_start, op_end = period_start, period_end
 
     os_qs = os_queryset_for_user(user)
     pagamentos_qs = Pagamento.objects.filter(empresa=empresa)
@@ -146,6 +159,15 @@ def build_dashboard_data(user, range_key=None, start=None, end=None):
         .annotate(total=Count("id"))
         .order_by("-total")
     )
+    os_por_funcionario_itens = (
+        os_periodo.annotate(executor_nome=Coalesce("executor__nome", "responsavel__username"))
+        .values("id", "executor_nome")
+        .order_by("-id")
+    )
+    os_por_funcionario_map = {}
+    for row in os_por_funcionario_itens:
+        executor_nome = row["executor_nome"] or "Sem executor"
+        os_por_funcionario_map.setdefault(executor_nome, []).append(row["id"])
     status_map = dict(OrdemServico.Status.choices)
     os_status = (
         os_periodo.values("status")
@@ -153,17 +175,31 @@ def build_dashboard_data(user, range_key=None, start=None, end=None):
         .order_by("status")
     )
 
-    os_finalizadas = os_qs.filter(
-        status=OrdemServico.Status.FINALIZADA,
-        finalizado_em__isnull=False,
-        finalizado_em__date__gte=op_start,
-        finalizado_em__date__lte=op_end,
+    finalizado_log = (
+        OrdemServicoLog.objects.filter(os_id=OuterRef("pk"), acao=OrdemServicoLog.Acao.FINALIZAR)
+        .order_by("-criado_em")
+        .values("criado_em")[:1]
+    )
+    os_finalizadas = (
+        os_qs.filter(status=OrdemServico.Status.FINALIZADA)
+        .annotate(
+            finalizado_em_eff=Coalesce(
+                "finalizado_em",
+                Subquery(finalizado_log),
+                F("criado_em"),
+            )
+        )
+        .filter(
+            finalizado_em_eff__isnull=False,
+            finalizado_em_eff__date__gte=op_start,
+            finalizado_em_eff__date__lte=op_end,
+        )
     )
     duracao = ExpressionWrapper(
-        F("finalizado_em") - Cast("entrada_em", DateTimeField()), output_field=DurationField()
+        F("finalizado_em_eff") - Cast("entrada_em", DateTimeField()), output_field=DurationField()
     )
     tempo_medio = (
-        os_finalizadas.annotate(period=TruncDate("finalizado_em"))
+        os_finalizadas.annotate(period=TruncDate("finalizado_em_eff"))
         .values("period")
         .annotate(media=Avg(duracao))
         .order_by("period")
@@ -173,7 +209,7 @@ def build_dashboard_data(user, range_key=None, start=None, end=None):
     produtos_top = (
         itens_periodo.values("produto__nome", "descricao")
         .annotate(qtd=Sum("qtd"), total=Sum("subtotal"))
-        .order_by("-total")[:10]
+        .order_by("-total")[:produtos_limit]
     )
 
     estoque_critico = produtos_qs.filter(
@@ -185,21 +221,14 @@ def build_dashboard_data(user, range_key=None, start=None, end=None):
     clientes_top = (
         pagamentos_periodo.values("os__cliente__nome")
         .annotate(total=Sum("valor"))
-        .order_by("-total")[:10]
+        .order_by("-total")[:clientes_limit]
     )
 
-    os_recorrencia = (
-        os_periodo.annotate(period=TruncMonth("entrada_em"))
-        .values("period", "cliente_id")
+    recorrencia_top = (
+        os_periodo.values("cliente__nome")
         .annotate(total_os=Count("id"))
-        .order_by("period")
+        .order_by("-total_os")[:recorrencia_limit]
     )
-    recorrencia_map = defaultdict(lambda: {"clientes": 0, "recorrentes": 0})
-    for row in os_recorrencia:
-        period = row["period"]
-        recorrencia_map[period]["clientes"] += 1
-        if row["total_os"] > 1:
-            recorrencia_map[period]["recorrentes"] += 1
 
     return {
         "periodo": {
@@ -223,6 +252,13 @@ def build_dashboard_data(user, range_key=None, start=None, end=None):
                 "labels": [row["executor_nome"] or "Sem executor" for row in os_por_funcionario],
                 "valores": [row["total"] for row in os_por_funcionario],
             },
+            "os_por_funcionario_detalhes": [
+                {
+                    "executor": row["executor_nome"] or "Sem executor",
+                    "os": os_por_funcionario_map.get(row["executor_nome"] or "Sem executor", []),
+                }
+                for row in os_por_funcionario
+            ],
             "status_os": {
                 "labels": [status_map.get(row["status"], row["status"]) for row in os_status],
                 "valores": [row["total"] for row in os_status],
@@ -262,11 +298,8 @@ def build_dashboard_data(user, range_key=None, start=None, end=None):
                 "valores": [float(row["total"] or 0) for row in clientes_top],
             },
             "recorrencia": {
-                "labels": [_format_month(period) for period in sorted(recorrencia_map.keys())],
-                "clientes": [recorrencia_map[period]["clientes"] for period in sorted(recorrencia_map.keys())],
-                "recorrentes": [
-                    recorrencia_map[period]["recorrentes"] for period in sorted(recorrencia_map.keys())
-                ],
+                "labels": [row["cliente__nome"] or "Sem cliente" for row in recorrencia_top],
+                "vezes": [row["total_os"] for row in recorrencia_top],
             },
         },
     }

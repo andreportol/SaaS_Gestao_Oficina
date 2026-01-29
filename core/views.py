@@ -1,4 +1,7 @@
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
+import io
+import unicodedata
 import re
 import urllib.parse
 import base64
@@ -19,7 +22,7 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
 from django.db import IntegrityError
-from django.db.models import Q, Sum, Case, When, Value, IntegerField
+from django.db.models import Q, Sum, Case, When, Value, IntegerField, F
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear
 from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
@@ -71,6 +74,14 @@ from .models import (
 )
 from .services import criar_os_log, os_queryset_for_user
 from .services.dashboard_metrics import build_dashboard_data
+
+
+def _parse_limit(value, fallback=10):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return fallback
+    return parsed if parsed > 0 else fallback
 
 
 class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -138,10 +149,14 @@ def _apply_os_status_audit(os, previous_status, usuario):
         os.iniciado_em = now
         actions.append(OrdemServicoLog.Acao.INICIAR)
     if os.status == OrdemServico.Status.FINALIZADA and previous_status != os.status:
-        if not os.finalizado_em:
-            os.finalizado_em = now
+        os.finalizado_em = now
         os.finalizado_por = usuario
+        os.previsao_entrega = now.date()
         actions.append(OrdemServicoLog.Acao.FINALIZAR)
+    if os.status == OrdemServico.Status.CANCELADA and previous_status != os.status:
+        os.previsao_entrega = now.date()
+    if os.status not in (OrdemServico.Status.FINALIZADA, OrdemServico.Status.CANCELADA):
+        os.previsao_entrega = None
     if os.status == OrdemServico.Status.CANCELADA and previous_status != os.status:
         actions.append(OrdemServicoLog.Acao.CANCELAR)
     return actions
@@ -161,7 +176,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         hoje = timezone.now().date()
         inicio_periodo = hoje - timedelta(days=30)
         ordens = os_queryset_for_user(self.request.user)
-        dashboard_data = build_dashboard_data(self.request.user, range_key=self.request.GET.get("range"))
+        dashboard_data = build_dashboard_data(
+            self.request.user,
+            range_key=self.request.GET.get("range"),
+            clientes_limit=_parse_limit(self.request.GET.get("clientes_top"), 10),
+            recorrencia_limit=_parse_limit(self.request.GET.get("recorrencia_top"), 10),
+            produtos_limit=_parse_limit(self.request.GET.get("produtos_top"), 10),
+        )
         context.update(
             {
                 "os_abertas": ordens.filter(status=OrdemServico.Status.ABERTA).count(),
@@ -181,6 +202,50 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
+class DashboardTableBaseView(LoginRequiredMixin, TemplateView):
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not request.user.is_gerente():
+            return redirect("clientes_list")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        dashboard_data = build_dashboard_data(
+            self.request.user,
+            range_key=self.request.GET.get("range"),
+            clientes_limit=_parse_limit(self.request.GET.get("clientes_top"), 10),
+            recorrencia_limit=_parse_limit(self.request.GET.get("recorrencia_top"), 10),
+            produtos_limit=_parse_limit(self.request.GET.get("produtos_top"), 10),
+        )
+        context["dashboard_data"] = dashboard_data
+        context["dashboard_range"] = self.request.GET.get("range") or "6m"
+        return context
+
+
+class DashboardOsPorFuncionarioView(DashboardTableBaseView):
+    template_name = "core/os_por_funcionario_table.html"
+
+
+class DashboardProdutosMaisVendidosView(DashboardTableBaseView):
+    template_name = "core/produtos_mais_vendidos_table.html"
+
+
+class DashboardEstoqueCriticoView(DashboardTableBaseView):
+    template_name = "core/estoque_critico_table.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        empresa = self.request.user.empresa
+        estoque_critico = Produto.objects.filter(
+            empresa=empresa,
+            estoque_atual__isnull=False,
+            estoque_minimo__isnull=False,
+            estoque_atual__lte=F("estoque_minimo"),
+        ).order_by("estoque_atual", "nome")
+        context["estoque_critico"] = estoque_critico
+        return context
+
+
 class DashboardDataView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         range_key = request.GET.get("range")
@@ -188,7 +253,15 @@ class DashboardDataView(LoginRequiredMixin, View):
         end_value = request.GET.get("end")
         start = parse_date(start_value) if start_value else None
         end = parse_date(end_value) if end_value else None
-        data = build_dashboard_data(request.user, range_key=range_key, start=start, end=end)
+        data = build_dashboard_data(
+            request.user,
+            range_key=range_key,
+            start=start,
+            end=end,
+            clientes_limit=_parse_limit(request.GET.get("clientes_top"), 10),
+            recorrencia_limit=_parse_limit(request.GET.get("recorrencia_top"), 10),
+            produtos_limit=_parse_limit(request.GET.get("produtos_top"), 10),
+        )
         return JsonResponse(data)
 
 
@@ -814,7 +887,7 @@ class ProdutoListView(EmpresaQuerysetMixin, ListView):
         termo = self.request.GET.get("q")
         if termo:
             qs = qs.filter(Q(nome__icontains=termo) | Q(codigo__icontains=termo))
-        return qs.order_by("nome")
+        return qs.order_by("-id")
 
 
 class ProdutoCreateView(EmpresaFormMixin, EmpresaQuerysetMixin, CreateView):
@@ -825,6 +898,10 @@ class ProdutoCreateView(EmpresaFormMixin, EmpresaQuerysetMixin, CreateView):
     extra_context = {"title": "Novo Produto"}
 
     def form_valid(self, form):
+        custo = form.cleaned_data.get("custo")
+        preco = form.cleaned_data.get("preco")
+        if custo is not None and preco is not None and custo > preco:
+            messages.warning(self.request, "Atenção: o custo está maior que o preço.")
         messages.success(self.request, "Produto salvo com sucesso.")
         return super().form_valid(form)
 
@@ -841,29 +918,161 @@ class ProdutoUpdateView(EmpresaFormMixin, EmpresaQuerysetMixin, UpdateView):
         return super().form_valid(form)
 
 
-def exportar_produtos_csv(request):
+def importar_produtos_csv(request):
     empresa = request.user.empresa
-    qs = Produto.objects.filter(empresa=empresa)
-    termo = request.GET.get("q")
-    if termo:
-        qs = qs.filter(Q(nome__icontains=termo) | Q(codigo__icontains=termo))
+    if request.method != "POST":
+        messages.info(request, "Use o botão Importar CSV para enviar o arquivo.")
+        return redirect("produtos_list")
 
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="produtos.csv"'
-    writer = csv.writer(response)
-    writer.writerow(["Nome", "Descrição", "Código", "Custo", "Preço", "Estoque"])
-    for p in qs:
-        writer.writerow(
-            [
-                p.nome,
-                p.descricao,
-                p.codigo,
-                f"{p.custo or 0:.2f}" if p.custo is not None else "",
-                f"{p.preco or 0:.2f}" if p.preco is not None else "",
-                p.estoque_atual if p.estoque_atual is not None else "",
-            ]
+    upload = request.FILES.get("csv_file")
+    if not upload:
+        messages.error(request, "Selecione um arquivo CSV para importar.")
+        return redirect("produtos_list")
+
+    try:
+        content = upload.read().decode("utf-8-sig")
+    except UnicodeDecodeError:
+        messages.error(request, "Arquivo CSV inválido. Use UTF-8.")
+        return redirect("produtos_list")
+
+    def normalize_header(value):
+        normalized = unicodedata.normalize("NFKD", value or "")
+        return "".join(ch for ch in normalized if not unicodedata.combining(ch)).lower().strip()
+
+    def parse_decimal(raw, field_label, row_index, required=False):
+        text = (raw or "").strip()
+        if not text:
+            if required:
+                raise ValueError(f"Linha {row_index}: campo '{field_label}' é obrigatório.")
+            return None
+        text = text.replace("R$", "").replace(" ", "")
+        if "," in text and "." in text:
+            text = text.replace(".", "").replace(",", ".")
+        elif "," in text:
+            text = text.replace(",", ".")
+        try:
+            value = Decimal(text)
+        except InvalidOperation:
+            raise ValueError(f"Linha {row_index}: valor inválido em '{field_label}'.")
+        if value < 0:
+            raise ValueError(f"Linha {row_index}: '{field_label}' não pode ser negativo.")
+        return value
+
+    def parse_int(raw, field_label, row_index):
+        if raw is None or str(raw).strip() == "":
+            return None
+        value = parse_decimal(raw, field_label, row_index, required=False)
+        if value is None:
+            return None
+        if value != value.to_integral_value():
+            raise ValueError(f"Linha {row_index}: '{field_label}' deve ser inteiro.")
+        return int(value)
+
+    reader = csv.reader(io.StringIO(content))
+    rows = list(reader)
+    if not rows:
+        messages.error(request, "Arquivo CSV vazio.")
+        return redirect("produtos_list")
+
+    expected_header = ["nome", "descricao", "codigo", "custo", "preco", "estoque"]
+    first_row = rows[0]
+    normalized_first = [normalize_header(cell) for cell in first_row]
+    start_index = 0
+    if normalized_first == expected_header:
+        start_index = 1
+    elif len(first_row) != len(expected_header):
+        messages.error(
+            request,
+            "CSV com colunas inválidas. Use a ordem: Nome, Descrição, Código, Custo, Preço, Estoque.",
         )
-    return response
+        return redirect("produtos_list")
+
+    existentes = {
+        (produto.nome or "").strip().lower(): produto
+        for produto in Produto.objects.filter(empresa=empresa)
+    }
+    created_map = {}
+    updated = []
+    updated_seen = set()
+    errors = []
+    update_fields = ["nome", "descricao", "codigo", "custo", "preco", "estoque_atual"]
+
+    for idx, row in enumerate(rows[start_index:], start=start_index + 1):
+        if not row or all(not str(cell).strip() for cell in row):
+            continue
+        if len(row) != len(expected_header):
+            errors.append(
+                f"Linha {idx}: número de colunas inválido (esperado {len(expected_header)})."
+            )
+            continue
+        nome, descricao, codigo, custo_raw, preco_raw, estoque_raw = row
+        nome = (nome or "").strip()
+        if not nome:
+            errors.append(f"Linha {idx}: campo 'Nome' é obrigatório.")
+            continue
+        try:
+            custo = parse_decimal(custo_raw, "Custo", idx, required=False)
+            preco = parse_decimal(preco_raw, "Preço", idx, required=True)
+            estoque = parse_int(estoque_raw, "Estoque", idx)
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+
+        produto_data = {
+            "nome": nome,
+            "descricao": (descricao or "").strip(),
+            "codigo": (codigo or "").strip(),
+            "custo": custo,
+            "preco": preco,
+            "estoque_atual": estoque,
+        }
+        nome_key = nome.lower()
+        if nome_key in existentes:
+            produto = existentes[nome_key]
+            original = {field: getattr(produto, field) for field in update_fields}
+            for field in update_fields:
+                setattr(produto, field, produto_data[field])
+            try:
+                produto.full_clean()
+            except Exception as exc:
+                for field, value in original.items():
+                    setattr(produto, field, value)
+                errors.append(f"Linha {idx}: {exc}")
+                continue
+            if produto.pk not in updated_seen:
+                updated.append(produto)
+                updated_seen.add(produto.pk)
+        else:
+            produto = Produto(empresa=empresa, **produto_data)
+            try:
+                produto.full_clean()
+            except Exception as exc:
+                errors.append(f"Linha {idx}: {exc}")
+                continue
+            created_map[nome_key] = produto
+
+    if errors:
+        for err in errors[:8]:
+            messages.error(request, err)
+        if len(errors) > 8:
+            messages.error(request, f"E mais {len(errors) - 8} erro(s).")
+        return redirect("produtos_list")
+
+    if not created_map and not updated:
+        messages.error(request, "Nenhum produto válido encontrado no CSV.")
+        return redirect("produtos_list")
+
+    created = list(created_map.values())
+    if created:
+        Produto.objects.bulk_create(created)
+    if updated:
+        Produto.objects.bulk_update(updated, update_fields)
+
+    messages.success(
+        request,
+        f"{len(created)} produto(s) importado(s), {len(updated)} atualizado(s) com sucesso.",
+    )
+    return redirect("produtos_list")
 
 
 class OrdemServicoListView(EmpresaQuerysetMixin, ListView):
@@ -919,7 +1128,7 @@ class OrdemServicoCreateView(EmpresaFormMixin, EmpresaQuerysetMixin, CreateView)
     model = OrdemServico
     form_class = OrdemServicoForm
     template_name = "core/form.html"
-    extra_context = {"title": "Nova Ordem de Serviço"}
+    extra_context = {"title": "Nova Ordem de Serviço", "is_os_form": True}
 
     def get_success_url(self):
         messages.success(self.request, "Ordem de serviço criada.")
@@ -948,10 +1157,31 @@ class OrdemServicoUpdateView(EmpresaFormMixin, EmpresaQuerysetMixin, UpdateView)
     model = OrdemServico
     form_class = OrdemServicoForm
     template_name = "core/form.html"
-    extra_context = {"title": "Editar Ordem de Serviço"}
+    extra_context = {"title": "Editar Ordem de Serviço", "is_os_form": True}
 
     def get_queryset(self):
         return os_queryset_for_user(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.setdefault("pagamento_form", PagamentoForm(user=self.request.user))
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if "add_pagamento" in request.POST:
+            pagamento_form = PagamentoForm(request.POST, user=request.user)
+            if pagamento_form.is_valid():
+                pagamento = pagamento_form.save(commit=False)
+                pagamento.os = self.object
+                pagamento.empresa = request.user.empresa
+                pagamento.save()
+                messages.success(request, "Pagamento registrado.")
+                return redirect("os_update", pk=self.object.pk)
+            form = self.get_form_class()(instance=self.object, user=request.user)
+            context = self.get_context_data(form=form, pagamento_form=pagamento_form)
+            return self.render_to_response(context)
+        return super().post(request, *args, **kwargs)
 
     def get_success_url(self):
         messages.success(self.request, "Ordem de serviço atualizada.")
@@ -1414,16 +1644,11 @@ class AutoCadastroView(FormMixin, TemplateView):
         user = form.save()
         messages.success(
             self.request,
-            "Cadastro recebido. Assim que o pagamento for confirmado, liberaremos o acesso ao sistema "
-            "e enviaremos uma notificação por e-mail ou WhatsApp.",
+            "Cadastro recebido. Assim que o pagamento for confirmado, liberaremos o acesso ao sistema.",
         )
-        enviado, erro = _notify_nova_liberacao(user.empresa, user)
-        if not enviado:
-            messages.warning(
-                self.request,
-                "Cadastro recebido, mas não foi possível enviar o e-mail de notificação. "
-                "Verifique as configurações de e-mail.",
-            )
+        enviado, _erro = _notify_nova_liberacao(user.empresa, user)
+        if enviado:
+            messages.success(self.request, "E-mail de notificação enviado com sucesso.")
         return super().form_valid(form)
 
 

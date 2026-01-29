@@ -21,7 +21,7 @@
             <p class="mb-1"><strong>Executor:</strong> {{ object.executor|default:"-" }}</p>
             <p class="mb-1"><strong>Status:</strong> <span class="status-pill status-{{ object.status }}">{{ object.get_status_display }}</span></p>
             <p class="mb-1"><strong>Entrada:</strong> {{ object.entrada_em }}</p>
-            <p class="mb-1"><strong>Previsão:</strong> {{ object.previsao_entrega|default:"-" }}</p>
+            <p class="mb-1"><strong>Data de entrega:</strong> {{ object.previsao_entrega|default:"-" }}</p>
             <p class="mb-1"><strong>Problema:</strong> {{ object.problema }}</p>
             <p class="mb-1"><strong>Diagnóstico:</strong> {{ object.diagnostico|default:"-" }}</p>
             <p class="mb-1"><strong>Observações:</strong> {{ object.observacoes|default:"-" }}</p>
@@ -37,6 +37,22 @@
             <p class="mb-1"><strong>Total:</strong> R$ {{ object.total|floatformat:2 }}</p>
             <p class="mb-1"><strong>Total Pago:</strong> R$ {{ object.total_pago|floatformat:2 }}</p>
             <p class="mb-1"><strong>Saldo:</strong> <span class="{% if object.saldo > 0 %}text-danger{% else %}text-success{% endif %}">R$ {{ object.saldo|floatformat:2 }}</span></p>
+            {% if object.pagamentos.exists %}
+                <div class="mt-2">
+                    <strong>Pagamentos:</strong>
+                    {% for pagamento in object.pagamentos.all %}
+                        <div class="text-muted small d-flex justify-content-between gap-2">
+                            <span>
+                                {{ pagamento.pago_em }}
+                                {% if pagamento.forma_pagamento %} • {{ pagamento.forma_pagamento }}{% endif %}
+                            </span>
+                            <span>R$ {{ pagamento.valor|floatformat:2 }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="mt-2 text-muted small">Nenhum pagamento registrado.</div>
+            {% endif %}
             {% if object.itens.exists %}
                 <div class="mt-2">
                     <strong>Itens:</strong>

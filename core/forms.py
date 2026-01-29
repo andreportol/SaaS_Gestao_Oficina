@@ -556,7 +556,7 @@ class OrdemServicoForm(EmpresaFormMixin):
             "mao_de_obra": "Mão de obra",
             "observacoes": "Observações",
             "desconto": "Desconto em Reais (R$)",
-            "previsao_entrega": "Previsão de entrega",
+            "previsao_entrega": "Data de entrega",
             "executor": "Executor do serviço",
         }
 
@@ -580,6 +580,8 @@ class OrdemServicoForm(EmpresaFormMixin):
 
         if "executor" in self.fields:
             self.fields["executor"].queryset = self.fields["executor"].queryset.filter(ativo=True)
+            self.fields["executor"].required = True
+            self.fields["executor"].error_messages["required"] = "Informe o executor do serviço."
 
         veiculos_qs = Veiculo.objects.all()
         if empresa:
@@ -603,6 +605,27 @@ class OrdemServicoForm(EmpresaFormMixin):
         for name in ("entrada_em", "previsao_entrega"):
             if name in self.fields:
                 self.fields[name].input_formats = date_formats
+
+    def clean(self):
+        cleaned = super().clean()
+        entrada_em = cleaned.get("entrada_em")
+        previsao_entrega = cleaned.get("previsao_entrega")
+        status = cleaned.get("status")
+        if status not in {OrdemServico.Status.FINALIZADA, OrdemServico.Status.CANCELADA}:
+            cleaned["previsao_entrega"] = None
+            return cleaned
+        if not previsao_entrega:
+            previsao_entrega = timezone.now().date()
+            cleaned["previsao_entrega"] = previsao_entrega
+        if entrada_em and previsao_entrega and entrada_em > previsao_entrega:
+            self.add_error(
+                "previsao_entrega",
+                "A data de entrada deve ser menor ou igual à data de entrega.",
+            )
+        if status == OrdemServico.Status.FINALIZADA and self.instance.pk:
+            if not self.instance.pagamentos.exists():
+                self.add_error("status", "Registre um pagamento antes de finalizar a OS.")
+        return cleaned
 
     def clean_anexo(self):
         anexo = self.cleaned_data.get("anexo")
@@ -686,11 +709,29 @@ class DespesaForm(EmpresaFormMixin):
         model = Despesa
         fields = ["descricao", "valor", "data"]
         widgets = {
-            "data": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+            "data": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "dd/mm/aaaa",
+                    "inputmode": "numeric",
+                    "data-date-picker": "br",
+                    "autocomplete": "off",
+                }
+            ),
             "valor": forms.NumberInput(
                 attrs={"min": "0", "step": "0.01", "data-format": "currency2", "placeholder": "0,00"}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "data" in self.fields:
+            self.fields["data"].input_formats = ["%d/%m/%Y", "%Y-%m-%d"]
+            if not self.is_bound:
+                today = timezone.now().date()
+                formatted = today.strftime("%d/%m/%Y")
+                self.initial["data"] = formatted
+                self.fields["data"].initial = formatted
 
 
 class FuncionarioForm(EmpresaFormMixin):

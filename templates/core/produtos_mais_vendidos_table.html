@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-0">
+            <span class="page-title-label">
+                <svg class="page-title-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 7l8-4 8 4-8 4-8-4z"></path>
+                    <path d="M4 7v10l8 4 8-4V7"></path>
+                    <path d="M12 11v10"></path>
+                </svg>
+                Produtos mais vendidos
+            </span>
+        </h1>
+        <div class="small text-muted dashboard-muted">Tabela com produtos mais vendidos no período</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-end dashboard-filters">
+        <div class="dashboard-filter dashboard-filter-range">
+            <label class="small text-muted dashboard-muted" for="dashboardRange">Período</label>
+            <select class="form-select form-select-sm" id="dashboardRange">
+                <option value="30d"{% if dashboard_range == "30d" %} selected{% endif %}>Últimos 30 dias</option>
+                <option value="90d"{% if dashboard_range == "90d" %} selected{% endif %}>Últimos 90 dias</option>
+                <option value="6m"{% if dashboard_range == "6m" %} selected{% endif %}>Últimos 6 meses</option>
+                <option value="12m"{% if dashboard_range == "12m" %} selected{% endif %}>Últimos 12 meses</option>
+                <option value="custom">Personalizado</option>
+            </select>
+        </div>
+        <div class="dashboard-filter">
+            <label class="small text-muted dashboard-muted" for="dashboardStart">Início</label>
+            <input class="form-control form-control-sm" type="date" id="dashboardStart" />
+        </div>
+        <div class="dashboard-filter">
+            <label class="small text-muted dashboard-muted" for="dashboardEnd">Fim</label>
+            <input class="form-control form-control-sm" type="date" id="dashboardEnd" />
+        </div>
+        <button class="btn btn-cta btn-sm dashboard-filter-apply" id="dashboardApply">Aplicar</button>
+    </div>
+</div>
+
+<div class="card p-3 dashboard-card">
+    <div class="table-responsive">
+        <table class="table table-sm table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th class="text-end">Qtd</th>
+                    <th class="text-end">Total (R$)</th>
+                </tr>
+            </thead>
+            <tbody id="produtosTableBody">
+                <tr>
+                    <td colspan="3" class="text-center text-muted">Sem dados.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{ dashboard_data|json_script:"dashboard-data" }}
+<script>
+    window.addEventListener("load", function() {
+        const dataSets = JSON.parse(document.getElementById("dashboard-data").textContent || "{}");
+        let currentData = dataSets;
+        const endpoint = "{% url 'dashboard_data' %}";
+        const rangeSel = document.getElementById("dashboardRange");
+        const startInput = document.getElementById("dashboardStart");
+        const endInput = document.getElementById("dashboardEnd");
+        const applyBtn = document.getElementById("dashboardApply");
+
+        const formatCurrency = (value) =>
+            `R$ ${Number(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+        const formatUnits = (value) => `${Number(value || 0)} Unidades`;
+
+        const renderTable = (data) => {
+            const body = document.getElementById("produtosTableBody");
+            if (!body) return;
+            const labels = data?.produtos?.mais_vendidos?.labels || [];
+            const qtd = data?.produtos?.mais_vendidos?.qtd || [];
+            const total = data?.produtos?.mais_vendidos?.total || [];
+            const totalRows = Math.max(labels.length, qtd.length, total.length);
+            body.innerHTML = "";
+            if (!totalRows) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.colSpan = 3;
+                cell.className = "text-center text-muted";
+                cell.textContent = "Sem dados.";
+                row.appendChild(cell);
+                body.appendChild(row);
+                return;
+            }
+            for (let i = 0; i < totalRows; i += 1) {
+                const row = document.createElement("tr");
+                const labelCell = document.createElement("td");
+                const qtdCell = document.createElement("td");
+                const totalCell = document.createElement("td");
+                labelCell.textContent = labels[i] || "-";
+                qtdCell.className = "text-end";
+                qtdCell.textContent = formatUnits(qtd[i] ?? 0);
+                totalCell.className = "text-end";
+                totalCell.textContent = formatCurrency(total[i] ?? 0);
+                row.appendChild(labelCell);
+                row.appendChild(qtdCell);
+                row.appendChild(totalCell);
+                body.appendChild(row);
+            }
+        };
+
+        const setInputsFromData = (data) => {
+            if (!data || !data.periodo) return;
+            startInput.value = data.periodo.start;
+            endInput.value = data.periodo.end;
+        };
+
+        const toggleCustomInputs = () => {
+            const isCustom = rangeSel.value === "custom";
+            startInput.disabled = !isCustom;
+            endInput.disabled = !isCustom;
+        };
+
+        const fetchData = () => {
+            const params = new URLSearchParams();
+            if (rangeSel.value && rangeSel.value !== "custom") {
+                params.set("range", rangeSel.value);
+            }
+            if (rangeSel.value === "custom") {
+                if (startInput.value) params.set("start", startInput.value);
+                if (endInput.value) params.set("end", endInput.value);
+            }
+            const url = params.toString() ? `${endpoint}?${params.toString()}` : endpoint;
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then((response) => response.json())
+                .then((data) => {
+                    currentData = data;
+                    renderTable(data);
+                    setInputsFromData(data);
+                });
+        };
+
+        rangeSel.addEventListener("change", () => {
+            toggleCustomInputs();
+            if (rangeSel.value !== "custom") {
+                fetchData();
+            }
+        });
+        applyBtn.addEventListener("click", fetchData);
+
+        toggleCustomInputs();
+        setInputsFromData(dataSets);
+        renderTable(currentData);
+    });
+</script>
+{% endblock %}

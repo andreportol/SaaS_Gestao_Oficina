@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-0">
+            <span class="page-title-label">
+                <svg class="page-title-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M4 21v-2a4 4 0 0 1 3-3.87"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                OS por funcionário
+            </span>
+        </h1>
+        <div class="small text-muted dashboard-muted">Tabela com números das OS por responsável</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-end dashboard-filters">
+        <div class="dashboard-filter dashboard-filter-range">
+            <label class="small text-muted dashboard-muted" for="dashboardRange">Período</label>
+            <select class="form-select form-select-sm" id="dashboardRange">
+                <option value="30d"{% if dashboard_range == "30d" %} selected{% endif %}>Últimos 30 dias</option>
+                <option value="90d"{% if dashboard_range == "90d" %} selected{% endif %}>Últimos 90 dias</option>
+                <option value="6m"{% if dashboard_range == "6m" %} selected{% endif %}>Últimos 6 meses</option>
+                <option value="12m"{% if dashboard_range == "12m" %} selected{% endif %}>Últimos 12 meses</option>
+                <option value="custom">Personalizado</option>
+            </select>
+        </div>
+        <div class="dashboard-filter">
+            <label class="small text-muted dashboard-muted" for="dashboardStart">Início</label>
+            <input class="form-control form-control-sm" type="date" id="dashboardStart" />
+        </div>
+        <div class="dashboard-filter">
+            <label class="small text-muted dashboard-muted" for="dashboardEnd">Fim</label>
+            <input class="form-control form-control-sm" type="date" id="dashboardEnd" />
+        </div>
+        <button class="btn btn-cta btn-sm dashboard-filter-apply" id="dashboardApply">Aplicar</button>
+    </div>
+</div>
+
+<div class="card p-3 dashboard-card">
+    <div class="table-responsive">
+        <table class="table table-sm table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Funcionário</th>
+                    <th class="text-end">Nº OS</th>
+                </tr>
+            </thead>
+            <tbody id="osFuncionarioTableBody">
+                <tr>
+                    <td colspan="2" class="text-center text-muted">Sem dados.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{ dashboard_data|json_script:"dashboard-data" }}
+<script>
+    window.addEventListener("load", function() {
+        const dataSets = JSON.parse(document.getElementById("dashboard-data").textContent || "{}");
+        let currentData = dataSets;
+        const endpoint = "{% url 'dashboard_data' %}";
+        const rangeSel = document.getElementById("dashboardRange");
+        const startInput = document.getElementById("dashboardStart");
+        const endInput = document.getElementById("dashboardEnd");
+        const applyBtn = document.getElementById("dashboardApply");
+
+        const osDetailTemplate = "{% url 'os_detail' 0 %}";
+        const osDetailBase = osDetailTemplate.replace("/0/", "/");
+
+        const renderOsLinks = (container, list) => {
+            container.textContent = "";
+            if (!Array.isArray(list) || list.length === 0) {
+                container.textContent = "-";
+                return;
+            }
+            list.forEach((id, index) => {
+                if (index > 0) {
+                    container.appendChild(document.createTextNode(", "));
+                }
+                const link = document.createElement("a");
+                link.href = `${osDetailBase}${id}/`;
+                link.textContent = `${id}`;
+                link.className = "os-id-chip";
+                container.appendChild(link);
+            });
+        };
+
+        const renderTable = (data) => {
+            const body = document.getElementById("osFuncionarioTableBody");
+            if (!body) return;
+            const rows = data?.operacional?.os_por_funcionario_detalhes || [];
+            body.innerHTML = "";
+            if (!rows.length) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+                cell.colSpan = 2;
+                cell.className = "text-center text-muted";
+                cell.textContent = "Sem dados.";
+                row.appendChild(cell);
+                body.appendChild(row);
+                return;
+            }
+            rows.forEach((item) => {
+                const row = document.createElement("tr");
+                const executorCell = document.createElement("td");
+                const osCell = document.createElement("td");
+                executorCell.textContent = item.executor || "Sem executor";
+                osCell.className = "text-end os-id-list";
+                renderOsLinks(osCell, item.os);
+                row.appendChild(executorCell);
+                row.appendChild(osCell);
+                body.appendChild(row);
+            });
+        };
+
+        const setInputsFromData = (data) => {
+            if (!data || !data.periodo) return;
+            startInput.value = data.periodo.start;
+            endInput.value = data.periodo.end;
+        };
+
+        const toggleCustomInputs = () => {
+            const isCustom = rangeSel.value === "custom";
+            startInput.disabled = !isCustom;
+            endInput.disabled = !isCustom;
+        };
+
+        const fetchData = () => {
+            const params = new URLSearchParams();
+            if (rangeSel.value && rangeSel.value !== "custom") {
+                params.set("range", rangeSel.value);
+            }
+            if (rangeSel.value === "custom") {
+                if (startInput.value) params.set("start", startInput.value);
+                if (endInput.value) params.set("end", endInput.value);
+            }
+            const url = params.toString() ? `${endpoint}?${params.toString()}` : endpoint;
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then((response) => response.json())
+                .then((data) => {
+                    currentData = data;
+                    renderTable(data);
+                    setInputsFromData(data);
+                });
+        };
+
+        rangeSel.addEventListener("change", () => {
+            toggleCustomInputs();
+            if (rangeSel.value !== "custom") {
+                fetchData();
+            }
+        });
+        applyBtn.addEventListener("click", fetchData);
+
+        toggleCustomInputs();
+        setInputsFromData(dataSets);
+        renderTable(currentData);
+    });
+</script>
+{% endblock %}

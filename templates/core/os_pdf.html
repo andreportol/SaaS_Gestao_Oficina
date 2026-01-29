@@ -466,7 +466,7 @@
             <div class="status-badge">{{ object.get_status_display }}</div>
             <div class="doc-dates">
                 <div><strong>Entrada:</strong> {{ object.entrada_em|date:"d/m/Y" }}</div>
-                <div><strong>Previsão:</strong> {{ object.previsao_entrega|date:"d/m/Y"|default:"A definir" }}</div>
+                <div><strong>Data de entrega:</strong> {{ object.previsao_entrega|date:"d/m/Y"|default:"A definir" }}</div>
                 <div><strong>Executor:</strong> {{ object.executor|default:"-" }}</div>
                 <div><strong>CNPJ:</strong> {{ empresa.cnpj_cpf|default:"-" }}</div>
                 <div><strong>Telefone:</strong> {{ empresa.telefone|default:"-" }}</div>

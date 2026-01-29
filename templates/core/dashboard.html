@@ -35,28 +35,72 @@
 
 <div class="row g-3">
     <div class="col-6 col-md-3 d-flex">
-        <div class="card p-3 text-center dashboard-stat-card dashboard-card w-100">
-            <div class="small text-muted">OS Abertas</div>
+        <a
+            class="card p-3 text-center dashboard-stat-card dashboard-card w-100 text-decoration-none text-reset"
+            href="{% url 'os_list' %}?status=ABERTA"
+        >
+            <div class="small text-muted d-flex align-items-center justify-content-center gap-1">
+                OS Abertas
+                <span class="dashboard-card-eye" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12s4.5-6 10-6 10 6 10 6-4.5 6-10 6-10-6-10-6z"></path>
+                        <circle cx="12" cy="12" r="3.5"></circle>
+                    </svg>
+                </span>
+            </div>
             <div class="h4 mb-0">{{ os_abertas }}</div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-md-3 d-flex">
-        <div class="card p-3 text-center dashboard-stat-card dashboard-card w-100">
-            <div class="small text-muted">Aguardando Peças</div>
+        <a
+            class="card p-3 text-center dashboard-stat-card dashboard-card w-100 text-decoration-none text-reset"
+            href="{% url 'os_list' %}?status=AGUARDANDO_PECA"
+        >
+            <div class="small text-muted d-flex align-items-center justify-content-center gap-1">
+                Aguardando Peças
+                <span class="dashboard-card-eye" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12s4.5-6 10-6 10 6 10 6-4.5 6-10 6-10-6-10-6z"></path>
+                        <circle cx="12" cy="12" r="3.5"></circle>
+                    </svg>
+                </span>
+            </div>
             <div class="h4 mb-0">{{ os_aguardando }}</div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-md-3 d-flex">
-        <div class="card p-3 text-center dashboard-stat-card dashboard-card w-100">
-            <div class="small text-muted">Em Execução</div>
+        <a
+            class="card p-3 text-center dashboard-stat-card dashboard-card w-100 text-decoration-none text-reset"
+            href="{% url 'os_list' %}?status=EXECUCAO"
+        >
+            <div class="small text-muted d-flex align-items-center justify-content-center gap-1">
+                Em Execução
+                <span class="dashboard-card-eye" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12s4.5-6 10-6 10 6 10 6-4.5 6-10 6-10-6-10-6z"></path>
+                        <circle cx="12" cy="12" r="3.5"></circle>
+                    </svg>
+                </span>
+            </div>
             <div class="h4 mb-0">{{ os_execucao }}</div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-md-3 d-flex">
-        <div class="card p-3 text-center dashboard-stat-card dashboard-card w-100">
-            <div class="small text-muted">Finalizadas (30d)</div>
+        <a
+            class="card p-3 text-center dashboard-stat-card dashboard-card w-100 text-decoration-none text-reset"
+            href="{% url 'os_list' %}?status=FINALIZADA"
+        >
+            <div class="small text-muted d-flex align-items-center justify-content-center gap-1">
+                Finalizadas (30d)
+                <span class="dashboard-card-eye" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12s4.5-6 10-6 10 6 10 6-4.5 6-10 6-10-6-10-6z"></path>
+                        <circle cx="12" cy="12" r="3.5"></circle>
+                    </svg>
+                </span>
+            </div>
             <div class="h4 mb-0">{{ os_finalizadas_periodo }}</div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -81,15 +125,27 @@
 </div>
 
 <div class="row g-3 mt-1">
-    <div class="col-12 col-lg-6">
-        <div class="card p-3 dashboard-card">
-            <h2 class="h6 text-uppercase text-muted mb-2">OS por funcionário</h2>
+    <div class="col-12 col-lg-8">
+        <a
+            class="card p-3 dashboard-card dashboard-card-link text-decoration-none text-reset"
+            href="{% url 'dashboard_os_por_funcionario' %}"
+            aria-label="Ver tabela de OS por funcionário"
+        >
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 text-uppercase text-muted mb-0">OS por funcionário</h2>
+                <span class="dashboard-card-eye" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12s4.5-6 10-6 10 6 10 6-4.5 6-10 6-10-6-10-6z"></path>
+                        <circle cx="12" cy="12" r="3.5"></circle>
+                    </svg>
+                </span>
+            </div>
             <div class="chart-wrapper">
                 <canvas id="osFuncionarioChart" height="260"></canvas>
             </div>
-        </div>
+        </a>
     </div>
-    <div class="col-12 col-lg-3">
+    <div class="col-12 col-lg-4">
         <div class="card p-3 dashboard-card">
             <h2 class="h6 text-uppercase text-muted mb-2">Status das OS</h2>
             <div class="chart-wrapper">
@@ -97,40 +153,90 @@
             </div>
         </div>
     </div>
-    <div class="col-12 col-lg-3">
-        <div class="card p-3 dashboard-card">
-            <h2 class="h6 text-uppercase text-muted mb-2">Tempo médio</h2>
-            <div class="chart-wrapper">
-                <canvas id="tempoMedioChart" height="260"></canvas>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div class="row g-3 mt-1">
     <div class="col-12 col-lg-7">
-        <div class="card p-3 dashboard-card">
-            <h2 class="h6 text-uppercase text-muted mb-2">Produtos mais vendidos</h2>
+        <a
+            class="card p-3 dashboard-card dashboard-card-link text-decoration-none text-reset"
+            href="{% url 'dashboard_produtos_mais_vendidos' %}"
+            aria-label="Ver tabela de produtos mais vendidos"
+        >
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 text-uppercase text-muted mb-0">Produtos mais vendidos</h2>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2" id="produtosTopFilter">
+                        <label class="small text-muted mb-0" for="produtosTopInput">Produtos</label>
+                        <input
+                            id="produtosTopInput"
+                            type="number"
+                            min="1"
+                            step="1"
+                            value="10"
+                            class="form-control form-control-sm"
+                            style="max-width: 90px;"
+                            aria-label="Quantidade de produtos mais vendidos"
+                        >
+                    </div>
+                    <span class="dashboard-card-eye" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12s4.5-6 10-6 10 6 10 6-4.5 6-10 6-10-6-10-6z"></path>
+                            <circle cx="12" cy="12" r="3.5"></circle>
+                        </svg>
+                    </span>
+                </div>
+            </div>
             <div class="chart-wrapper">
                 <canvas id="produtosChart" height="260"></canvas>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-12 col-lg-5">
-        <div class="card p-3 dashboard-card">
+        <a
+            class="card p-3 dashboard-card dashboard-card-link text-decoration-none text-reset"
+            href="{% url 'dashboard_estoque_critico' %}"
+            aria-label="Ver tabela de estoque crítico"
+        >
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h2 class="h6 text-uppercase text-muted mb-0">Estoque crítico</h2>
-                <span class="small text-muted"><span id="estoqueCriticoTotal">0</span> itens</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-muted"><span id="estoqueCriticoTotal">0</span> itens</span>
+                    <span class="dashboard-card-eye" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12s4.5-6 10-6 10 6 10 6-4.5 6-10 6-10-6-10-6z"></path>
+                            <circle cx="12" cy="12" r="3.5"></circle>
+                        </svg>
+                    </span>
+                </div>
             </div>
-            <div class="list-group list-group-flush" id="estoqueCriticoList"></div>
-        </div>
+            <div
+                class="list-group list-group-flush"
+                id="estoqueCriticoList"
+                style="max-height: 260px; overflow-y: auto;"
+            ></div>
+        </a>
     </div>
 </div>
 
 <div class="row g-3 mt-1">
     <div class="col-12 col-lg-6">
         <div class="card p-3 dashboard-card">
-            <h2 class="h6 text-uppercase text-muted mb-2">Clientes mais lucrativos</h2>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 text-uppercase text-muted mb-0">Clientes mais lucrativos</h2>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="small text-muted mb-0" for="clientesTopInput">Clientes</label>
+                    <input
+                        id="clientesTopInput"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value="10"
+                        class="form-control form-control-sm"
+                        style="max-width: 90px;"
+                        aria-label="Quantidade de clientes mais lucrativos"
+                    >
+                </div>
+            </div>
             <div class="chart-wrapper">
                 <canvas id="clientesChart" height="260"></canvas>
             </div>
@@ -138,7 +244,22 @@
     </div>
     <div class="col-12 col-lg-6">
         <div class="card p-3 dashboard-card">
-            <h2 class="h6 text-uppercase text-muted mb-2">Recorrência de clientes</h2>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 text-uppercase text-muted mb-0">Recorrência de clientes</h2>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="small text-muted mb-0" for="recorrenciaTopInput">Clientes</label>
+                    <input
+                        id="recorrenciaTopInput"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value="10"
+                        class="form-control form-control-sm"
+                        style="max-width: 90px;"
+                        aria-label="Quantidade de clientes recorrentes"
+                    >
+                </div>
+            </div>
             <div class="chart-wrapper">
                 <canvas id="recorrenciaChart" height="260"></canvas>
             </div>
@@ -158,18 +279,59 @@
         const endInput = document.getElementById("dashboardEnd");
         const applyBtn = document.getElementById("dashboardApply");
         const themeToggle = document.getElementById("themeToggle");
+        const produtosTopInput = document.getElementById("produtosTopInput");
+        const produtosTopFilter = document.getElementById("produtosTopFilter");
+        const clientesTopInput = document.getElementById("clientesTopInput");
+        const recorrenciaTopInput = document.getElementById("recorrenciaTopInput");
         const charts = {};
 
         const formatCurrency = (value) =>
             `R$ ${Number(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
         const formatUnits = (value) => `${Number(value || 0)} Unidades`;
-        const formatDays = (value) => `${Number(value || 0).toFixed(1)} Dias`;
+        const sanitizeLimit = (value, fallback = 10) => {
+            const parsed = parseInt(value, 10);
+            if (Number.isFinite(parsed) && parsed > 0) return parsed;
+            return fallback;
+        };
         const axisColor = () => (document.body.classList.contains("theme-light") ? "#000" : "#cbd5e1");
         const valueFromCtx = (ctx) => {
             if (ctx && typeof ctx.parsed === "object") {
                 return Number(ctx.parsed.y ?? ctx.parsed.x ?? 0);
             }
             return Number(ctx?.parsed ?? 0);
+        };
+        const palette = [
+            "rgba(14, 116, 144, 0.7)",
+            "rgba(217, 119, 6, 0.7)",
+            "rgba(37, 99, 235, 0.7)",
+            "rgba(22, 163, 74, 0.7)",
+            "rgba(220, 38, 38, 0.7)",
+            "rgba(124, 58, 237, 0.7)",
+            "rgba(8, 145, 178, 0.7)",
+            "rgba(234, 88, 12, 0.7)",
+            "rgba(79, 70, 229, 0.7)",
+            "rgba(5, 150, 105, 0.7)",
+        ];
+        const borderPalette = palette.map((color) => color.replace("0.7", "1"));
+        const buildColors = (size) => ({
+            backgroundColor: Array.from({ length: size }, (_, i) => palette[i % palette.length]),
+            borderColor: Array.from({ length: size }, (_, i) => borderPalette[i % borderPalette.length]),
+        });
+        const buildDynamicColors = (size, baseHue) => {
+            const safeSize = Math.max(size, 1);
+            const step = 360 / safeSize;
+            const hues = Array.from({ length: size }, (_, i) => (baseHue + i * step) % 360);
+            return {
+                backgroundColor: hues.map((hue) => `hsla(${hue}, 72%, 55%, 0.7)`),
+                borderColor: hues.map((hue) => `hsla(${hue}, 72%, 45%, 1)`),
+            };
+        };
+        const getDistinctHues = () => {
+            const base = Math.floor(Math.random() * 360);
+            return {
+                clientes: base,
+                recorrencia: (base + 160) % 360,
+            };
         };
 
         const setSaldoCards = (financeiro) => {
@@ -305,41 +467,6 @@
             });
         };
 
-        const renderTempoMedio = (data) => {
-            const ctx = document.getElementById("tempoMedioChart");
-            ensureChart("tempoMedio", ctx, {
-                type: "line",
-                data: {
-                    labels: data.labels || [],
-                    datasets: [
-                        {
-                            label: "Dias",
-                            data: data.dias || [],
-                            borderColor: "rgba(139, 92, 246, 1)",
-                            backgroundColor: "rgba(139, 92, 246, 0.3)",
-                            tension: 0.35,
-                        },
-                    ],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: axisColor() } },
-                        tooltip: {
-                            callbacks: {
-                                label: (ctx) => `${ctx.dataset.label}: ${formatDays(valueFromCtx(ctx))}`,
-                            },
-                        },
-                    },
-                    scales: {
-                        x: { ticks: { color: axisColor() } },
-                        y: { ticks: { color: axisColor() }, beginAtZero: true },
-                    },
-                },
-            });
-        };
-
         const renderProdutos = (data) => {
             const ctx = document.getElementById("produtosChart");
             ensureChart("produtos", ctx, {
@@ -394,8 +521,9 @@
             });
         };
 
-        const renderClientes = (data) => {
+        const renderClientes = (data, hue) => {
             const ctx = document.getElementById("clientesChart");
+            const colors = buildDynamicColors((data.labels || []).length, hue ?? 210);
             ensureChart("clientes", ctx, {
                 type: "bar",
                 data: {
@@ -404,8 +532,8 @@
                         {
                             label: "Faturamento",
                             data: data.valores || [],
-                            backgroundColor: "rgba(251, 146, 60, 0.6)",
-                            borderColor: "rgba(251, 146, 60, 1)",
+                            backgroundColor: colors.backgroundColor,
+                            borderColor: colors.borderColor,
                         },
                     ],
                 },
@@ -428,24 +556,19 @@
             });
         };
 
-        const renderRecorrencia = (data) => {
+        const renderRecorrencia = (data, hue) => {
             const ctx = document.getElementById("recorrenciaChart");
+            const colors = buildDynamicColors((data.labels || []).length, hue ?? 30);
             ensureChart("recorrencia", ctx, {
                 type: "bar",
                 data: {
                     labels: data.labels || [],
                     datasets: [
                         {
-                            label: "Clientes unicos",
-                            data: data.clientes || [],
-                            backgroundColor: "rgba(52, 211, 153, 0.6)",
-                            borderColor: "rgba(52, 211, 153, 1)",
-                        },
-                        {
-                            label: "Recorrentes",
-                            data: data.recorrentes || [],
-                            backgroundColor: "rgba(239, 68, 68, 0.6)",
-                            borderColor: "rgba(239, 68, 68, 1)",
+                            label: "Vezes",
+                            data: data.vezes || [],
+                            backgroundColor: colors.backgroundColor,
+                            borderColor: colors.borderColor,
                         },
                     ],
                 },
@@ -456,7 +579,8 @@
                         legend: { labels: { color: axisColor() } },
                         tooltip: {
                             callbacks: {
-                                label: (ctx) => `${ctx.dataset.label}: ${formatUnits(valueFromCtx(ctx))}`,
+                                title: (items) => items?.[0]?.label || "",
+                                label: (ctx) => `${valueFromCtx(ctx)} vezes`,
                             },
                         },
                     },
@@ -484,7 +608,7 @@
                 row.innerHTML = `
                     <div>
                         <div class="fw-bold">${item.nome}</div>
-                        <div class="small text-muted">Minimo: ${item.estoque_minimo ?? "-"}</div>
+                        <div class="small estoque-minimo-label">Minimo: <span class="estoque-minimo-value">${item.estoque_minimo ?? "-"}</span></div>
                     </div>
                     <span class="badge bg-danger-subtle text-danger-emphasis">${item.estoque_atual ?? "-"}</span>
                 `;
@@ -494,15 +618,15 @@
 
         const renderAll = (data) => {
             if (!data || !data.financeiro) return;
+            const hues = getDistinctHues();
             setSaldoCards(data.financeiro);
             renderLucro(data.financeiro.lucro_mensal);
             renderOsFuncionario(data.operacional.os_por_funcionario);
             renderOsStatus(data.operacional.status_os);
-            renderTempoMedio(data.operacional.tempo_medio);
             renderProdutos(data.produtos.mais_vendidos);
             renderEstoqueCritico(data.produtos.estoque_critico);
-            renderClientes(data.clientes.mais_lucrativos);
-            renderRecorrencia(data.clientes.recorrencia);
+            renderClientes(data.clientes.mais_lucrativos, hues.clientes);
+            renderRecorrencia(data.clientes.recorrencia, hues.recorrencia);
         };
 
         const setInputsFromData = (data) => {
@@ -519,6 +643,21 @@
 
         const fetchData = () => {
             const params = new URLSearchParams();
+            if (produtosTopInput) {
+                const limit = sanitizeLimit(produtosTopInput.value, 10);
+                produtosTopInput.value = limit;
+                params.set("produtos_top", limit);
+            }
+            if (clientesTopInput) {
+                const limit = sanitizeLimit(clientesTopInput.value, 10);
+                clientesTopInput.value = limit;
+                params.set("clientes_top", limit);
+            }
+            if (recorrenciaTopInput) {
+                const limit = sanitizeLimit(recorrenciaTopInput.value, 10);
+                recorrenciaTopInput.value = limit;
+                params.set("recorrencia_top", limit);
+            }
             if (rangeSel.value && rangeSel.value !== "custom") {
                 params.set("range", rangeSel.value);
             }
@@ -543,6 +682,11 @@
             }
         });
         applyBtn.addEventListener("click", fetchData);
+        produtosTopFilter?.addEventListener("click", (event) => event.stopPropagation());
+        produtosTopFilter?.addEventListener("mousedown", (event) => event.stopPropagation());
+        produtosTopInput?.addEventListener("change", fetchData);
+        clientesTopInput?.addEventListener("change", fetchData);
+        recorrenciaTopInput?.addEventListener("change", fetchData);
         themeToggle?.addEventListener("click", () => {
             setTimeout(() => renderAll(currentData), 0);
         });
