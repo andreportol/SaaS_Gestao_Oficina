@@ -1391,6 +1391,24 @@ body:not(.theme-light) .table-responsive {
     background: var(--panel);
 }
 
+body:not(.theme-light) .dashboard-table-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+body:not(.theme-light) .dashboard-table-card .table,
+body:not(.theme-light) .dashboard-table-card .table-responsive {
+    background: transparent;
+}
+
+body:not(.theme-light) .dashboard-table-card .table {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+body:not(.theme-light) .dashboard-table-card .table > :not(caption) > * > * {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
 .phone-actions a {
     text-decoration: none;
     display: inline-flex;
