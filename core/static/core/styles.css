@@ -869,6 +869,25 @@ body:not(.theme-light) .btn-print:focus {
     color: #e2e8f0;
 }
 
+#estoqueCriticoList .list-group-item {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(148, 163, 184, 0.2);
+    color: var(--text);
+}
+
+#estoqueCriticoList .list-group-item + .list-group-item {
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+#estoqueCriticoList .estoque-minimo-label {
+    color: var(--muted);
+}
+
+#estoqueCriticoList .estoque-minimo-value {
+    color: var(--text);
+    font-weight: 600;
+}
+
 .os-id-list {
     display: flex;
     flex-wrap: wrap;
@@ -904,6 +923,24 @@ body:not(.theme-light) .btn-print:focus {
 
 .theme-light .dashboard-card-link:hover .dashboard-card-eye,
 .theme-light .dashboard-card-link:focus .dashboard-card-eye {
+    color: #0f172a;
+}
+
+.theme-light #estoqueCriticoList .list-group-item {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.12);
+    color: #0f172a;
+}
+
+.theme-light #estoqueCriticoList .list-group-item + .list-group-item {
+    border-top: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.theme-light #estoqueCriticoList .estoque-minimo-label {
+    color: #475569;
+}
+
+.theme-light #estoqueCriticoList .estoque-minimo-value {
     color: #0f172a;
 }
 

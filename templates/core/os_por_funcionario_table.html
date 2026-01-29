@@ -31,7 +31,14 @@
         </div>
         <div class="dashboard-filter">
             <label class="small text-muted dashboard-muted" for="dashboardEnd">Fim</label>
-            <input class="form-control form-control-sm" type="date" id="dashboardEnd" />
+            <input
+                class="form-control form-control-sm"
+                type="text"
+                id="dashboardEnd"
+                placeholder="dd/mm/aaaa"
+                inputmode="numeric"
+                autocomplete="off"
+            />
         </div>
         <button class="btn btn-cta btn-sm dashboard-filter-apply" id="dashboardApply">Aplicar</button>
     </div>
@@ -43,7 +50,7 @@
             <thead>
                 <tr>
                     <th>Funcionário</th>
-                    <th class="text-end">Nº OS</th>
+                    <th class="text-center">Nº OS</th>
                 </tr>
             </thead>
             <tbody id="osFuncionarioTableBody">
@@ -68,6 +75,32 @@
 
         const osDetailTemplate = "{% url 'os_detail' 0 %}";
         const osDetailBase = osDetailTemplate.replace("/0/", "/");
+        const formatPtBrDate = (isoDate) => {
+            if (!isoDate || typeof isoDate !== "string") return "";
+            const [year, month, day] = isoDate.split("-");
+            if (!year || !month || !day) return "";
+            return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
+        };
+        const parsePtBrDate = (value) => {
+            if (!value || typeof value !== "string") return "";
+            const parts = value.trim().split("/");
+            if (parts.length !== 3) return "";
+            const [dayStr, monthStr, yearStr] = parts;
+            const day = Number(dayStr);
+            const month = Number(monthStr);
+            const year = Number(yearStr);
+            if (!Number.isInteger(day) || !Number.isInteger(month) || !Number.isInteger(year)) return "";
+            if (year < 1900 || year > 2100) return "";
+            if (month < 1 || month > 12) return "";
+            if (day < 1 || day > 31) return "";
+            const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const date = new Date(`${iso}T00:00:00`);
+            if (Number.isNaN(date.getTime())) return "";
+            if (date.getUTCFullYear() !== year || date.getUTCMonth() + 1 !== month || date.getUTCDate() !== day) {
+                return "";
+            }
+            return iso;
+        };
 
         const renderOsLinks = (container, list) => {
             container.textContent = "";
@@ -118,7 +151,7 @@
         const setInputsFromData = (data) => {
             if (!data || !data.periodo) return;
             startInput.value = data.periodo.start;
-            endInput.value = data.periodo.end;
+            endInput.value = formatPtBrDate(data.periodo.end);
         };
 
         const toggleCustomInputs = () => {
@@ -134,7 +167,10 @@
             }
             if (rangeSel.value === "custom") {
                 if (startInput.value) params.set("start", startInput.value);
-                if (endInput.value) params.set("end", endInput.value);
+                if (endInput.value) {
+                    const isoEnd = parsePtBrDate(endInput.value);
+                    if (isoEnd) params.set("end", isoEnd);
+                }
             }
             const url = params.toString() ? `${endpoint}?${params.toString()}` : endpoint;
             fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
