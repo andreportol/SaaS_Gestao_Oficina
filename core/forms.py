@@ -133,7 +133,8 @@ def _send_resend_email(subject, body, to_email, reply_to=None):
     try:
         _send_payload(from_email)
     except urllib.error.HTTPError as exc:
-        if settings.DEBUG:
+        allow_test_fallback = bool(getattr(settings, "RESEND_ALLOW_TEST_FALLBACK", False))
+        if exc.code == 403 and (settings.DEBUG or allow_test_fallback):
             test_from = getattr(settings, "RESEND_TEST_FROM_EMAIL", "")
             if test_from and test_from != from_email:
                 try:

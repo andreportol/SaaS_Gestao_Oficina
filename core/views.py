@@ -730,7 +730,8 @@ class ContatoSuporteView(View):
         try:
             _send_payload(from_email)
         except urllib.error.HTTPError as exc:
-            if exc.code == 403 and settings.DEBUG:
+            allow_test_fallback = bool(getattr(settings, "RESEND_ALLOW_TEST_FALLBACK", False))
+            if exc.code == 403 and (settings.DEBUG or allow_test_fallback):
                 test_from = getattr(settings, "RESEND_TEST_FROM_EMAIL", "")
                 if test_from and test_from != from_email:
                     try:
@@ -1646,9 +1647,14 @@ class AutoCadastroView(FormMixin, TemplateView):
             self.request,
             "Cadastro recebido. Assim que o pagamento for confirmado, liberaremos o acesso ao sistema.",
         )
-        enviado, _erro = _notify_nova_liberacao(user.empresa, user)
+        enviado, erro = _notify_nova_liberacao(user.empresa, user)
         if enviado:
             messages.success(self.request, "E-mail de notificação enviado com sucesso.")
+        else:
+            messages.warning(
+                self.request,
+                f"E-mail de notificação não enviado. {erro or 'Verifique RESEND_API_KEY e EMAIL_FROM.'}",
+            )
         return super().form_valid(form)
 
 

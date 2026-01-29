@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 ALLOWED_HOSTS = [
     "alpoficinas.up.railway.app",
     "alpoficinas-h.up.railway.app",
@@ -33,6 +33,12 @@ RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "alpsistemascg@gmail.com")
 EMAIL_FROM = os.getenv("EMAIL_FROM", "no-reply@alpsistemas.app")
 RESEND_TEST_FROM_EMAIL = os.getenv("RESEND_TEST_FROM_EMAIL", "")
+RESEND_ALLOW_TEST_FALLBACK = os.getenv("RESEND_ALLOW_TEST_FALLBACK", "").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
 
 INSTALLED_APPS = [
