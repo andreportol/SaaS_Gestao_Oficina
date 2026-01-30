@@ -26,6 +26,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+RUN python manage.py collectstatic --noinput
+
 EXPOSE 8080
 
 CMD ["bash", "-lc", "gunicorn ProjetoOficina.wsgi:application --bind 0.0.0.0:${PORT:-8080} --log-file -"]
