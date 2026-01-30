@@ -59,6 +59,9 @@ python app\manage.py test
    - `ALLOWED_HOSTS` (ex: `seu-app.up.railway.app`)
    - `CSRF_TRUSTED_ORIGINS` (ex: `https://seu-app.up.railway.app`)
    - `DATABASE_URL` (Railway Postgres)
+   - `RESEND_API_KEY`
+   - `EMAIL_FROM` (ex: `ALP Oficinas <no-reply@alpoficinas.com.br>`)
+   - `CONTACT_EMAIL` (destino das notificacoes)
 2. Comandos apos o deploy:
 ```
 python app/manage.py migrate

@@ -1653,7 +1653,7 @@ class AutoCadastroView(FormMixin, TemplateView):
         else:
             messages.warning(
                 self.request,
-                f"E-mail de notificação não enviado. {erro or 'Verifique RESEND_API_KEY e EMAIL_FROM.'}",
+                f"E-mail de notificação não enviado. {erro or 'Verifique RESEND_API_KEY, EMAIL_FROM e CONTACT_EMAIL.'}",
             )
         return super().form_valid(form)
 
@@ -1858,7 +1858,7 @@ class EmpresaAprovacaoView(SuperuserRequiredMixin, TemplateView):
                 else:
                     messages.warning(
                         request,
-                        f"Email de acesso nao enviado. {erro or 'Verifique RESEND_API_KEY e EMAIL_FROM.'}",
+                        f"Email de acesso nao enviado. {erro or 'Verifique RESEND_API_KEY, EMAIL_FROM e CONTACT_EMAIL.'}",
                     )
         else:
             messages.warning(request, f"Acesso bloqueado para {empresa.nome}.")

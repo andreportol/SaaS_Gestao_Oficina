@@ -30,8 +30,9 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "alpsistemascg@gmail.com")
-EMAIL_FROM = os.getenv("EMAIL_FROM", "no-reply@alpsistemas.app")
+# Compat: aceita nomes antigos caso ainda existam no ambiente.
+CONTACT_EMAIL = os.getenv("CONTACT_EMAIL") or os.getenv("SUPPORT_EMAIL", "alpsistemascg@gmail.com")
+EMAIL_FROM = os.getenv("EMAIL_FROM") or os.getenv("SUPPORT_FROM_EMAIL", "no-reply@alpsistemas.app")
 RESEND_TEST_FROM_EMAIL = os.getenv("RESEND_TEST_FROM_EMAIL", "")
 RESEND_ALLOW_TEST_FALLBACK = os.getenv("RESEND_ALLOW_TEST_FALLBACK", "").lower() in {
     "1",
