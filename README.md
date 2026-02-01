@@ -62,9 +62,9 @@ python app\manage.py test
    - `RESEND_API_KEY`
    - `EMAIL_FROM` (ex: `ALP Oficinas <no-reply@alpoficinas.com.br>`)
    - `CONTACT_EMAIL` (destino das notificacoes)
-   - `MEDIA_ROOT` (ex: `/data/media` quando usar volume persistente)
-2. Crie um Volume no Railway e monte em um caminho (ex: `/data`).
-   - Defina `MEDIA_ROOT=/data/media` nas variaveis do Railway.
+   - `MEDIA_ROOT` (ex: `/app/media` quando usar volume persistente)
+2. Crie um Volume no Railway e monte no caminho `/app/media`.
+   - Defina `MEDIA_ROOT=/app/media` nas variaveis do Railway.
 3. Comandos apos o deploy:
 ```
 python app/manage.py migrate
