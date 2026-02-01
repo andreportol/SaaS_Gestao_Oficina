@@ -84,6 +84,78 @@ def _parse_limit(value, fallback=10):
     return parsed if parsed > 0 else fallback
 
 
+def _empresa_logo_src(empresa, prefer_inline=True):
+    if not empresa:
+        return ""
+
+    checker = getattr(empresa, "logomarca_existe", None)
+    if callable(checker):
+        if not checker():
+            return ""
+    else:
+        logo = getattr(empresa, "logomarca", None)
+        if not logo:
+            return ""
+        storage = getattr(logo, "storage", None) or default_storage
+        try:
+            if not storage.exists(logo.name):
+                return ""
+        except Exception:
+            return ""
+
+    if prefer_inline:
+        data = None
+        try:
+            logo_path = empresa.logomarca.path
+        except (NotImplementedError, OSError, ValueError, AttributeError):
+            logo_path = None
+        if logo_path:
+            path = Path(logo_path)
+            if path.exists():
+                try:
+                    data = path.read_bytes()
+                except OSError:
+                    data = None
+        if data is None:
+            try:
+                with empresa.logomarca.open("rb") as logo_file:
+                    data = logo_file.read()
+            except OSError:
+                data = None
+
+        if data:
+            try:
+                from PIL import Image
+            except ImportError:
+                Image = None
+            if Image:
+                try:
+                    image = Image.open(BytesIO(data))
+                    image = image.convert("RGBA")
+                    image.thumbnail((600, 600))
+                    buffer = BytesIO()
+                    image.save(buffer, format="PNG", optimize=True)
+                    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+                    return f"data:image/png;base64,{encoded}"
+                except Exception:
+                    pass
+
+            mime_type = mimetypes.guess_type(empresa.logomarca.name or "")[0] or "image/png"
+            encoded = base64.b64encode(data).decode("ascii")
+            return f"data:{mime_type};base64,{encoded}"
+
+    getter = getattr(empresa, "logomarca_url", None)
+    if callable(getter):
+        return getter() or ""
+    logo = getattr(empresa, "logomarca", None)
+    if not logo:
+        return ""
+    try:
+        return logo.url
+    except Exception:
+        return ""
+
+
 class ManagerRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         checker = getattr(self.request.user, "is_gerente", None)
@@ -197,6 +269,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 or 0,
                 "dashboard_data": dashboard_data,
                 "dashboard_range": self.request.GET.get("range") or "6m",
+                "logo_src": _empresa_logo_src(empresa, prefer_inline=True),
             }
         )
         return context

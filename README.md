@@ -62,11 +62,14 @@ python app\manage.py test
    - `RESEND_API_KEY`
    - `EMAIL_FROM` (ex: `ALP Oficinas <no-reply@alpoficinas.com.br>`)
    - `CONTACT_EMAIL` (destino das notificacoes)
-2. Comandos apos o deploy:
+   - `MEDIA_ROOT` (ex: `/data/media` quando usar volume persistente)
+2. Crie um Volume no Railway e monte em um caminho (ex: `/data`).
+   - Defina `MEDIA_ROOT=/data/media` nas variaveis do Railway.
+3. Comandos apos o deploy:
 ```
 python app/manage.py migrate
 python app/manage.py collectstatic --noinput
 ```
 
 ## Observacoes
-- Uploads (logomarca) precisam de storage persistente em producao.
+- Uploads (logomarca) precisam de storage persistente em producao (Railway Volume, S3, etc).

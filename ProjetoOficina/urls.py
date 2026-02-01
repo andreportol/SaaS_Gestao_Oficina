@@ -15,4 +15,11 @@ urlpatterns = [
     path('accounts/logout/', core_views.logout_view, name='logout'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', include('core.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+# Serve uploads in production (e.g., Railway) until a dedicated media host is configured.
+urlpatterns += static(
+    settings.MEDIA_URL,
+    document_root=settings.MEDIA_ROOT,
+    insecure=not settings.DEBUG,
+)
