@@ -2118,6 +2118,36 @@ body:not(.theme-light) .user-flag-hints {
     }
 }
 
+@media (max-width: 575.98px) {
+    .dashboard-filters {
+        display: flex !important;
+        flex-direction: column;
+        align-items: stretch;
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .dashboard-filter-range,
+    .dashboard-filter,
+    .dashboard-filter-apply {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .dashboard-filters .form-select,
+    .dashboard-filters .form-control {
+        width: 100%;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .dashboard-subtitle {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+    }
+}
+
 @media (max-width: 399.98px) {
     .dashboard-filters {
         display: flex !important;
@@ -2687,6 +2717,81 @@ body.app-bg:not(.theme-light) .dashboard-muted {
     width: 16px;
     height: 16px;
     display: block;
+}
+
+.empresas-aprovacao-page .table-responsive {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.empresas-aprovacao-page .table th,
+.empresas-aprovacao-page .table td {
+    white-space: nowrap;
+}
+
+.empresas-aprovacao-page .empresa-details-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.empresas-aprovacao-page .empresa-detail-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.empresas-aprovacao-page .empresa-details-row td {
+    background: var(--panel-strong);
+}
+
+@media (min-width: 992px) {
+    .empresas-aprovacao-page .table {
+        min-width: 980px;
+    }
+}
+
+@media (min-width: 992px) {
+    .empresas-aprovacao-page .empresa-col-toggle {
+        display: none;
+    }
+
+    .empresas-aprovacao-page .empresa-details-row {
+        display: none !important;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .empresas-aprovacao-page .empresa-col-extra,
+    .empresas-aprovacao-page .empresa-col-extra-header {
+        display: none;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .empresas-aprovacao-page .table {
+        min-width: 0;
+    }
+
+    .empresas-aprovacao-page .table th,
+    .empresas-aprovacao-page .table td {
+        white-space: normal;
+    }
+
+    .empresas-aprovacao-page .empresa-col-phone {
+        display: none;
+    }
+
+    .empresas-aprovacao-page .empresa-col-extra,
+    .empresas-aprovacao-page .empresa-col-extra-header {
+        display: none;
+    }
+
+    .empresas-aprovacao-page .empresa-col-toggle {
+        display: table-cell;
+    }
 }
 
 .empresas-aprovacao-actions .form-check,

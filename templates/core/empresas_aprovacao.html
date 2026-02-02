@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load core_extras %}
 {% block content %}
+<div class="empresas-aprovacao-page">
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <h1 class="h4 mb-0">Liberação de acesso</h1>
     <div class="d-flex align-items-center gap-2">
@@ -22,19 +23,20 @@
             <thead>
                 <tr>
                     <th>Empresa</th>
-                    <th>Contato</th>
-                    <th>Tipo</th>
-                    <th>Renovação</th>
-                    <th>Pagamento</th>
-                    <th>Criado em</th>
-                    <th class="text-end">Ação</th>
+                    <th class="empresa-col-phone">Contato</th>
+                    <th class="empresa-col-extra-header">Tipo</th>
+                    <th class="empresa-col-extra-header">Renovação</th>
+                    <th class="empresa-col-extra-header">Pagamento</th>
+                    <th class="empresa-col-extra-header">Criado em</th>
+                    <th class="text-end empresa-col-extra-header">Ação</th>
+                    <th class="text-end empresa-col-toggle">Detalhes</th>
                 </tr>
             </thead>
             <tbody>
                 {% for empresa in empresas %}
-                <tr>
+                <tr class="empresa-row" data-empresa-row="{{ empresa.id }}">
                     <td>{{ empresa.nome }}</td>
-                    <td>
+                    <td class="empresa-col-phone">
                         {% if empresa.telefone %}
                             <div class="d-inline-flex align-items-center gap-2">
                                 <span>{{ empresa.telefone }}</span>
@@ -53,7 +55,7 @@
                             -
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="empresa-col-extra">
                         {% if empresa.renovacao_periodo %}
                             <span class="badge bg-warning text-dark">Renovação</span>
                         {% elif not empresa.pagamento_confirmado %}
@@ -62,7 +64,7 @@
                             <span class="text-muted">-</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="empresa-col-extra">
                         {% if empresa.renovacao_periodo %}
                             <div class="small">Solicitado: {{ empresa.get_renovacao_periodo_display }}</div>
                             {% if empresa.renovacao_solicitada_em %}
@@ -72,7 +74,7 @@
                             -
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="empresa-col-extra">
                         {% if empresa.pagamento_confirmado %}
                             Confirmado
                         {% else %}
@@ -84,8 +86,8 @@
                             <div class="small text-muted">Inativo</div>
                         {% endif %}
                     </td>
-                    <td>{{ empresa.criado_em|date:"d/m/Y" }}</td>
-                    <td class="text-end">
+                    <td class="empresa-col-extra">{{ empresa.criado_em|date:"d/m/Y" }}</td>
+                    <td class="text-end empresa-col-extra">
                         <form method="post" id="empresa-form-{{ empresa.id }}" class="d-inline-flex align-items-center gap-2 empresas-aprovacao-actions">
                             {% csrf_token %}
                             <input type="hidden" name="empresa_id" value="{{ empresa.id }}">
@@ -102,10 +104,103 @@
                             <button class="chip chip-action chip-outline no-dot" type="submit">Salvar</button>
                         </form>
                     </td>
+                    <td class="text-end empresa-col-toggle">
+                        <button class="btn btn-outline-secondary btn-sm empresa-details-toggle" type="button" data-empresa-details-toggle="{{ empresa.id }}" aria-expanded="false" aria-controls="empresa-details-{{ empresa.id }}">Detalhes</button>
+                    </td>
+                </tr>
+                <tr class="empresa-details-row" id="empresa-details-{{ empresa.id }}" data-empresa-details="{{ empresa.id }}" hidden>
+                    <td colspan="8">
+                        <div class="empresa-details-grid">
+                            <div class="empresa-detail-item">
+                                <div class="empresa-detail-label">Tipo</div>
+                                <div>
+                                    {% if empresa.renovacao_periodo %}
+                                        <span class="badge bg-warning text-dark">Renovação</span>
+                                    {% elif not empresa.pagamento_confirmado %}
+                                        <span class="badge bg-info text-dark">Novo cadastro</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="empresa-detail-item">
+                                <div class="empresa-detail-label">Renovação</div>
+                                <div>
+                                    {% if empresa.renovacao_periodo %}
+                                        <div class="small">Solicitado: {{ empresa.get_renovacao_periodo_display }}</div>
+                                        {% if empresa.renovacao_solicitada_em %}
+                                            <div class="text-muted small">{{ empresa.renovacao_solicitada_em|date:"d/m/Y" }}</div>
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="empresa-detail-item">
+                                <div class="empresa-detail-label">Pagamento</div>
+                                <div>
+                                    {% if empresa.pagamento_confirmado %}
+                                        Confirmado
+                                    {% else %}
+                                        Pendente
+                                    {% endif %}
+                                    {% if empresa.plano_vencido %}
+                                        <div class="small text-muted">Plano vencido</div>
+                                    {% elif not empresa.is_ativo %}
+                                        <div class="small text-muted">Inativo</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="empresa-detail-item">
+                                <div class="empresa-detail-label">Contato</div>
+                                <div>
+                                    {% if empresa.telefone %}
+                                        <div class="d-inline-flex align-items-center gap-2">
+                                            <span>{{ empresa.telefone }}</span>
+                                            {% with phone=empresa.telefone|whatsapp_number %}
+                                                {% if phone %}
+                                                    <a class="whatsapp-link" href="https://wa.me/{{ phone }}?text={{ whatsapp_message|urlencode }}" target="_blank" rel="noopener" aria-label="Enviar WhatsApp">
+                                                        <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                                                            <path d="M16 3C9.1 3 3.5 8.5 3.5 15.3c0 2.4.7 4.7 2 6.7L3 29l7.2-2.4c1.9 1 4.1 1.6 6.4 1.6 6.9 0 12.5-5.5 12.5-12.3S22.9 3 16 3z" fill="currentColor"/>
+                                                            <path d="M11.3 9.7c.3-.7.6-.7.9-.7h.7c.2 0 .5 0 .7.4.2.4.9 2.2 1 2.4.1.2.1.5 0 .7-.1.2-.2.4-.4.6-.2.2-.4.4-.5.6-.2.2-.4.4-.2.8.2.4 1 1.6 2.1 2.6 1.4 1.2 2.6 1.6 3 1.8.4.2.6.2.8 0 .2-.2 1-.9 1.2-1.2.2-.3.4-.2.7-.1.3.1 1.9.9 2.2 1.1.3.2.5.2.6.4.1.2.1 1-.2 2-.3.9-1.7 1.7-2.3 1.8-.6.1-1.3.2-2.1-.1-.5-.2-1.1-.3-1.9-.7-3.3-1.4-5.4-4.6-5.6-4.9-.2-.3-1.4-1.8-1.4-3.5 0-1.7.9-2.5 1.2-2.9z" fill="#0b1224"/>
+                                                        </svg>
+                                                    </a>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="empresa-detail-item">
+                                <div class="empresa-detail-label">Criado em</div>
+                                <div>{{ empresa.criado_em|date:"d/m/Y" }}</div>
+                            </div>
+                            <div class="empresa-detail-item empresa-detail-actions">
+                                <div class="empresa-detail-label">Ação</div>
+                                <form method="post" id="empresa-form-{{ empresa.id }}-mobile" class="d-inline-flex flex-wrap align-items-center gap-2 empresas-aprovacao-actions">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="empresa_id" value="{{ empresa.id }}">
+                                    <div class="form-check form-switch m-0" data-bs-toggle="tooltip" data-bs-title="{% if empresa.plano_vencido %}Plano vencido — ajuste o período para liberar.{% else %}Liberar ativa o acesso da empresa após confirmação de pagamento.{% endif %}">
+                                        <input class="form-check-input" type="checkbox" id="empresa-{{ empresa.id }}-mobile" name="pagamento_confirmado"{% if empresa.pagamento_confirmado and not empresa.plano_vencido %} checked{% endif %}{% if empresa.plano_vencido %} disabled{% endif %}>
+                                        <label class="form-check-label" for="empresa-{{ empresa.id }}-mobile">Liberar</label>
+                                    </div>
+                                    {% if empresa.renovacao_periodo %}
+                                    <div class="form-check m-0" data-bs-toggle="tooltip" data-bs-title="Confirmar renovação aplica o período solicitado e renova a validade do plano.">
+                                        <input class="form-check-input" type="checkbox" id="renovar-{{ empresa.id }}-mobile" name="confirmar_renovacao">
+                                        <label class="form-check-label" for="renovar-{{ empresa.id }}-mobile">Confirmar renovação</label>
+                                    </div>
+                                    {% endif %}
+                                    <button class="chip chip-action chip-outline no-dot" type="submit">Salvar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center py-3">Nenhuma empresa cadastrada.</td>
+                    <td colspan="8" class="text-center py-3">Nenhuma empresa cadastrada.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -123,6 +218,27 @@
 </script>
 <script>
     (function() {
+        const toggles = document.querySelectorAll("[data-empresa-details-toggle]");
+        if (!toggles.length) return;
+        toggles.forEach((toggle) => {
+            const empresaId = toggle.getAttribute("data-empresa-details-toggle");
+            const detailsRow = document.querySelector(`[data-empresa-details="${empresaId}"]`);
+            if (!detailsRow) return;
+            toggle.addEventListener("click", () => {
+                const isHidden = detailsRow.hasAttribute("hidden");
+                if (isHidden) {
+                    detailsRow.removeAttribute("hidden");
+                } else {
+                    detailsRow.setAttribute("hidden", "");
+                }
+                toggle.textContent = isHidden ? "Ocultar detalhes" : "Detalhes";
+                toggle.setAttribute("aria-expanded", isHidden ? "true" : "false");
+            });
+        });
+    })();
+</script>
+<script>
+    (function() {
         const refreshMs = 30000;
         setInterval(() => {
             if (document.hidden) return;
@@ -130,4 +246,5 @@
         }, refreshMs);
     })();
 </script>
+</div>
 {% endblock %}
