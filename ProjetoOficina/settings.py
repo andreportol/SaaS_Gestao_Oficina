@@ -133,7 +133,6 @@ else:
 MEDIA_URL = os.getenv("MEDIA_URL", "/media/")
 _media_root = os.getenv("MEDIA_ROOT")
 MEDIA_ROOT = Path(_media_root) if _media_root else BASE_DIR / "media"
-MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'core.Usuario'
