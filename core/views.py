@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import logging
 from decimal import Decimal, InvalidOperation
 import io
 import unicodedata
@@ -11,8 +10,6 @@ import mimetypes
 from pathlib import Path
 import csv
 import json
-import urllib.error
-import urllib.request
 
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -75,8 +72,7 @@ from .models import (
 )
 from .services import criar_os_log, os_queryset_for_user
 from .services.dashboard_metrics import build_dashboard_data
-
-logger = logging.getLogger(__name__)
+from .services.resend_email import send_email_resend
 
 
 def _parse_limit(value, fallback=10):
@@ -776,67 +772,31 @@ class ContatoSuporteView(View):
             f"Email: {email}\n"
             f"Mensagem:\n{mensagem}\n"
         )
-        api_url = "https://api.resend.com/emails"
+        sent, detail, status = send_email_resend(
+            to=to_email,
+            subject="Ajuda no acesso - Oficina",
+            html=body,
+            reply_to=email,
+            from_email=from_email,
+        )
+        if sent:
+            return JsonResponse({"ok": True})
 
-        def _send_payload(sender):
-            payload = {
-                "from": sender,
-                "to": [to_email],
-                "subject": "Ajuda no acesso - Oficina",
-                "text": body,
-                "reply_to": email,
-            }
-            data = json.dumps(payload).encode("utf-8")
-            req = urllib.request.Request(
-                api_url,
-                data=data,
-                headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=10):
-                return True
+        allow_test_fallback = bool(getattr(settings, "RESEND_ALLOW_TEST_FALLBACK", False))
+        if status == 403 and (settings.DEBUG or allow_test_fallback):
+            test_from = getattr(settings, "RESEND_TEST_FROM_EMAIL", "")
+            if test_from and test_from != from_email:
+                sent, detail, _ = send_email_resend(
+                    to=to_email,
+                    subject="Ajuda no acesso - Oficina",
+                    html=body,
+                    reply_to=email,
+                    from_email=test_from,
+                )
+                if sent:
+                    return JsonResponse({"ok": True})
 
-        def _parse_resend_error(exc):
-            try:
-                payload = json.loads(exc.read().decode("utf-8"))
-                return payload.get("message") or payload.get("error") or payload.get("statusText")
-            except Exception:
-                return None
-
-        try:
-            _send_payload(from_email)
-        except urllib.error.HTTPError as exc:
-            allow_test_fallback = bool(getattr(settings, "RESEND_ALLOW_TEST_FALLBACK", False))
-            if exc.code == 403 and (settings.DEBUG or allow_test_fallback):
-                test_from = getattr(settings, "RESEND_TEST_FROM_EMAIL", "")
-                if test_from and test_from != from_email:
-                    try:
-                        _send_payload(test_from)
-                        return JsonResponse({"ok": True})
-                    except urllib.error.HTTPError as retry_exc:
-                        exc = retry_exc
-            detail = _parse_resend_error(exc)
-            logger.warning(
-                "Resend email failed (HTTP %s). Detail: %s | from=%s to=%s reply_to=%s subject=%s",
-                exc.code,
-                detail or "N/A",
-                from_email,
-                to_email,
-                email or "-",
-                "Ajuda no acesso - Oficina",
-            )
-            return JsonResponse({"error": detail or f"Erro ao enviar: {exc.code}"}, status=500)
-        except Exception:
-            logger.exception(
-                "Resend email failed (unexpected). from=%s to=%s reply_to=%s subject=%s",
-                from_email,
-                to_email,
-                email or "-",
-                "Ajuda no acesso - Oficina",
-            )
-            return JsonResponse({"error": "Erro de comunicação com o serviço de email."}, status=500)
-
-        return JsonResponse({"ok": True})
+        return JsonResponse({"error": detail or "Erro ao enviar email."}, status=500)
 
 
 class UsuarioListView(ManagerRequiredMixin, EmpresaQuerysetMixin, ListView):

@@ -1,8 +1,5 @@
 import json
-import logging
 import re
-import urllib.error
-import urllib.request
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -30,11 +27,10 @@ from .models import (
     Veiculo,
 )
 from .permissions import ROLE_EMPLOYEE, ROLE_MANAGER
+from .services.resend_email import send_email_resend
 
 
 User = get_user_model()
-logger = logging.getLogger(__name__)
-
 
 def _coerce_display_date(value):
     if not value:
@@ -98,72 +94,32 @@ def _validate_cnpj_cpf(value):
 
 
 def _send_resend_email(subject, body, to_email, reply_to=None):
-    api_key = getattr(settings, "RESEND_API_KEY", "")
-    if not api_key:
-        return False, "RESEND_API_KEY nao configurada."
     from_email = getattr(settings, "EMAIL_FROM", "no-reply@alpsistemas.app")
-    api_url = "https://api.resend.com/emails"
+    ok, detail, status = send_email_resend(
+        to=to_email,
+        subject=subject,
+        html=body,
+        reply_to=reply_to,
+        from_email=from_email,
+    )
+    if ok:
+        return True, None
 
-    def _send_payload(sender):
-        payload = {
-            "from": sender,
-            "to": [to_email],
-            "subject": subject,
-            "text": body,
-        }
-        if reply_to:
-            payload["reply_to"] = reply_to
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            api_url,
-            data=data,
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=10):
-            return True
+    allow_test_fallback = bool(getattr(settings, "RESEND_ALLOW_TEST_FALLBACK", False))
+    if status == 403 and (settings.DEBUG or allow_test_fallback):
+        test_from = getattr(settings, "RESEND_TEST_FROM_EMAIL", "")
+        if test_from and test_from != from_email:
+            ok, detail, _ = send_email_resend(
+                to=to_email,
+                subject=subject,
+                html=body,
+                reply_to=reply_to,
+                from_email=test_from,
+            )
+            if ok:
+                return True, None
 
-    def _parse_resend_error(exc):
-        try:
-            payload = json.loads(exc.read().decode("utf-8"))
-            return payload.get("message") or payload.get("error") or payload.get("statusText")
-        except Exception:
-            return None
-
-    try:
-        _send_payload(from_email)
-    except urllib.error.HTTPError as exc:
-        allow_test_fallback = bool(getattr(settings, "RESEND_ALLOW_TEST_FALLBACK", False))
-        if exc.code == 403 and (settings.DEBUG or allow_test_fallback):
-            test_from = getattr(settings, "RESEND_TEST_FROM_EMAIL", "")
-            if test_from and test_from != from_email:
-                try:
-                    _send_payload(test_from)
-                    return True, None
-                except urllib.error.HTTPError as retry_exc:
-                    exc = retry_exc
-        detail = _parse_resend_error(exc)
-        logger.warning(
-            "Resend email failed (HTTP %s). Detail: %s | from=%s to=%s reply_to=%s subject=%s",
-            exc.code,
-            detail or "N/A",
-            from_email,
-            to_email,
-            reply_to or "-",
-            subject,
-        )
-        return False, detail or f"HTTP {exc.code}"
-    except Exception:
-        logger.exception(
-            "Resend email failed (unexpected). from=%s to=%s reply_to=%s subject=%s",
-            from_email,
-            to_email,
-            reply_to or "-",
-            subject,
-        )
-        return False, "Erro de comunicacao com o servico de email."
-
-    return True, None
+    return False, detail
 
 
 def _notify_nova_liberacao(empresa, user):
