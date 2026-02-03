@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import logging
 from decimal import Decimal, InvalidOperation
 import io
 import unicodedata
@@ -74,6 +75,8 @@ from .models import (
 )
 from .services import criar_os_log, os_queryset_for_user
 from .services.dashboard_metrics import build_dashboard_data
+
+logger = logging.getLogger(__name__)
 
 
 def _parse_limit(value, fallback=10):
@@ -813,8 +816,24 @@ class ContatoSuporteView(View):
                     except urllib.error.HTTPError as retry_exc:
                         exc = retry_exc
             detail = _parse_resend_error(exc)
+            logger.warning(
+                "Resend email failed (HTTP %s). Detail: %s | from=%s to=%s reply_to=%s subject=%s",
+                exc.code,
+                detail or "N/A",
+                from_email,
+                to_email,
+                email or "-",
+                "Ajuda no acesso - Oficina",
+            )
             return JsonResponse({"error": detail or f"Erro ao enviar: {exc.code}"}, status=500)
         except Exception:
+            logger.exception(
+                "Resend email failed (unexpected). from=%s to=%s reply_to=%s subject=%s",
+                from_email,
+                to_email,
+                email or "-",
+                "Ajuda no acesso - Oficina",
+            )
             return JsonResponse({"error": "Erro de comunicação com o serviço de email."}, status=500)
 
         return JsonResponse({"ok": True})
@@ -1723,11 +1742,6 @@ class AutoCadastroView(FormMixin, TemplateView):
         enviado, erro = _notify_nova_liberacao(user.empresa, user)
         if enviado:
             messages.success(self.request, "E-mail de notificação enviado com sucesso.")
-        else:
-            messages.warning(
-                self.request,
-                f"E-mail de notificação não enviado. {erro or 'Verifique RESEND_API_KEY, EMAIL_FROM e CONTACT_EMAIL.'}",
-            )
         return super().form_valid(form)
 
 

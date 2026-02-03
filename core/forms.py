@@ -143,10 +143,24 @@ def _send_resend_email(subject, body, to_email, reply_to=None):
                 except urllib.error.HTTPError as retry_exc:
                     exc = retry_exc
         detail = _parse_resend_error(exc)
-        logger.warning("Resend email failed: %s", detail or f"HTTP {exc.code}")
+        logger.warning(
+            "Resend email failed (HTTP %s). Detail: %s | from=%s to=%s reply_to=%s subject=%s",
+            exc.code,
+            detail or "N/A",
+            from_email,
+            to_email,
+            reply_to or "-",
+            subject,
+        )
         return False, detail or f"HTTP {exc.code}"
     except Exception:
-        logger.exception("Resend email failed")
+        logger.exception(
+            "Resend email failed (unexpected). from=%s to=%s reply_to=%s subject=%s",
+            from_email,
+            to_email,
+            reply_to or "-",
+            subject,
+        )
         return False, "Erro de comunicacao com o servico de email."
 
     return True, None
