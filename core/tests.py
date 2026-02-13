@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from .forms import ClienteForm
 from .models import Cliente, Despesa, Empresa, OrdemServico, OSItem, Pagamento, Veiculo
 from .permissions import ROLE_EMPLOYEE, ROLE_MANAGER, setup_roles
 
@@ -249,3 +251,32 @@ class DashboardDataTests(TestCase):
         data = response.json()
         self.assertEqual(sum(data["operacional"]["os_por_funcionario"]["valores"]), 2)
         self.assertEqual(data["financeiro"]["saldo_geral"], 250.0)
+
+
+class ClienteNomeUnicoPorEmpresaTests(TestCase):
+    def setUp(self):
+        self.empresa1 = Empresa.objects.create(nome="Oficina 1", pagamento_confirmado=True)
+        self.empresa2 = Empresa.objects.create(nome="Oficina 2", pagamento_confirmado=True)
+        self.user1 = User.objects.create_user(username="cliente_user_1", password="123", empresa=self.empresa1)
+
+    def test_bloqueia_nome_duplicado_na_mesma_empresa_no_banco(self):
+        Cliente.objects.create(empresa=self.empresa1, nome="JOAO", telefone="1111")
+
+        with self.assertRaises(IntegrityError):
+            Cliente.objects.create(empresa=self.empresa1, nome=" joao ", telefone="2222")
+
+    def test_permite_mesmo_nome_em_empresas_diferentes(self):
+        Cliente.objects.create(empresa=self.empresa1, nome="MARIA", telefone="1111")
+        Cliente.objects.create(empresa=self.empresa2, nome="MARIA", telefone="2222")
+
+        self.assertEqual(Cliente.objects.filter(nome="MARIA").count(), 2)
+
+    def test_form_mostra_erro_para_nome_duplicado_na_mesma_empresa(self):
+        Cliente.objects.create(empresa=self.empresa1, nome="CARLOS", telefone="1111")
+        form = ClienteForm(
+            data={"nome": " carlos ", "telefone": "9999"},
+            user=self.user1,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("nome", form.errors)

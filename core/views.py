@@ -618,7 +618,7 @@ class AgendaQuickCreateView(LoginRequiredMixin, View):
         except (TypeError, ValueError):
             return JsonResponse({"error": "Dados inválidos."}, status=400)
 
-        nome = (payload.get("cliente_nome") or "").strip()
+        nome = (payload.get("cliente_nome") or "").strip().upper()
         telefone = (payload.get("telefone") or "").strip()
         placa = (payload.get("placa") or "").strip().upper()
         modelo = (payload.get("modelo") or "").strip()

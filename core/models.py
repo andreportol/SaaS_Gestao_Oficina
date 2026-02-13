@@ -332,6 +332,9 @@ class Cliente(models.Model):
 
     class Meta:
         ordering = ["nome"]
+        constraints = [
+            models.UniqueConstraint(fields=["empresa", "nome"], name="uniq_cliente_empresa_nome"),
+        ]
 
     def __str__(self) -> str:
         return self.nome

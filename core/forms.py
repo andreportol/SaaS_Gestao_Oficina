@@ -233,6 +233,22 @@ class ClienteForm(EmpresaFormMixin):
             ["nome", "telefone", "email", "documento", "cep", "rua", "numero", "bairro", "cidade", "data_cadastro"]
         )
 
+    def clean_nome(self):
+        nome = (self.cleaned_data.get("nome") or "").strip().upper()
+        empresa = getattr(self.user, "empresa", None) or getattr(self.instance, "empresa", None)
+
+        if not nome or not empresa:
+            return nome
+
+        duplicado = Cliente.objects.filter(empresa=empresa, nome=nome)
+        if self.instance.pk:
+            duplicado = duplicado.exclude(pk=self.instance.pk)
+
+        if duplicado.exists():
+            raise forms.ValidationError("Ja existe um cliente com esse nome nesta empresa.")
+
+        return nome
+
 
 class VeiculoForm(EmpresaFormMixin):
     data_cadastro = forms.DateField(
