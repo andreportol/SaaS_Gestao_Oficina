@@ -53,6 +53,7 @@ def _normalizar_e_consolidar_clientes(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    atomic = False
     dependencies = [
         ("core", "0032_plano_valor_pix_fields"),
     ]

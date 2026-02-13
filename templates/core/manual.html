@@ -59,6 +59,16 @@
         text-decoration: underline;
     }
 
+    /* Tema escuro: aumentar contraste dos links */
+    body:not(.theme-light) .manual-page a {
+        color: #facc15;
+    }
+
+    body:not(.theme-light) .manual-page a:hover,
+    body:not(.theme-light) .manual-page a:focus {
+        color: #f59e0b;
+    }
+
     @media (max-width: 575.98px) {
         .manual-page {
             font-size: 0.95rem;
