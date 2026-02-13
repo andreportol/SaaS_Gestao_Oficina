@@ -63,9 +63,11 @@
 
         const valFromCtx = (ctx) => {
             if (ctx && typeof ctx.parsed === "object") {
-                return Number(ctx.parsed.y ?? ctx.parsed.x ?? 0);
+                if (ctx.parsed.y != null) return Number(ctx.parsed.y);
+                if (ctx.parsed.x != null) return Number(ctx.parsed.x);
+                return 0;
             }
-            return Number(ctx.parsed ?? 0);
+            return Number((ctx && ctx.parsed) || 0);
         };
 
         const renderMainChart = () => {
@@ -211,12 +213,14 @@
 
         periodSel.addEventListener("change", renderMainChart);
         typeSel.addEventListener("change", renderMainChart);
-        themeToggle?.addEventListener("click", () => {
-            setTimeout(() => {
-                renderMainChart();
-                renderFormasChart();
-            }, 0);
-        });
+        if (themeToggle) {
+            themeToggle.addEventListener("click", () => {
+                setTimeout(() => {
+                    renderMainChart();
+                    renderFormasChart();
+                }, 0);
+            });
+        }
         renderMainChart();
         renderFormasChart();
     });

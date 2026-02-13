@@ -141,7 +141,9 @@
 <script>
     (function() {
         const btn = document.getElementById('btnPrint');
-        btn?.addEventListener('click', () => window.print());
+        if (btn) {
+            btn.addEventListener('click', () => window.print());
+        }
     })();
 </script>
 </div>

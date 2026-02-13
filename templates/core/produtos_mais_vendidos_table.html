@@ -107,9 +107,10 @@
         const renderTable = (data) => {
             const body = document.getElementById("produtosTableBody");
             if (!body) return;
-            const labels = data?.produtos?.mais_vendidos?.labels || [];
-            const qtd = data?.produtos?.mais_vendidos?.qtd || [];
-            const total = data?.produtos?.mais_vendidos?.total || [];
+            const maisVendidos = data && data.produtos && data.produtos.mais_vendidos ? data.produtos.mais_vendidos : {};
+            const labels = maisVendidos.labels || [];
+            const qtd = maisVendidos.qtd || [];
+            const total = maisVendidos.total || [];
             const totalRows = Math.max(labels.length, qtd.length, total.length);
             body.innerHTML = "";
             if (!totalRows) {
@@ -129,9 +130,9 @@
                 const totalCell = document.createElement("td");
                 labelCell.textContent = labels[i] || "-";
                 qtdCell.className = "text-end";
-                qtdCell.textContent = formatUnits(qtd[i] ?? 0);
+                qtdCell.textContent = formatUnits(qtd[i] != null ? qtd[i] : 0);
                 totalCell.className = "text-end";
-                totalCell.textContent = formatCurrency(total[i] ?? 0);
+                totalCell.textContent = formatCurrency(total[i] != null ? total[i] : 0);
                 row.appendChild(labelCell);
                 row.appendChild(qtdCell);
                 row.appendChild(totalCell);

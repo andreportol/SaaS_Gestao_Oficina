@@ -13,22 +13,50 @@
         letter-spacing: 0.02em;
     }
 
-    @media (min-width: 1200px) {
-        .manual-page {
-            font-size: 0.98rem;
-        }
+    .manual-step-list li {
+        margin-bottom: 0.6rem;
+    }
 
-        .manual-page h1 {
-            font-size: 1.45rem;
-        }
+    .manual-mini-card {
+        height: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.9rem;
+        background: var(--panel-strong);
+    }
 
-        .manual-page h2 {
-            font-size: 1rem;
-        }
+    .manual-mini-card h3 {
+        margin-bottom: 0.35rem;
+        font-size: 0.95rem;
+    }
 
-        .manual-page h3 {
-            font-size: 0.95rem;
-        }
+    .manual-mini-card p {
+        margin-bottom: 0;
+    }
+
+    .manual-badge {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        color: var(--text);
+        border-radius: 999px;
+        padding: 0.2rem 0.55rem;
+        font-size: 0.78rem;
+    }
+
+    .manual-note {
+        border-left: 3px solid #0d6efd;
+        padding-left: 0.75rem;
+    }
+
+    .manual-page a {
+        color: #0d6efd;
+        text-decoration: underline;
+    }
+
+    .manual-page a:hover,
+    .manual-page a:focus {
+        color: #0b5ed7;
+        text-decoration: underline;
     }
 
     @media (max-width: 575.98px) {
@@ -62,8 +90,8 @@
 <div class="manual-page">
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
-        <h1 class="h4 mb-1">Manual do Sistema</h1>
-        <div class="small text-muted">Guia rápido para operar a oficina do início ao faturamento.</div>
+        <h1 class="h4 mb-1">Manual rápido do sistema</h1>
+        <div class="small text-muted">Guia simples para novos usuários: do primeiro cadastro ao fechamento do dia.</div>
     </div>
     <a class="btn btn-outline-secondary" href="{% url 'dashboard' %}">Voltar ao início</a>
 </div>
@@ -71,103 +99,161 @@
 <div class="card p-3 mb-3 manual-shortcuts">
     <h2 class="h6 text-uppercase text-muted mb-2">Atalhos</h2>
     <div class="d-flex flex-wrap gap-2">
-        <a class="chip chip-action chip-ghost no-dot" href="#passo-a-passo">Passo a passo</a>
-        <a class="chip chip-action chip-ghost no-dot" href="#fluxo">Fluxo principal</a>
-        <a class="chip chip-action chip-ghost no-dot" href="#menus">Menus e funções</a>
-        <a class="chip chip-action chip-ghost no-dot" href="#dicas">Dicas rápidas</a>
-        <a class="chip chip-action chip-ghost no-dot" href="#videos" id="videos">Ver vídeos</a>
+        <a class="chip chip-action chip-ghost no-dot" href="#primeiros-passos">Primeiros passos</a>
+        <a class="chip chip-action chip-ghost no-dot" href="#fluxo-atendimento">Fluxo de atendimento</a>
+        <a class="chip chip-action chip-ghost no-dot" href="#rotina-diaria">Rotina diária</a>
+        <a class="chip chip-action chip-ghost no-dot" href="#tela-por-tela">Tela por tela</a>
+        <a class="chip chip-action chip-ghost no-dot" href="#erros-comuns">Erros comuns</a>
+        <a class="chip chip-action chip-ghost no-dot" href="#faq" id="videos">FAQ</a>
     </div>
 </div>
 
-<div class="card p-3 mb-3" id="passo-a-passo">
-    <h2 class="h6 text-uppercase text-muted mb-2">Passo a passo inicial</h2>
-    <ol class="mb-0">
-        <li>Cadastre o <strong>Cliente</strong> com nome e contato.</li>
-        <li>Cadastre o <strong>Veículo</strong> e vincule ao cliente (um veículo pertence a um único cliente).</li>
-        <li>Cadastre <strong>Produtos</strong> (peças e serviços) para facilitar a montagem da OS.</li>
-        <li>Crie uma <strong>Ordem de Serviço (OS)</strong> escolhendo cliente e veículo.</li>
-        <li>Na OS, informe problema/diagnóstico, adicione itens e registre pagamentos.</li>
-        <li>Use <strong>Caixa</strong> e <strong>Relatórios</strong> para acompanhar entradas e saídas.</li>
+<div class="card p-3 mb-3" id="primeiros-passos">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <h2 class="h6 text-uppercase text-muted mb-0">Primeiros 10 minutos</h2>
+        <span class="manual-badge">Comece por aqui</span>
+    </div>
+    <ol class="mb-2 manual-step-list">
+        <li>Cadastre um cliente em <a href="{% url 'clientes_create' %}">Clientes</a>.</li>
+        <li>Cadastre o veículo desse cliente em <a href="{% url 'veiculos_create' %}">Veículos</a>.</li>
+        <li>Cadastre serviços/peças em <a href="{% url 'produtos_create' %}">Produtos</a>.</li>
+        <li>Abra uma OS em <a href="{% url 'os_create' %}">Ordens</a> e adicione os itens.</li>
+        {% if user.is_gerente or user.is_superuser %}
+        <li>Registre pagamento na OS e acompanhe resultado em <a href="{% url 'caixa' %}">Caixa</a>.</li>
+        {% else %}
+        <li>Registre pagamento na OS e informe o gerente para validar no Caixa.</li>
+        {% endif %}
     </ol>
+    <div class="manual-note small text-muted">
+        Regra principal do sistema: <strong>Cliente -> Veículo -> OS</strong>. Sem cliente e veículo, a OS não pode ser criada.
+    </div>
 </div>
 
-<div class="card p-3 mb-3" id="fluxo">
-    <h2 class="h6 text-uppercase text-muted mb-2">Fluxo principal</h2>
-    <p class="mb-1"><strong>Cliente → Veículo → OS</strong></p>
-    <p class="mb-0 text-muted">
-        A OS sempre precisa de um cliente e de um veículo. Por isso, o cadastro do cliente vem primeiro,
-        depois o veículo (ligado ao cliente) e por fim a abertura da OS.
-    </p>
-</div>
-
-<div class="card p-3 mb-3" id="menus">
-    <h2 class="h6 text-uppercase text-muted mb-2">Menus e funções</h2>
-
-    <div class="mb-3">
-        <h3 class="h6 mb-1">Dashboard</h3>
-        <div class="text-muted">Visão geral do período com indicadores, gráficos e saldo.</div>
-    </div>
-
-    <div class="mb-3">
-        <h3 class="h6 mb-1">Clientes</h3>
-        <div class="text-muted">Cadastro de clientes. E o primeiro passo para abrir OS.</div>
-    </div>
-
-    <div class="mb-3">
-        <h3 class="h6 mb-1">Veiculos</h3>
-        <div class="text-muted">Cadastro de veículos. Cada veículo deve estar ligado a um cliente.</div>
-    </div>
-
-    <div class="mb-3">
-        <h3 class="h6 mb-1">Agenda</h3>
-        <div class="text-muted">Agendamento de entregas, retiradas e anotações do dia.</div>
-    </div>
-
-    <div class="mb-3">
-        <h3 class="h6 mb-1">Produtos</h3>
-        <div class="text-muted">Peças e serviços com preço e estoque para montar a OS rapidamente.</div>
-    </div>
-
-    <div class="mb-3">
-        <h3 class="h6 mb-1">Ordens de Servico</h3>
-        <div class="text-muted">
-            Cadastro e acompanhamento das OS. Precisa de cliente e veículo.
-            Dentro da OS você adiciona itens, registra pagamentos e imprime o PDF.
+<div class="card p-3 mb-3" id="fluxo-atendimento">
+    <h2 class="h6 text-uppercase text-muted mb-2">Fluxo de atendimento (simples)</h2>
+    <div class="row g-2">
+        <div class="col-12 col-md-4">
+            <div class="manual-mini-card">
+                <h3>1. Entrada</h3>
+                <p class="text-muted small">Cliente chega, veículo identificado, problema registrado.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="manual-mini-card">
+                <h3>2. Execução</h3>
+                <p class="text-muted small">Abra a OS, adicione itens, ajuste status conforme o andamento.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="manual-mini-card">
+                <h3>3. Entrega e caixa</h3>
+                <p class="text-muted small">Registre pagamento, finalize a OS e use o PDF como comprovante.</p>
+            </div>
         </div>
     </div>
-
-    <div class="mb-3">
-        <h3 class="h6 mb-1">Caixa</h3>
-        <div class="text-muted">Controle de entradas (pagamentos) e saídas (despesas).</div>
-    </div>
-
-    <div class="mb-3">
-        <h3 class="h6 mb-1">Relatorios</h3>
-        <div class="text-muted">Resumo do período com faturamento, despesas e OS.</div>
-    </div>
-
-    <div class="mb-0">
-        <h3 class="h6 mb-1">Colaboradores</h3>
-        <div class="text-muted">Central de gestão de pessoas e acessos (apenas gerente).</div>
-        <ul class="small text-muted mb-0">
-            <li><a href="{% url 'usuarios_list' %}">Usuários do Sistema</a>: cria logins e define níveis de acesso.</li>
-            <li><a href="{% url 'funcionarios_list' %}">Funcionários</a>: cadastro da equipe para execução de OS e relatórios.</li>
-        </ul>
-    </div>
 </div>
 
-<div class="card p-3 mb-3" id="dicas">
-    <h2 class="h6 text-uppercase text-muted mb-2">Dicas rápidas</h2>
+<div class="card p-3 mb-3" id="rotina-diaria">
+    <h2 class="h6 text-uppercase text-muted mb-2">Rotina diária recomendada</h2>
     <ul class="mb-0">
-        <li>Use os filtros por data em OS, Caixa e Relatórios para comparar períodos.</li>
-        <li>Na OS, mantenha o status atualizado para refletir o andamento.</li>
-        <li>O PDF da OS serve como comprovante profissional para o cliente.</li>
+        <li><strong>Inicio do dia:</strong> confira <a href="{% url 'agenda' %}">Agenda</a> e OS em aberto.</li>
+        <li><strong>Durante o dia:</strong> mantenha status da OS atualizado (aberta, em execução, aguardando peça, finalizada, cancelada).</li>
+        {% if user.is_gerente or user.is_superuser %}
+        <li><strong>Fim do dia:</strong> revise entradas/saidas no <a href="{% url 'caixa' %}">Caixa</a> e valide pendências em <a href="{% url 'relatorios' %}">Relatorios</a>.</li>
+        {% else %}
+        <li><strong>Fim do dia:</strong> revise pendências das OS e alinhe fechamento financeiro com o gerente.</li>
+        {% endif %}
     </ul>
 </div>
 
-<div class="card p-3" id="videos">
-    <h2 class="h6 text-uppercase text-muted mb-2">Ver vídeos</h2>
-    <p class="mb-0 text-muted">Em breve adicionaremos vídeos explicando cada etapa do sistema.</p>
+<div class="card p-3 mb-3" id="tela-por-tela">
+    <h2 class="h6 text-uppercase text-muted mb-2">Tela por tela: para que serve</h2>
+    <div class="row g-2">
+        <div class="col-12 col-md-6">
+            <div class="manual-mini-card">
+                <h3>Dashboard</h3>
+                <p class="text-muted small">Resumo rápido do negócio: faturamento, OS e indicadores.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="manual-mini-card">
+                <h3>Clientes</h3>
+                <p class="text-muted small">Cadastro de pessoas atendidas. Nome não pode repetir na mesma empresa.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="manual-mini-card">
+                <h3>Veículos</h3>
+                <p class="text-muted small">Cadastro e vínculo do veículo ao cliente correto.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="manual-mini-card">
+                <h3>Agenda</h3>
+                <p class="text-muted small">Organização de entregas, retiradas e observações por data.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="manual-mini-card">
+                <h3>Produtos</h3>
+                <p class="text-muted small">Peças e serviços usados para montar OS com rapidez.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="manual-mini-card">
+                <h3>Ordens de serviço</h3>
+                <p class="text-muted small">Processo completo de atendimento, itens, pagamento e PDF.</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="manual-mini-card">
+                <h3>Caixa</h3>
+                <p class="text-muted small">Controle financeiro diário: entradas (pagamentos) e saídas (despesas).</p>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="manual-mini-card">
+                <h3>Relatórios</h3>
+                <p class="text-muted small">Fechamento por período: saldo, status de OS e clientes com pendências.</p>
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_gerente or user.is_superuser %}
+    <div class="manual-note small text-muted mt-3">
+        Como gerente, você também administra acessos em
+        <a href="{% url 'usuarios_list' %}">Usuários do Sistema</a>
+        e equipe em
+        <a href="{% url 'funcionarios_list' %}">Funcionários</a>.
+    </div>
+    {% endif %}
+</div>
+
+<div class="card p-3 mb-3" id="erros-comuns">
+    <h2 class="h6 text-uppercase text-muted mb-2">Erros comuns e como evitar</h2>
+    <ul class="mb-0">
+        <li><strong>Cliente duplicado:</strong> pesquise antes de cadastrar e use o cadastro existente.</li>
+        <li><strong>OS sem item:</strong> adicione itens para refletir valor real do serviço.</li>
+        <li><strong>Status desatualizado:</strong> atualize o status da OS no mesmo momento da mudança.</li>
+        <li><strong>Pagamento não lançado:</strong> registrar no Caixa depende do pagamento dentro da OS.</li>
+        <li><strong>Período errado em relatório:</strong> valide datas de início e fim antes de comparar resultados.</li>
+    </ul>
+</div>
+
+<div class="card p-3" id="faq">
+    <h2 class="h6 text-uppercase text-muted mb-2">Perguntas Frequentes</h2>
+    <div class="mb-2">
+        <h3 class="h6 mb-1">Preciso cadastrar produto para abrir OS?</h3>
+        <p class="mb-0 text-muted small">Não. Mas cadastrar produtos agiliza muito e melhora o controle financeiro.</p>
+    </div>
+    <div class="mb-2">
+        <h3 class="h6 mb-1">Quem pode gerenciar usuários?</h3>
+        <p class="mb-0 text-muted small">Apenas gerente pode criar/desativar acessos.</p>
+    </div>
+    <div class="mb-0">
+        <h3 class="h6 mb-1">Como compartilhar com o cliente o que foi feito?</h3>
+        <p class="mb-0 text-muted small">Use o PDF da OS para enviar o resumo do serviço e dos pagamentos.</p>
+    </div>
 </div>
 </div>
 {% endblock %}

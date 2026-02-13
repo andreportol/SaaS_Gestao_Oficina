@@ -149,7 +149,9 @@
 
     const events = JSON.parse('{{ eventos_fc_json|escapejs }}');
     const selectedDate = "{{ selected_date|date:'Y-m-d' }}";
-    const fallbackDate = "{{ current_year }}-{{ current_month|stringformat:'02d' }}-01";
+    const now = new Date();
+    const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const initialCalendarDate = selectedDate || todayIso;
     const canDelete = {{ can_delete_agenda|yesno:"true,false" }};
     const quickModalEl = document.getElementById("quickAgendaModal");
     if (quickModalEl && quickModalEl.parentElement !== document.body) {
@@ -161,13 +163,14 @@
     const quickSuccess = document.getElementById("quickAgendaSuccess");
     let calendar; // will hold instance later
 
+    const csrfField = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    const csrfCookieEntry = document.cookie
+        .split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith("csrftoken="));
     const csrfToken =
-        document.querySelector('input[name="csrfmiddlewaretoken"]')?.value ||
-        document.cookie
-            .split(";")
-            .map((c) => c.trim())
-            .find((c) => c.startsWith("csrftoken="))
-            ?.split("=")[1] ||
+        (csrfField ? csrfField.value : "") ||
+        (csrfCookieEntry ? csrfCookieEntry.split("=")[1] : "") ||
         "";
 
     const syncMove = async (info) => {
@@ -213,8 +216,8 @@
             alert("Não foi possível abrir o modal. Recarregue a página e tente novamente.");
             return;
         }
-        quickError?.classList.add("d-none");
-        quickSuccess?.classList.add("d-none");
+        if (quickError) quickError.classList.add("d-none");
+        if (quickSuccess) quickSuccess.classList.add("d-none");
         const dateInput = quickForm.querySelector('input[name="data"]');
         const timeInput = quickForm.querySelector('input[name="hora"]');
         if (dateInput) dateInput.value = dateObj.toISOString().slice(0, 10);
@@ -224,13 +227,14 @@
         }
         quickModal.show();
         const first = quickForm.querySelector("input[name='cliente_nome']");
-        first?.focus();
+        if (first) first.focus();
     };
 
-    quickForm?.addEventListener("submit", async (ev) => {
-        ev.preventDefault();
-        quickError?.classList.add("d-none");
-        quickSuccess?.classList.add("d-none");
+    if (quickForm) {
+        quickForm.addEventListener("submit", async (ev) => {
+            ev.preventDefault();
+            if (quickError) quickError.classList.add("d-none");
+            if (quickSuccess) quickSuccess.classList.add("d-none");
         const formData = new FormData(quickForm);
         const payload = Object.fromEntries(formData.entries());
         try {
@@ -249,7 +253,7 @@
             if (data.event) {
                 calendar.addEvent(data.event);
             }
-            quickSuccess?.classList.remove("d-none");
+            if (quickSuccess) quickSuccess.classList.remove("d-none");
             quickForm.reset();
             setTimeout(() => quickModal.hide(), 800);
         } catch (err) {
@@ -260,12 +264,13 @@
                 alert(err.message || "Erro ao salvar");
             }
         }
-    });
+        });
+    }
 
     calendar = new FullCalendar.Calendar(calendarEl, {
         locale: "pt-br",
         initialView: "dayGridMonth",
-        initialDate: selectedDate || fallbackDate,
+        initialDate: initialCalendarDate,
         headerToolbar: {
             left: "prev,next today",
             center: "title",
@@ -370,7 +375,7 @@
 
 (function() {
     const form = document.getElementById("agendaSearchForm");
-    const input = form?.querySelector('input[name="q"]');
+    const input = form ? form.querySelector('input[name="q"]') : null;
     const clearBtn = document.getElementById("clearAgendaSearch");
     if (!form || !input) return;
     let last = input.value;
@@ -381,10 +386,12 @@
         }
         last = current;
     });
-    clearBtn?.addEventListener("click", () => {
-        input.value = "";
-        form.submit();
-    });
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            input.value = "";
+            form.submit();
+        });
+    }
 })();
 
 (function() {

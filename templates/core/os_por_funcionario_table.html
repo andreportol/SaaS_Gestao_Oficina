@@ -123,7 +123,7 @@
         const renderTable = (data) => {
             const body = document.getElementById("osFuncionarioTableBody");
             if (!body) return;
-            const rows = data?.operacional?.os_por_funcionario_detalhes || [];
+            const rows = (data && data.operacional && data.operacional.os_por_funcionario_detalhes) || [];
             body.innerHTML = "";
             if (!rows.length) {
                 const row = document.createElement("tr");

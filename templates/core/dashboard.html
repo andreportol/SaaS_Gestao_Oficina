@@ -296,9 +296,11 @@
         const axisColor = () => (document.body.classList.contains("theme-light") ? "#000" : "#cbd5e1");
         const valueFromCtx = (ctx) => {
             if (ctx && typeof ctx.parsed === "object") {
-                return Number(ctx.parsed.y ?? ctx.parsed.x ?? 0);
+                if (ctx.parsed.y != null) return Number(ctx.parsed.y);
+                if (ctx.parsed.x != null) return Number(ctx.parsed.x);
+                return 0;
             }
-            return Number(ctx?.parsed ?? 0);
+            return Number((ctx && ctx.parsed) || 0);
         };
         const palette = [
             "rgba(14, 116, 144, 0.7)",
@@ -499,7 +501,7 @@
                             callbacks: {
                                 label: (ctx) => {
                                     const value = valueFromCtx(ctx);
-                                    if (ctx.dataset.label?.toLowerCase().includes("total")) {
+                                    if (ctx.dataset.label && ctx.dataset.label.toLowerCase().includes("total")) {
                                         return `${ctx.dataset.label}: ${formatCurrency(value)}`;
                                     }
                                     return `${ctx.dataset.label}: ${formatUnits(value)}`;
@@ -523,7 +525,7 @@
 
         const renderClientes = (data, hue) => {
             const ctx = document.getElementById("clientesChart");
-            const colors = buildDynamicColors((data.labels || []).length, hue ?? 210);
+            const colors = buildDynamicColors((data.labels || []).length, hue != null ? hue : 210);
             ensureChart("clientes", ctx, {
                 type: "bar",
                 data: {
@@ -558,7 +560,7 @@
 
         const renderRecorrencia = (data, hue) => {
             const ctx = document.getElementById("recorrenciaChart");
-            const colors = buildDynamicColors((data.labels || []).length, hue ?? 30);
+            const colors = buildDynamicColors((data.labels || []).length, hue != null ? hue : 30);
             ensureChart("recorrencia", ctx, {
                 type: "bar",
                 data: {
@@ -579,7 +581,7 @@
                         legend: { labels: { color: axisColor() } },
                         tooltip: {
                             callbacks: {
-                                title: (items) => items?.[0]?.label || "",
+                                title: (items) => (items && items[0] && items[0].label) || "",
                                 label: (ctx) => `${valueFromCtx(ctx)} vezes`,
                             },
                         },
@@ -608,9 +610,9 @@
                 row.innerHTML = `
                     <div>
                         <div class="fw-bold">${item.nome}</div>
-                        <div class="small estoque-minimo-label">Minimo: <span class="estoque-minimo-value">${item.estoque_minimo ?? "-"}</span></div>
+                        <div class="small estoque-minimo-label">Minimo: <span class="estoque-minimo-value">${item.estoque_minimo != null ? item.estoque_minimo : "-"}</span></div>
                     </div>
-                    <span class="badge bg-danger-subtle text-danger-emphasis">${item.estoque_atual ?? "-"}</span>
+                    <span class="badge bg-danger-subtle text-danger-emphasis">${item.estoque_atual != null ? item.estoque_atual : "-"}</span>
                 `;
                 listEl.appendChild(row);
             });
@@ -682,14 +684,18 @@
             }
         });
         applyBtn.addEventListener("click", fetchData);
-        produtosTopFilter?.addEventListener("click", (event) => event.stopPropagation());
-        produtosTopFilter?.addEventListener("mousedown", (event) => event.stopPropagation());
-        produtosTopInput?.addEventListener("change", fetchData);
-        clientesTopInput?.addEventListener("change", fetchData);
-        recorrenciaTopInput?.addEventListener("change", fetchData);
-        themeToggle?.addEventListener("click", () => {
-            setTimeout(() => renderAll(currentData), 0);
-        });
+        if (produtosTopFilter) {
+            produtosTopFilter.addEventListener("click", (event) => event.stopPropagation());
+            produtosTopFilter.addEventListener("mousedown", (event) => event.stopPropagation());
+        }
+        if (produtosTopInput) produtosTopInput.addEventListener("change", fetchData);
+        if (clientesTopInput) clientesTopInput.addEventListener("change", fetchData);
+        if (recorrenciaTopInput) recorrenciaTopInput.addEventListener("change", fetchData);
+        if (themeToggle) {
+            themeToggle.addEventListener("click", () => {
+                setTimeout(() => renderAll(currentData), 0);
+            });
+        }
 
         toggleCustomInputs();
         setInputsFromData(dataSets);

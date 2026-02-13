@@ -507,7 +507,9 @@
         validateDates();
         syncEntregaFromStatus();
 
-        statusEl?.addEventListener("change", syncEntregaFromStatus);
+        if (statusEl) {
+            statusEl.addEventListener("change", syncEntregaFromStatus);
+        }
 
         formEl.addEventListener("submit", (event) => {
             if (validateDates() === false) {

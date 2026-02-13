@@ -164,7 +164,8 @@
         if (!toggles.length) return;
         toggles.forEach((toggle) => {
             const targetId = toggle.getAttribute("data-password-target");
-            const input = targetId ? document.getElementById(targetId) : toggle.closest(".password-wrap")?.querySelector("input");
+            const wrap = toggle.closest(".password-wrap");
+            const input = targetId ? document.getElementById(targetId) : (wrap ? wrap.querySelector("input") : null);
             if (!input) return;
             toggle.addEventListener("click", () => {
                 const isPassword = input.getAttribute("type") === "password";
