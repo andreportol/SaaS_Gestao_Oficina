@@ -25,6 +25,7 @@ from django.db.models.functions import TruncDate, TruncMonth, TruncYear
 from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.encoding import force_bytes
@@ -67,6 +68,7 @@ from .models import (
     OSItem,
     Pagamento,
     Produto,
+    PlanoValor,
     Usuario,
     Veiculo,
 )
@@ -1677,6 +1679,64 @@ class AutoCadastroView(FormMixin, TemplateView):
     template_name = "registration/signup.html"
     form_class = AutoCadastroForm
     success_url = reverse_lazy("login")
+
+    def _format_brl(self, value):
+        amount = value if isinstance(value, Decimal) else Decimal(value or "0")
+        formatted = f"{amount:,.2f}"
+        return f"R$ {formatted.replace(',', 'X').replace('.', ',').replace('X', '.')}"
+
+    def _build_plan_data(self):
+        defaults = {
+            Empresa.PlanoPeriodo.MENSAL: Decimal("150.00"),
+            Empresa.PlanoPeriodo.SEMESTRAL: Decimal("720.00"),
+            Empresa.PlanoPeriodo.ANUAL: Decimal("1200.00"),
+        }
+        default_qr_url = static("core/img/qrcode_bancobrasil.jpeg")
+        period_labels = dict(Empresa.PlanoPeriodo.choices)
+        records = {
+            item.periodo: item
+            for item in PlanoValor.objects.filter(plano=Empresa.Plano.BASICO).only(
+                "periodo", "valor", "pix_qr_code", "pix_copia_cola"
+            )
+        }
+
+        choices = []
+        qr_map = {}
+        for periodo, label in Empresa.PlanoPeriodo.choices:
+            record = records.get(periodo)
+            value = record.valor if record else defaults.get(periodo, Decimal("0.00"))
+            value_display = self._format_brl(value)
+            qr_url = ""
+            if record and record.pix_qr_code:
+                try:
+                    qr_url = record.pix_qr_code.url
+                except Exception:
+                    qr_url = ""
+            if not qr_url:
+                qr_url = default_qr_url
+
+            choices.append((periodo, f"{label} — {value_display}"))
+            qr_map[periodo] = {
+                "label": period_labels.get(periodo, label),
+                "valor": value_display,
+                "qr_url": qr_url,
+                "pix_copia_cola": (record.pix_copia_cola if record else "")
+                or f"PIX TESTE ALP SISTEMAS - {period_labels.get(periodo, label)} - {value_display}",
+            }
+
+        return choices, qr_map
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        choices, qr_map = self._build_plan_data()
+        form.fields["plano_periodo"].choices = choices
+        self._signup_plan_qr_map = qr_map
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["plano_qr_map"] = getattr(self, "_signup_plan_qr_map", self._build_plan_data()[1])
+        return context
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:

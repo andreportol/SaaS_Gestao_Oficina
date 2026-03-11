@@ -1,4 +1,41 @@
 {% extends "base.html" %}
+{% block extra_head %}
+<style>
+    .signup-plan-preview {
+        background: linear-gradient(145deg, rgba(16, 24, 37, 0.92), rgba(10, 16, 26, 0.88));
+        border: 1px solid rgba(164, 189, 219, 0.26) !important;
+        color: #e8eef8;
+    }
+
+    .signup-plan-preview .text-muted {
+        color: #a5b3c8 !important;
+    }
+
+    body.theme-light .signup-plan-preview {
+        background: #f8fafc;
+        color: #0f172a;
+        border-color: #d7deeb !important;
+    }
+
+    body.theme-light .signup-plan-preview .text-muted {
+        color: #64748b !important;
+    }
+
+    .signup-plan-preview .plan-preview-center {
+        text-align: center;
+    }
+
+    .signup-plan-preview #planoPreviewQr {
+        margin: 0 auto;
+        display: none;
+    }
+
+    .signup-plan-preview .plan-preview-copy-wrap {
+        margin-top: 10px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
 {% block content %}
 <div class="auth-wrapper login-page">
     <div class="col-lg-6 col-md-8 col-11 mx-auto">
@@ -76,6 +113,25 @@
                                 {{ form.cidade }}
                                 {{ form.cidade.errors }}
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="signup-section">
+                    <div class="signup-section-title">Plano desejado</div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.plano_periodo.label }}</label>
+                        {{ form.plano_periodo }}
+                        {{ form.plano_periodo.errors }}
+                    </div>
+                    <div class="card border-0 shadow-sm signup-plan-preview" id="planoPreviewCard">
+                        <div class="card-body">
+                            <div class="small text-muted mb-2 plan-preview-center">Pagamento via Pix do plano selecionado</div>
+                            <img id="planoPreviewQr" src="" alt="QR Code Pix do plano" style="max-width: 140px; width: 100%; height: auto; border-radius: 10px; display: none;">
+                            <textarea id="planoPreviewPixCode" class="visually-hidden" readonly></textarea>
+                            <div class="plan-preview-copy-wrap">
+                                <button id="planoPreviewCopyBtn" type="button" class="btn btn-outline-secondary btn-sm" style="display: none;">Copiar código Pix</button>
+                            </div>
+                            <div class="small text-muted mt-2 plan-preview-center" id="planoPreviewSemQr">QR Code indisponível para este plano no momento.</div>
                         </div>
                     </div>
                 </div>
@@ -158,6 +214,7 @@
         </div>
     </div>
 </div>
+{{ plano_qr_map|json_script:"plano-qr-map" }}
 <script>
     (function() {
         const toggles = document.querySelectorAll("[data-password-toggle]");
@@ -174,6 +231,67 @@
                 toggle.classList.toggle("is-visible", isPassword);
             });
         });
+    })();
+
+    (function() {
+        const select = document.getElementById("id_plano_periodo");
+        const dataNode = document.getElementById("plano-qr-map");
+        const qr = document.getElementById("planoPreviewQr");
+        const noQr = document.getElementById("planoPreviewSemQr");
+        const pixCode = document.getElementById("planoPreviewPixCode");
+        const copyBtn = document.getElementById("planoPreviewCopyBtn");
+        if (!select || !dataNode || !qr || !noQr || !pixCode || !copyBtn) return;
+
+        let map = {};
+        try {
+            map = JSON.parse(dataNode.textContent || "{}");
+        } catch (e) {
+            map = {};
+        }
+
+        const render = () => {
+            const selected = select.value;
+            const current = map[selected] || {};
+            pixCode.value = current.pix_copia_cola || "";
+            copyBtn.style.display = pixCode.value ? "inline-block" : "none";
+            if (current.qr_url) {
+                qr.src = current.qr_url;
+                qr.style.display = "block";
+                noQr.style.display = "none";
+            } else {
+                qr.removeAttribute("src");
+                qr.style.display = "none";
+                noQr.style.display = "block";
+            }
+        };
+
+        copyBtn.addEventListener("click", async () => {
+            const text = pixCode.value || "";
+            if (!text) return;
+            let copied = false;
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text);
+                    copied = true;
+                }
+            } catch (e) {
+                copied = false;
+            }
+            if (!copied) {
+                pixCode.classList.remove("visually-hidden");
+                pixCode.select();
+                document.execCommand("copy");
+                pixCode.classList.add("visually-hidden");
+            }
+            const original = copyBtn.textContent;
+            copyBtn.textContent = "Copiado!";
+            setTimeout(() => {
+                copyBtn.textContent = original;
+            }, 1500);
+        });
+
+        select.addEventListener("change", render);
+        render();
     })();
 </script>
 {% endblock %}

@@ -104,10 +104,25 @@
 
         .mobile-menu-panel a {
             width: fit-content;
+            color: #ffffff;
+            text-decoration: underline;
+            text-decoration-color: transparent;
+            text-underline-offset: 5px;
+            text-decoration-thickness: 2px;
+            transition: color 0.2s ease, text-decoration-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+            border-radius: 8px;
+            padding: 4px 2px;
+        }
+
+        .mobile-menu-panel a:hover {
+            color: #ffffff;
+            text-decoration-color: var(--gold);
+            background: rgba(255, 210, 127, 0.08);
+            transform: translateY(-1px);
         }
 
         .nav-links a {
-            color: #d7e3f5;
+            color: #ffffff;
             text-decoration: underline;
             text-decoration-color: transparent;
             text-underline-offset: 5px;
@@ -166,6 +181,10 @@
             margin-bottom: 12px;
         }
 
+        .orgulho-text {
+            color: var(--muted) !important;
+        }
+
         .cta-row .btn { min-width: 200px; }
 
         .img-panel {
@@ -183,8 +202,31 @@
         footer {
             border-top: 1px solid var(--line);
             margin-top: 36px;
-            padding: 20px 0;
+            padding: 22px 0;
             color: #a8bad3;
+            background: linear-gradient(180deg, rgba(8, 13, 22, 0.35), rgba(8, 13, 22, 0.65));
+        }
+
+        .footer-shell {
+            border: 1px solid rgba(164, 189, 219, 0.18);
+            border-radius: 12px;
+            padding: 12px 14px;
+            background: rgba(13, 20, 32, 0.58);
+        }
+
+        .footer-link {
+            color: #7fd8ff !important;
+            text-decoration: underline;
+            text-decoration-color: transparent;
+            text-underline-offset: 4px;
+            font-weight: 600;
+            transition: color 0.2s ease, text-decoration-color 0.2s ease, text-shadow 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: #ffd27f !important;
+            text-decoration-color: #ffd27f;
+            text-shadow: 0 0 10px rgba(255, 210, 127, 0.3);
         }
 
         @media (max-width: 860px) {
@@ -242,7 +284,7 @@
                     <div class="img-panel">
                         <img src="{% static 'core/img/bandeira.jpg' %}" alt="Bandeira de Mato Grosso do Sul">
                     </div>
-                    <p class="small text-muted mt-2 mb-0">Orgulhosamente sul-mato-grossense</p>
+                    <p class="small mt-2 mb-0 orgulho-text">Orgulhosamente sul-mato-grossense</p>
                 </div>
             </div>
         </section>
@@ -314,11 +356,17 @@
     </main>
 
     <footer>
-        <div class="container d-flex flex-column flex-lg-row align-items-center justify-content-between gap-2">
-            <div>&copy; ALP SISTEMAS</div>
+        <div class="container footer-shell d-flex flex-column flex-lg-row align-items-center justify-content-between gap-2">
+            <div class="fw-semibold">&copy; ALP SISTEMAS</div>
             <div class="d-flex gap-3">
-                <a href="mailto:alpsistemascg@gmail.com" class="text-decoration-none">alpsistemascg@gmail.com</a>
-                <a href="https://www.youtube.com/@ALPSistemas" target="_blank" rel="noopener" class="text-decoration-none">YouTube</a>
+                <a href="mailto:alpsistemascg@gmail.com" class="footer-link d-inline-flex align-items-center gap-1">
+                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                    <span>alpsistemascg@gmail.com</span>
+                </a>
+                <a href="https://www.youtube.com/@ALPSistemas" target="_blank" rel="noopener" class="footer-link d-inline-flex align-items-center gap-1">
+                    <i class="fab fa-youtube" aria-hidden="true"></i>
+                    <span>YouTube</span>
+                </a>
             </div>
         </div>
     </footer>
@@ -329,10 +377,21 @@
             const navInner = document.querySelector(".nav-shell-inner");
             const toggle = document.getElementById("quemSomosMenuToggle");
             if (!navInner || !toggle) return;
+            const AUTO_CLOSE_MS = 5000;
+            let mobileMenuTimer = null;
 
             const setOpen = (open) => {
+                if (mobileMenuTimer) {
+                    clearTimeout(mobileMenuTimer);
+                    mobileMenuTimer = null;
+                }
                 navInner.classList.toggle("is-mobile-open", open);
                 toggle.setAttribute("aria-expanded", open ? "true" : "false");
+                if (open && window.innerWidth <= 860) {
+                    mobileMenuTimer = setTimeout(() => {
+                        setOpen(false);
+                    }, AUTO_CLOSE_MS);
+                }
             };
 
             toggle.addEventListener("click", function () {

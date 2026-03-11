@@ -995,6 +995,11 @@ class AutoCadastroForm(forms.Form):
         required=False,
         validators=[FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png", "webp"])],
     )
+    plano_periodo = forms.ChoiceField(
+        label="Tipo de plano desejado",
+        choices=Empresa.PlanoPeriodo.choices,
+        initial=Empresa.PlanoPeriodo.MENSAL,
+    )
     username = forms.CharField(label="Login", max_length=150)
     email = forms.EmailField(label="E-mail")
     email_recuperacao = forms.EmailField(label="E-mail para recuperação de senha")
@@ -1036,6 +1041,7 @@ class AutoCadastroForm(forms.Form):
             {"placeholder": "Cidade", "autocomplete": "address-level2"}
         )
         self.fields["logomarca"].widget.attrs.update({"accept": "image/*"})
+        self.fields["plano_periodo"].widget.attrs.update({})
         self.fields["username"].widget.attrs.update(
             {"placeholder": "Digite um login", "autocomplete": "username"}
         )
@@ -1133,6 +1139,7 @@ class AutoCadastroForm(forms.Form):
                 bairro=data.get("bairro", ""),
                 cidade=data.get("cidade", ""),
                 logomarca=data.get("logomarca"),
+                plano_periodo=data.get("plano_periodo", Empresa.PlanoPeriodo.MENSAL),
                 senha_temporaria=data.get("password1", ""),
             )
             user = User.objects.create_user(
