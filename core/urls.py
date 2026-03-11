@@ -3,7 +3,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.DashboardView.as_view(), name='dashboard'),
+    path('', views.LandingPageView.as_view(), name='landing'),
+    path('quem-somos/', views.QuemSomosView.as_view(), name='quem_somos'),
+    path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
     path('cadastro/', views.AutoCadastroView.as_view(), name='cadastro'),
     path('dashboard/data/', views.DashboardDataView.as_view(), name='dashboard_data'),
     path(

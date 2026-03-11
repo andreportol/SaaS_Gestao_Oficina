@@ -1,0 +1,356 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quem Somos - ALP SISTEMAS</title>
+    <link rel="icon" type="image/png" href="{% static 'core/img/logomarca.png' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f1623;
+            --surface: #131d2d;
+            --line: rgba(164, 189, 219, 0.26);
+            --text: #e9f0fb;
+            --muted: #a8bad3;
+            --gold: #e2a73a;
+            --teal: #49c5a7;
+            --brand-blue: #5eb7f2;
+        }
+
+        body {
+            font-family: "Outfit", "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at 12% 8%, rgba(226, 167, 58, 0.18), transparent 36%),
+                radial-gradient(circle at 88% 12%, rgba(73, 197, 167, 0.14), transparent 38%),
+                var(--bg);
+            color: var(--text);
+        }
+
+        .nav-shell {
+            background: rgba(12, 19, 31, 0.92);
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid var(--line);
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            margin-right: calc(50% - 50vw);
+            padding: 10px 0;
+        }
+
+        .nav-shell-inner {
+            width: min(1160px, calc(100vw - 40px));
+            margin: 0 auto;
+            min-height: 58px;
+        }
+
+        .brand-link {
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: inherit;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .brand-link img {
+            width: 46px;
+            height: 46px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+        }
+
+        .brand-alp { color: var(--gold); font-weight: 800; }
+        .brand-sistemas { color: var(--gold); }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .mobile-menu-toggle,
+        .mobile-menu-panel {
+            display: none;
+        }
+
+        .mobile-menu-toggle {
+            margin-left: auto;
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            background: rgba(255, 255, 255, 0.08);
+            color: #d7e3f5;
+            border-radius: 10px;
+            padding: 7px 12px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .mobile-menu-panel {
+            width: 100%;
+            margin-top: 10px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(12, 19, 31, 0.95);
+            padding: 10px;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mobile-menu-panel a {
+            width: fit-content;
+        }
+
+        .nav-links a {
+            color: #d7e3f5;
+            text-decoration: underline;
+            text-decoration-color: transparent;
+            text-underline-offset: 5px;
+            font-weight: 600;
+            transition: color 0.2s ease, text-decoration-color 0.2s ease, background 0.2s ease, transform 0.2s ease, text-shadow 0.2s ease;
+            padding: 4px 2px;
+            border-radius: 8px;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+            text-decoration-color: var(--gold);
+            background: rgba(255, 210, 127, 0.08);
+            transform: translateY(-1px);
+            text-shadow: 0 0 14px rgba(255, 210, 127, 0.28);
+        }
+
+        .login-link {
+            text-decoration: none !important;
+            color: #0f1824 !important;
+            background: linear-gradient(135deg, #f3b347, #efc16a);
+            border: 1px solid rgba(243, 179, 71, 0.7);
+            border-radius: 999px;
+            padding: 7px 14px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            line-height: 1;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+
+        .login-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(243, 179, 71, 0.35);
+            filter: brightness(1.02);
+        }
+
+        .page-head {
+            background: linear-gradient(135deg, rgba(226, 167, 58, 0.18), rgba(73, 197, 167, 0.16), rgba(255, 255, 255, 0.02));
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 28px;
+        }
+
+        .info-card {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--surface);
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.26);
+        }
+
+        .info-card .card-body { padding: 22px; }
+
+        .soft-text {
+            color: var(--muted);
+            line-height: 1.75;
+            margin-bottom: 12px;
+        }
+
+        .cta-row .btn { min-width: 200px; }
+
+        .img-panel {
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            overflow: hidden;
+        }
+
+        .img-panel img {
+            width: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        footer {
+            border-top: 1px solid var(--line);
+            margin-top: 36px;
+            padding: 20px 0;
+            color: #a8bad3;
+        }
+
+        @media (max-width: 860px) {
+            .nav-links {
+                display: none;
+            }
+            .mobile-menu-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .nav-shell-inner.is-mobile-open .mobile-menu-panel {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-shell sticky-top">
+        <div class="nav-shell-inner py-2 d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <a class="brand-link" href="{% url 'landing' %}">
+                <img src="{% static 'core/img/logomarca.png' %}" alt="Logomarca ALP Sistemas">
+                <span><span class="brand-alp">ALP</span> <span class="brand-sistemas">SISTEMAS</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="{% url 'landing' %}#inicio">Início</a>
+                <a href="{% url 'landing' %}#videos-os">Vídeos e OS</a>
+                <a href="{% url 'landing' %}#contato">Contato</a>
+                <a href="{% url 'cadastro' %}">Cadastrar</a>
+                <a class="login-link" href="{% url 'login' %}">Login</a>
+            </div>
+            <button class="mobile-menu-toggle" id="quemSomosMenuToggle" type="button" aria-expanded="false" aria-controls="quemSomosMobileMenu">Menu</button>
+            <div class="mobile-menu-panel" id="quemSomosMobileMenu">
+                <a href="{% url 'landing' %}#inicio">Início</a>
+                <a href="{% url 'landing' %}#videos-os">Vídeos e OS</a>
+                <a href="{% url 'landing' %}#contato">Contato</a>
+                <a href="{% url 'cadastro' %}">Cadastrar</a>
+                <a class="login-link" href="{% url 'login' %}">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-4 py-lg-5">
+        <section class="page-head mb-4">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <h1 class="display-6 fw-bold mb-3"><i class="fas fa-building me-2 text-warning"></i>Quem Somos</h1>
+                    <p class="soft-text mb-0">
+                        A ALP SISTEMAS foi fundada em 14 de agosto de 2025, em Campo Grande - MS, com o propósito de criar
+                        soluções tecnológicas práticas para empresas que precisam de mais controle, automação e clareza
+                        operacional.
+                    </p>
+                </div>
+                <div class="col-lg-4">
+                    <div class="img-panel">
+                        <img src="{% static 'core/img/bandeira.jpg' %}" alt="Bandeira de Mato Grosso do Sul">
+                    </div>
+                    <p class="small text-muted mt-2 mb-0">Orgulhosamente sul-mato-grossense</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <article class="info-card h-100">
+                    <div class="card-body">
+                        <h4 class="mb-3"><i class="fas fa-bullseye me-2 text-warning"></i>Nossa missão</h4>
+                        <p class="soft-text">
+                            Entregar software que simplifica rotinas complexas. No cenário de oficinas, isso significa reduzir retrabalho,
+                            aumentar previsibilidade no atendimento e organizar de ponta a ponta o fluxo de Ordem de Serviço.
+                        </p>
+                        <p class="soft-text">
+                            Combinamos design funcional, regras de negócio reais e visão de campo para transformar processos em algo
+                            mais rápido, confiável e fácil de usar no dia a dia da equipe.
+                        </p>
+                        <p class="soft-text mb-0">
+                            Nossa direção é clara: tecnologia com foco em resultado operacional, mantendo simplicidade para quem usa.
+                        </p>
+                    </div>
+                </article>
+            </div>
+            <div class="col-lg-5">
+                <article class="info-card h-100">
+                    <div class="card-body">
+                        <h4 class="mb-3"><i class="fas fa-user-tie me-2 text-primary"></i>Fundador</h4>
+                        <p class="mb-2 fw-semibold">Engenheiro Eletricista: André L. Porto</p>
+                        <p class="soft-text">
+                            Profissional com trajetória em eletrônica, engenharia elétrica e automação. Hoje lidera a ALP SISTEMAS
+                            no desenvolvimento de soluções inteligentes para gestão operacional e tomada de decisão.
+                        </p>
+                        <div class="img-panel mt-2">
+                            <img src="{% static 'core/img/Imagem_escura.png' %}" alt="Soluções ALP Sistemas">
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <section class="info-card mt-4">
+            <div class="card-body">
+                <h4 class="mb-3"><i class="fas fa-map-marker-alt me-2 text-success"></i>Onde estamos e para quem atendemos</h4>
+                <div class="row g-3 align-items-center">
+                    <div class="col-lg-7">
+                        <p class="soft-text mb-0">
+                            Nosso ponto de partida é Campo Grande - MS, com atendimento digital para todo o Brasil.
+                            Desenvolvemos soluções sob medida para negócios que precisam de operação eficiente e dados confiáveis.
+                        </p>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="img-panel">
+                            <img src="{% static 'core/img/mapa-campo-grande.webp' %}" alt="Mapa de Campo Grande">
+                        </div>
+                        <p class="small text-muted mt-2 mb-0">Mapa para referência; atendemos clientes em todo o Brasil.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="cta-row d-flex flex-column flex-sm-row gap-2 justify-content-center justify-content-lg-end mt-4">
+            <a href="{% url 'landing' %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>Voltar para a página inicial
+            </a>
+            <a href="{% url 'landing' %}#contato" class="btn btn-outline-primary">
+                <i class="fas fa-envelope me-2"></i>Fale conosco
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container d-flex flex-column flex-lg-row align-items-center justify-content-between gap-2">
+            <div>&copy; ALP SISTEMAS</div>
+            <div class="d-flex gap-3">
+                <a href="mailto:alpsistemascg@gmail.com" class="text-decoration-none">alpsistemascg@gmail.com</a>
+                <a href="https://www.youtube.com/@ALPSistemas" target="_blank" rel="noopener" class="text-decoration-none">YouTube</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            const navInner = document.querySelector(".nav-shell-inner");
+            const toggle = document.getElementById("quemSomosMenuToggle");
+            if (!navInner || !toggle) return;
+
+            const setOpen = (open) => {
+                navInner.classList.toggle("is-mobile-open", open);
+                toggle.setAttribute("aria-expanded", open ? "true" : "false");
+            };
+
+            toggle.addEventListener("click", function () {
+                const isOpen = navInner.classList.contains("is-mobile-open");
+                setOpen(!isOpen);
+            });
+
+            const panelLinks = navInner.querySelectorAll(".mobile-menu-panel a");
+            for (const link of panelLinks) {
+                link.addEventListener("click", function () {
+                    setOpen(false);
+                });
+            }
+
+            window.addEventListener("resize", function () {
+                if (window.innerWidth > 860) setOpen(false);
+            });
+        })();
+    </script>
+</body>
+</html>

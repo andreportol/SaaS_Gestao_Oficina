@@ -233,6 +233,19 @@ def _apply_os_status_audit(os, previous_status, usuario):
     return actions
 
 
+class LandingPageView(TemplateView):
+    template_name = "core/landing.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect("dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
+
+class QuemSomosView(TemplateView):
+    template_name = "core/quem_somos.html"
+
+
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "core/dashboard.html"
 
