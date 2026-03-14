@@ -11,6 +11,7 @@ urlpatterns = [
     path("favicon.ico", RedirectView.as_view(url=staticfiles_storage.url("core/img/logomarca.png"))),
     path('admin/', admin.site.urls),
     path('accounts/login/', core_views.CustomLoginView.as_view(), name='login'),
+    path('accounts/demo-login/', core_views.demo_login_view, name='demo_login'),
     path('accounts/recuperar/', core_views.PasswordRecoveryView.as_view(), name='password_recovery'),
     path('accounts/logout/', core_views.logout_view, name='logout'),
     path('accounts/', include('django.contrib.auth.urls')),

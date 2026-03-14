@@ -12,7 +12,7 @@ import csv
 import json
 
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LoginView
@@ -2004,3 +2004,17 @@ def logout_view(request):
     logout(request)
     messages.success(request, "Sessão encerrada.")
     return redirect("login")
+
+
+def demo_login_view(request):
+    """Login automático de demonstração (somente quando habilitado no ambiente)."""
+    if not settings.ENABLE_DEMO_LOGIN:
+        raise PermissionDenied("Acesso de demonstração indisponível.")
+
+    user = Usuario.objects.filter(username="treinamento", is_active=True).first()
+    if not user:
+        messages.error(request, "Usuário de demonstração não encontrado.")
+        return redirect("login")
+
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    return redirect("dashboard")

@@ -141,6 +141,13 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
+ENABLE_DEMO_LOGIN = os.getenv("ENABLE_DEMO_LOGIN", "False").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 

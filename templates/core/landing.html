@@ -475,6 +475,14 @@
 
         .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
 
+        .btn-demo {
+            color: #072317;
+            background: linear-gradient(135deg, #58d89a, #8fe3c2);
+            box-shadow: 0 12px 25px rgba(88, 216, 154, 0.25);
+        }
+
+        .btn-demo:hover { background: linear-gradient(135deg, #4dcb8e, #7ddab5); }
+
         .kpis {
             margin-top: 22px;
             display: grid;
@@ -509,6 +517,12 @@
             letter-spacing: 0.01em;
         }
 
+        .section-note {
+            margin: -4px 0 12px;
+            color: var(--text-soft);
+            font-size: 0.94rem;
+        }
+
         .section-block {
             border: 1px solid var(--line);
             border-radius: var(--radius-lg);
@@ -521,6 +535,110 @@
             margin: 0;
             color: var(--text-soft);
             line-height: 1.7;
+        }
+
+        .system-carousel {
+            position: relative;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            background: rgba(13, 20, 32, 0.75);
+            box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+        }
+
+        .system-carousel-track {
+            display: flex;
+            transition: transform 0.45s ease;
+            will-change: transform;
+        }
+
+        .system-slide {
+            min-width: 100%;
+            position: relative;
+            margin: 0;
+        }
+
+        .system-slide img {
+            width: 100%;
+            height: 440px;
+            object-fit: contain;
+            object-position: top center;
+            display: block;
+            background: linear-gradient(135deg, rgba(243, 179, 71, 0.12), rgba(127, 216, 255, 0.08));
+        }
+
+        .system-caption {
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            bottom: 14px;
+            background: rgba(7, 12, 20, 0.74);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 12px;
+            padding: 10px 12px;
+            backdrop-filter: blur(4px);
+        }
+
+        .system-caption h3 {
+            margin: 0 0 4px;
+            font-size: 1rem;
+        }
+
+        .system-caption p {
+            margin: 0;
+            color: var(--text-soft);
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
+        .system-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 38px;
+            height: 38px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(6, 11, 18, 0.62);
+            color: #f7fbff;
+            font-size: 1.2rem;
+            line-height: 1;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            z-index: 2;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .system-arrow:hover {
+            background: rgba(243, 179, 71, 0.2);
+            border-color: rgba(243, 179, 71, 0.52);
+        }
+
+        .system-arrow.prev { left: 10px; }
+        .system-arrow.next { right: 10px; }
+
+        .system-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            padding: 12px 10px 14px;
+            background: rgba(10, 15, 24, 0.65);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .system-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            border: 0;
+            background: rgba(255, 255, 255, 0.32);
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .system-dot.active {
+            background: #f3b347;
         }
 
         .cards {
@@ -651,22 +769,27 @@
         .os-preview {
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 12px;
-            padding: 12px;
+            overflow: hidden;
             background: rgba(8, 13, 22, 0.7);
         }
 
-        .os-row {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 6px;
-            padding: 6px 0;
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
-            font-size: 0.9rem;
+        .os-preview iframe {
+            width: 100%;
+            height: 360px;
+            border: 0;
+            display: block;
         }
 
-        .os-row:last-child { border-bottom: 0; }
-
-        .os-row strong { color: #f6d195; }
+        .os-pdf-link {
+            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffd27f;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
 
         .contact-grid {
             display: grid;
@@ -857,6 +980,9 @@
             .hero-visual img {
                 height: auto;
             }
+            .system-slide img {
+                height: 290px;
+            }
             .footer-shell {
                 width: calc(100vw - 24px);
                 flex-direction: column;
@@ -963,6 +1089,7 @@
                     <div class="cta-row">
                         <a class="btn btn-primary" href="{% url 'login' %}">Entrar no portal</a>
                         <a class="btn btn-secondary" href="{% url 'cadastro' %}">Criar cadastro</a>
+                        <a class="btn btn-demo" href="https://alpoficinas-h.up.railway.app/accounts/demo-login/" target="_blank" rel="noopener noreferrer">Demonstração (treinamento)</a>
                     </div>
 
                     <div class="kpis">
@@ -1029,6 +1156,57 @@
             </article>
         </section>
 
+        <h2 class="section-title" id="partes-sistema">Partes do sistema</h2>
+        <p class="section-note">O sistema conta com dois temas de visualização: claro e escuro.</p>
+        <section class="system-carousel" aria-label="Carrossel de telas do sistema" data-system-carousel>
+            <div class="system-carousel-track">
+                <figure class="system-slide">
+                    <img src="{% static 'core/img/agenda_clara.png' %}" alt="Tela de agenda no tema claro">
+                    <figcaption class="system-caption">
+                        <h3>Agenda</h3>
+                        <p>Visual da agenda no tema claro para organização dos atendimentos.</p>
+                    </figcaption>
+                </figure>
+                <figure class="system-slide">
+                    <img src="{% static 'core/img/dashboard_tema_claro_oficina.png' %}" alt="Painel principal no tema claro">
+                    <figcaption class="system-caption">
+                        <h3>Dashboard</h3>
+                        <p>Resumo gerencial com indicadores da oficina no tema claro.</p>
+                    </figcaption>
+                </figure>
+                <figure class="system-slide">
+                    <img src="{% static 'core/img/lista_produtos.png' %}" alt="Lista de produtos no sistema">
+                    <figcaption class="system-caption">
+                        <h3>Produtos</h3>
+                        <p>Consulta e controle dos itens cadastrados na oficina.</p>
+                    </figcaption>
+                </figure>
+                <figure class="system-slide">
+                    <img src="{% static 'core/img/ordens_servico_escuro.png' %}" alt="Tela de ordens de serviço no tema escuro">
+                    <figcaption class="system-caption">
+                        <h3>Ordens de Serviço</h3>
+                        <p>Acompanhamento das OS no tema escuro, com status e valores.</p>
+                    </figcaption>
+                </figure>
+                <figure class="system-slide">
+                    <img src="{% static 'core/img/relatorios_tema_escuro.png' %}" alt="Tela de relatórios no tema escuro">
+                    <figcaption class="system-caption">
+                        <h3>Relatórios</h3>
+                        <p>Relatórios operacionais no tema escuro para análise rápida.</p>
+                    </figcaption>
+                </figure>
+            </div>
+            <button class="system-arrow prev" type="button" aria-label="Slide anterior" data-carousel-prev>&lsaquo;</button>
+            <button class="system-arrow next" type="button" aria-label="Próximo slide" data-carousel-next>&rsaquo;</button>
+            <div class="system-dots" aria-label="Navegação dos slides">
+                <button class="system-dot active" type="button" aria-label="Ir para slide 1" data-slide-to="0"></button>
+                <button class="system-dot" type="button" aria-label="Ir para slide 2" data-slide-to="1"></button>
+                <button class="system-dot" type="button" aria-label="Ir para slide 3" data-slide-to="2"></button>
+                <button class="system-dot" type="button" aria-label="Ir para slide 4" data-slide-to="3"></button>
+                <button class="system-dot" type="button" aria-label="Ir para slide 5" data-slide-to="4"></button>
+            </div>
+        </section>
+
         <h2 class="section-title" id="videos-os">Vídeo explicativo e demonstração de OS</h2>
         <section class="video-grid">
             <article class="video-card">
@@ -1040,16 +1218,11 @@
             </article>
             <article class="os-card">
                 <h3>Demonstrativo de Ordem de Serviço</h3>
-                <p>Modelo visual de como uma OS fica organizada dentro do sistema.</p>
+                <p>Modelo real de Ordem de Serviço gerado no sistema. A logomarca exibida será da oficina.</p>
                 <div class="os-preview">
-                    <div class="os-row"><span>OS #</span><strong>000245</strong></div>
-                    <div class="os-row"><span>Cliente</span><strong>Carlos Henrique</strong></div>
-                    <div class="os-row"><span>Veículo</span><strong>Ford Ranger 3.2</strong></div>
-                    <div class="os-row"><span>Status</span><strong>Em execução</strong></div>
-                    <div class="os-row"><span>Serviço</span><strong>Revisão + freio dianteiro</strong></div>
-                    <div class="os-row"><span>Previsão</span><strong>14/03/2026</strong></div>
-                    <div class="os-row"><span>Total</span><strong>R$ 1.280,00</strong></div>
+                    <iframe src="{% static 'core/pdf/os_4.pdf' %}" title="Demonstrativo de Ordem de Serviço" loading="lazy"></iframe>
                 </div>
+                <a class="os-pdf-link" href="{% static 'core/pdf/os_4.pdf' %}" target="_blank" rel="noopener noreferrer">Abrir PDF da OS</a>
             </article>
         </section>
 
@@ -1226,59 +1399,121 @@
                 if (event.key === "Escape") setPlansOpen(false);
             });
 
-            const form = document.getElementById("landingContactForm");
-            const status = document.getElementById("landingContactStatus");
-            if (!form || !status) return;
+            const carousel = document.querySelector("[data-system-carousel]");
+            if (carousel) {
+                const track = carousel.querySelector(".system-carousel-track");
+                const slides = track ? Array.from(track.children) : [];
+                const dots = Array.from(carousel.querySelectorAll("[data-slide-to]"));
+                const prevBtn = carousel.querySelector("[data-carousel-prev]");
+                const nextBtn = carousel.querySelector("[data-carousel-next]");
+                let currentIndex = 0;
+                let timer = null;
 
-            form.addEventListener("submit", async function (event) {
-                event.preventDefault();
-                status.textContent = "Enviando...";
-
-                const data = new FormData(form);
-                const nome = (data.get("nome") || "").toString().trim();
-                const empresa = (data.get("empresa") || "").toString().trim();
-                const email = (data.get("email") || "").toString().trim();
-                const telefone = (data.get("telefone") || "").toString().trim();
-                const mensagem = (data.get("mensagem") || "").toString().trim();
-
-                if (!nome || !email || !mensagem) {
-                    status.textContent = "Preencha nome, e-mail e mensagem.";
-                    return;
-                }
-
-                const payload = {
-                    nome: nome,
-                    email: email,
-                    mensagem:
-                        "Empresa: " + (empresa || "-") + "\n" +
-                        "Telefone: " + (telefone || "-") + "\n\n" +
-                        mensagem
+                const goToSlide = (index) => {
+                    if (!track || !slides.length) return;
+                    currentIndex = (index + slides.length) % slides.length;
+                    track.style.transform = "translateX(-" + (currentIndex * 100) + "%)";
+                    dots.forEach((dot, dotIndex) => {
+                        dot.classList.toggle("active", dotIndex === currentIndex);
+                    });
                 };
 
-                const csrfInput = form.querySelector("input[name='csrfmiddlewaretoken']");
-                const csrfToken = csrfInput ? csrfInput.value : "";
+                const startAutoplay = () => {
+                    if (timer || slides.length < 2) return;
+                    timer = window.setInterval(() => {
+                        goToSlide(currentIndex + 1);
+                    }, 5000);
+                };
 
-                try {
-                    const response = await fetch("{% url 'contato_suporte' %}", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": csrfToken
-                        },
-                        body: JSON.stringify(payload)
+                const stopAutoplay = () => {
+                    if (!timer) return;
+                    window.clearInterval(timer);
+                    timer = null;
+                };
+
+                if (prevBtn) {
+                    prevBtn.addEventListener("click", () => {
+                        goToSlide(currentIndex - 1);
+                        startAutoplay();
                     });
+                }
+                if (nextBtn) {
+                    nextBtn.addEventListener("click", () => {
+                        goToSlide(currentIndex + 1);
+                        startAutoplay();
+                    });
+                }
+                dots.forEach((dot) => {
+                    dot.addEventListener("click", () => {
+                        const targetIndex = Number(dot.getAttribute("data-slide-to"));
+                        if (Number.isNaN(targetIndex)) return;
+                        goToSlide(targetIndex);
+                        startAutoplay();
+                    });
+                });
 
-                    const body = await response.json();
-                    if (!response.ok) {
-                        status.textContent = body.error || "Não foi possível enviar agora.";
+                carousel.addEventListener("mouseenter", stopAutoplay);
+                carousel.addEventListener("mouseleave", startAutoplay);
+                carousel.addEventListener("focusin", stopAutoplay);
+                carousel.addEventListener("focusout", startAutoplay);
+
+                goToSlide(0);
+                startAutoplay();
+            }
+
+            const form = document.getElementById("landingContactForm");
+            const status = document.getElementById("landingContactStatus");
+            if (form && status) {
+                form.addEventListener("submit", async function (event) {
+                    event.preventDefault();
+                    status.textContent = "Enviando...";
+
+                    const data = new FormData(form);
+                    const nome = (data.get("nome") || "").toString().trim();
+                    const empresa = (data.get("empresa") || "").toString().trim();
+                    const email = (data.get("email") || "").toString().trim();
+                    const telefone = (data.get("telefone") || "").toString().trim();
+                    const mensagem = (data.get("mensagem") || "").toString().trim();
+
+                    if (!nome || !email || !mensagem) {
+                        status.textContent = "Preencha nome, e-mail e mensagem.";
                         return;
                     }
-                    status.textContent = "Mensagem enviada com sucesso. Em breve retornamos.";
-                    form.reset();
-                } catch (error) {
-                    status.textContent = "Erro de conexão. Tente novamente.";
-                }
-            });
+
+                    const payload = {
+                        nome: nome,
+                        email: email,
+                        mensagem:
+                            "Empresa: " + (empresa || "-") + "\n" +
+                            "Telefone: " + (telefone || "-") + "\n\n" +
+                            mensagem
+                    };
+
+                    const csrfInput = form.querySelector("input[name='csrfmiddlewaretoken']");
+                    const csrfToken = csrfInput ? csrfInput.value : "";
+
+                    try {
+                        const response = await fetch("{% url 'contato_suporte' %}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRFToken": csrfToken
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const body = await response.json();
+                        if (!response.ok) {
+                            status.textContent = body.error || "Não foi possível enviar agora.";
+                            return;
+                        }
+                        status.textContent = "Mensagem enviada com sucesso. Em breve retornamos.";
+                        form.reset();
+                    } catch (error) {
+                        status.textContent = "Erro de conexão. Tente novamente.";
+                    }
+                });
+            }
         })();
     </script>
 </body>

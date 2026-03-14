@@ -63,6 +63,7 @@ python app\manage.py test
    - `EMAIL_FROM` (ex: `ALP Oficinas <no-reply@alpoficinas.com.br>`)
    - `CONTACT_EMAIL` (destino das notificacoes)
    - `MEDIA_ROOT` (ex: `/app/media` quando usar volume persistente)
+   - `ENABLE_DEMO_LOGIN` (`False` por padrao; use `True` apenas em homologacao para liberar login automatico de demonstracao)
 2. Crie um Volume no Railway e monte no caminho `/app/media`.
    - Defina `MEDIA_ROOT=/app/media` nas variaveis do Railway.
 3. Comandos apos o deploy:
@@ -70,6 +71,14 @@ python app\manage.py test
 python app/manage.py migrate
 python app/manage.py collectstatic --noinput
 ```
+
+## Demonstracao em homologacao
+- URL de demonstracao: `https://alpoficinas-h.up.railway.app/accounts/demo-login/`
+- Faz login automatico e redireciona para o dashboard.
+- Requer:
+  - `ENABLE_DEMO_LOGIN=True` no ambiente de homologacao.
+  - Usuario ativo com username `treinamento`.
+- Recomendacao: manter `ENABLE_DEMO_LOGIN=False` em producao.
 
 ## Observacoes
 - Uploads (logomarca) precisam de storage persistente em producao (Railway Volume, S3, etc).
